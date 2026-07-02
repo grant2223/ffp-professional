@@ -102,9 +102,10 @@ a{color:var(--ffp-blue);}
 .gate-err{color:#ef4444;font-size:12px;font-weight:700;margin:8px 0;text-align:center;min-height:16px;}
 .gate-link{font-size:13px;color:#637c8d;font-weight:600;text-align:center;margin-top:14px;}
 .gate-link a{color:#0a3e44;font-weight:800;text-decoration:none;}
-.gate .code-row{display:flex;gap:8px;justify-content:center;margin:4px 0 8px;}
-.gate .code-box{flex:1;min-width:0;max-width:50px;height:58px;background:#fff;border:1.5px solid #dde7ee;border-radius:12px;font-size:26px;font-weight:900;text-align:center;color:#102230;font-family:'Montserrat',sans-serif;outline:none;}
-.gate .code-box:focus{border-color:#0a3e44;box-shadow:0 0 0 3px rgba(10,62,68,.14);}
+.gate .code-wrap{display:block;margin:0 auto 8px;max-width:320px;width:100%;}
+.gate .code-digit{width:100%;height:62px;padding:0 0 0 14px;background:#fff;border:1.5px solid #dde7ee;border-radius:12px;font-size:30px;font-weight:900;letter-spacing:14px;color:#102230;text-align:center;font-family:'Montserrat',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
+.gate .code-digit::placeholder{color:#c2d2dd;letter-spacing:14px;}
+.gate .code-digit:focus{border-color:#0a3e44;box-shadow:0 0 0 3px rgba(10,62,68,.14);}
 .spin{width:30px;height:30px;border:3px solid var(--ffp-border);border-top-color:var(--ffp-purple);border-radius:50%;animation:sp 1s linear infinite;margin:8px auto;}
 @keyframes sp{to{transform:rotate(360deg);}}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px;}
@@ -345,18 +346,19 @@ a{color:var(--ffp-blue);}
         <div class="gate-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#0a3e44" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Professional Sign In</span></div>
         <h2>Sign In</h2>
         <p>Use the email on your FFP Passport. We'll send you a 6-digit code.</p>
-        <div class="field" style="margin-bottom:12px;"><div class="label">Email</div><input class="input" id="si-email" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com"></div>
+        <div class="field" style="margin-bottom:12px;"><div class="label">Email Address</div><input class="input" id="si-email" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com"></div>
         <div class="gate-err" id="si-err"></div>
-        <button class="btn btn-pri btn-block" id="si-email-btn" onclick="proRequestCode()">Send my code</button>
+        <button class="btn btn-pri btn-block" id="si-email-btn" onclick="proRequestCode()">Get My Code</button>
       </div>
       <div id="signin-step-code" class="hidden">
+        <div class="gate-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#0a3e44" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Professional Sign In</span></div>
         <h2>Enter your code</h2>
         <p>We sent a 6-digit code to <b id="si-sent-to"></b>.</p>
-        <div class="code-row">
-          <input class="code-box" maxlength="1" inputmode="numeric" placeholder="•" oninput="siCodeMove(this,0)"><input class="code-box" maxlength="1" inputmode="numeric" placeholder="•" oninput="siCodeMove(this,1)"><input class="code-box" maxlength="1" inputmode="numeric" placeholder="•" oninput="siCodeMove(this,2)"><input class="code-box" maxlength="1" inputmode="numeric" placeholder="•" oninput="siCodeMove(this,3)"><input class="code-box" maxlength="1" inputmode="numeric" placeholder="•" oninput="siCodeMove(this,4)"><input class="code-box" maxlength="1" inputmode="numeric" placeholder="•" oninput="siCodeMove(this,5)">
+        <div class="code-wrap">
+          <input class="code-digit" id="si-code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" aria-label="6-digit code" placeholder="••••••" enterkeyhint="go" onkeydown="if(event.key==='Enter'){event.preventDefault();proVerifyCode();}">
         </div>
         <div class="gate-err" id="si-code-err"></div>
-        <button class="btn btn-pri btn-block" id="si-code-btn" onclick="proVerifyCode()">Sign in</button>
+        <button class="btn btn-pri btn-block" id="si-code-btn" onclick="proVerifyCode()">Sign In</button>
         <div class="gate-link" style="cursor:default;">Didn't get it? <a id="pro-resend-link" onclick="proResendCode()" style="cursor:pointer;text-decoration:underline;font-weight:700;">Resend code</a><span id="pro-resend-timer" style="margin-left:6px;opacity:.8;"></span></div>
         <div class="gate-link" onclick="proSigninBack()">Use a different email</div>
       </div>
@@ -1107,7 +1109,7 @@ function proRequestCode(){
     _siEmail=email; document.getElementById('si-sent-to').textContent=email;
     document.getElementById('signin-step-email').classList.add('hidden');
     document.getElementById('signin-step-code').classList.remove('hidden');
-    var f=document.querySelector('#signin-step-code .code-box'); if(f)f.focus();
+    var f=document.getElementById('si-code'); if(f)f.focus();
     proStartCooldown(60);
   }).catch(function(){ btn.disabled=false; btn.textContent=lbl; err.textContent='Network error. Please try again.'; });
 }
@@ -1118,7 +1120,7 @@ function siCodeMove(el,i){
   if(i===5&&el.value){ proVerifyCode(); }
 }
 function proVerifyCode(){
-  var boxes=document.querySelectorAll('#signin-step-code .code-box'); var code=''; boxes.forEach(function(b){ code+=b.value; });
+  var code=(document.getElementById('si-code').value||'').replace(/[^0-9]/g,'').trim();
   var err=document.getElementById('si-code-err');
   if(code.length<6){ err.textContent='Enter all 6 digits.'; return; }
   err.textContent='';

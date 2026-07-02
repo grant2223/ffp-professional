@@ -1,4 +1,4 @@
-/* FFP Passport - PWA install helper
+/* FFP Professional - PWA install helper
    (1) Registers the service worker. (2) Auto-shows a tasteful "Install the app" banner on mobile (Android =
    native beforeinstallprompt; iOS Safari = Share -> Add to Home Screen hint), hidden once installed or for
    14 days after dismissal. (3) Exposes window.FFPInstall so an explicit button (e.g. in Profile) can trigger
@@ -35,7 +35,7 @@
     var el = document.createElement('div');
     el.id = 'ffp-pwa-banner';
     el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', 'Install FFP Passport');
+    el.setAttribute('aria-label', 'Install FFP Professional');
     el.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;max-width:460px;margin:0 auto;' +
       'background:#0f1e2e;border:1px solid rgba(43,168,224,.35);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.5);' +
       'padding:14px 14px 14px 14px;color:#e8eef4;font-family:Montserrat,system-ui,sans-serif;' +
@@ -66,13 +66,13 @@
   }
 
   function androidBannerHTML() {
-    return '<div style="font-size:14px;font-weight:800;letter-spacing:-.1px;">Install FFP Passport</div>' +
+    return '<div style="font-size:14px;font-weight:800;letter-spacing:-.1px;">Install FFP Professional</div>' +
       '<div style="font-size:12px;color:#9fb4c4;margin-top:2px;line-height:1.4;">Add it to your home screen - opens full-screen and keeps you signed in.</div>' +
-      '<button id="ffp-pwa-install" style="margin-top:10px;background:#1980AD;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;">Install</button>';
+      '<button id="ffp-pwa-install" style="margin-top:10px;background:#0a3e44;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;">Install</button>';
   }
   function iosHelp() {
     banner(
-      '<div style="font-size:14px;font-weight:800;letter-spacing:-.1px;">Add FFP Passport to your home screen</div>' +
+      '<div style="font-size:14px;font-weight:800;letter-spacing:-.1px;">Add FFP Professional to your home screen</div>' +
       '<div style="font-size:12px;color:#9fb4c4;margin-top:3px;line-height:1.5;">Tap the Share button ' +
       '<span style="display:inline-block;vertical-align:-3px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2ba8e0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span> ' +
       'then <strong style="color:#e8eef4;">Add to Home Screen</strong>. It opens full-screen and keeps you signed in.</div>'
@@ -81,7 +81,7 @@
   function genericHelp() {
     banner(
       '<div style="font-size:14px;font-weight:800;letter-spacing:-.1px;">Open this on your phone</div>' +
-      '<div style="font-size:12px;color:#9fb4c4;margin-top:3px;line-height:1.5;">To add FFP Passport to your home screen, open <strong style="color:#e8eef4;">ffppassport.com</strong> in your mobile browser, then use the browser menu &rarr; <strong style="color:#e8eef4;">Add to Home Screen</strong>.</div>'
+      '<div style="font-size:12px;color:#9fb4c4;margin-top:3px;line-height:1.5;">To add FFP Professional to your home screen, open <strong style="color:#e8eef4;">ffpprofessional.com</strong> in your mobile browser, then use the browser menu &rarr; <strong style="color:#e8eef4;">Add to Home Screen</strong>.</div>'
     );
   }
 

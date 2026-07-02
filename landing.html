@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FFP Professional — grow your coaching business with FFP</title>
+<meta name="description" content="Coaches & service companies: get discovered by an active, ready-to-book audience across the FFP network. Your FFP Passport unlocks the professional dashboard — $20/month or $149/year, keep 100% of your bookings.">
+<meta name="theme-color" content="#0e2f3d">
+<link rel="icon" href="/assets/icons/ffp-pro-32.png?v=3" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/icons/ffp-pro-180.png?v=3">
+<meta property="og:title" content="For professionals | Find Fit People">
+<meta property="og:description" content="Get discovered and booked by active members. Your FFP Passport unlocks the professional dashboard — $20/month or $149/year.">
+<meta property="og:image" content="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-6-screens.png">
+<meta property="og:type" content="website">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#102230; --muted:#637c8d; --dim:#8295a3; --teal:#0a3e44; --teal2:#0e2f3d; --line:#e7ecf0; --bg:#edf0f2; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  img{max-width:100%;display:block;}
+  a{text-decoration:none;color:inherit;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
+  .btn{display:inline-block;background:#FFCC00;color:#082335;font-weight:800;font-size:15px;padding:15px 30px;border-radius:12px;box-shadow:0 8px 22px rgba(0,0,0,.18);transition:transform .08s;}
+  .btn:active{transform:translateY(1px);}
+  .btn-ghost{display:inline-block;color:#fff;font-weight:800;font-size:14px;padding:11px 20px;border:1.5px solid rgba(255,255,255,.35);border-radius:11px;}
+  /* top bar */
+  .nav{position:sticky;top:0;z-index:40;background:rgba(14,47,61,.96);backdrop-filter:blur(8px);}
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;}
+  .nav .brand{font-size:16px;font-weight:900;letter-spacing:1px;color:#fff;}
+  .nav .brand b{color:#5ec8d8;}
+  .nav .actions{display:flex;align-items:center;gap:10px;}
+  .nav .signin{color:#cfe0e6;font-weight:700;font-size:14px;padding:9px 14px;}
+  .nav .njoin{background:#FFCC00;color:#082335;font-weight:800;font-size:13.5px;padding:10px 16px;border-radius:10px;}
+  /* hero */
+  .hero{position:relative;background:var(--teal2);color:#fff;overflow:hidden;}
+  .hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1600&q=70') center/cover;opacity:.20;}
+  .hero .wrap{position:relative;padding:70px 22px 78px;max-width:820px;}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#5ec8d8;margin-bottom:16px;}
+  .hero h1{font-size:clamp(30px,5.4vw,50px);font-weight:900;line-height:1.08;letter-spacing:-.5px;margin-bottom:18px;}
+  .hero p.lead{font-size:clamp(15px,2vw,18px);color:#cfe0e6;line-height:1.6;margin-bottom:26px;max-width:660px;}
+  .hero-badges{display:flex;flex-wrap:wrap;gap:26px;margin-top:34px;}
+  .hero-badges .hb b{display:block;font-size:16px;font-weight:900;color:#fff;}
+  .hero-badges .hb span{font-size:12.5px;color:#9fc0c9;}
+  /* passport strip */
+  .strip{background:#f5f8f9;border-bottom:1px solid var(--line);}
+  .strip .wrap{padding:34px 22px;text-align:center;}
+  .strip h2{font-size:22px;font-weight:900;margin-bottom:8px;}
+  .strip p{color:var(--muted);font-size:14.5px;max-width:640px;margin:0 auto 12px;}
+  .price-pill{display:inline-block;background:var(--teal);color:#fff;font-weight:800;font-size:14px;padding:9px 18px;border-radius:22px;}
+  /* section */
+  section{padding:58px 0;}
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 40px;}
+  .sec-head h2{font-size:clamp(24px,3.4vw,32px);font-weight:900;letter-spacing:-.4px;margin-bottom:10px;}
+  .sec-head p{color:var(--muted);font-size:15px;}
+  .shot{width:100%;border-radius:18px;box-shadow:0 20px 50px rgba(16,34,48,.12);border:1px solid var(--line);}
+  .feature{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;margin-bottom:56px;}
+  .feature:nth-child(even) .fig{order:2;}
+  .feature h3{font-size:22px;font-weight:900;margin-bottom:12px;letter-spacing:-.3px;}
+  .feature ul{list-style:none;}
+  .feature li{position:relative;padding-left:26px;margin-bottom:10px;color:#33475b;font-size:14.5px;font-weight:500;}
+  .feature li:before{content:"";position:absolute;left:0;top:7px;width:9px;height:9px;border-radius:50%;background:var(--teal);}
+  .center-shot{max-width:760px;margin:0 auto;}
+  /* steps */
+  .steps{background:var(--teal2);color:#fff;}
+  .steps .sec-head h2,.steps .sec-head p{color:#fff;}
+  .steps .sec-head p{color:#9fc0c9;}
+  .step-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+  .step .n{width:38px;height:38px;border-radius:50%;background:#FFCC00;color:#082335;font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+  .step h4{font-size:16px;font-weight:800;margin-bottom:7px;}
+  .step p{color:#9fc0c9;font-size:13.5px;line-height:1.55;}
+  /* pricing */
+  .pricecard{max-width:460px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:34px 30px;box-shadow:0 20px 50px rgba(16,34,48,.10);text-align:center;}
+  .pricecard .tag{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+  .pricecard h3{font-size:22px;font-weight:900;margin-bottom:14px;}
+  .pricecard .amt{font-size:40px;font-weight:900;color:var(--teal);line-height:1;}
+  .pricecard .amt small{font-size:16px;color:var(--muted);font-weight:700;}
+  .pricecard .alt{font-size:13px;color:var(--muted);margin:8px 0 20px;}
+  .pricecard ul{list-style:none;text-align:left;margin-bottom:24px;}
+  .pricecard li{position:relative;padding-left:26px;margin-bottom:10px;font-size:14px;color:#33475b;font-weight:500;}
+  .pricecard li:before{content:"✓";position:absolute;left:0;top:0;color:var(--teal);font-weight:900;}
+  .facil{text-align:center;color:var(--muted);font-size:13.5px;margin-top:22px;}
+  .facil a{color:var(--teal);font-weight:800;}
+  /* faq */
+  .faq{max-width:720px;margin:0 auto;}
+  .faq details{border-bottom:1px solid var(--line);padding:18px 0;}
+  .faq summary{font-size:16px;font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary:after{content:"+";color:var(--teal);font-weight:900;font-size:22px;}
+  .faq details[open] summary:after{content:"–";}
+  .faq p{color:var(--muted);font-size:14.5px;line-height:1.6;margin-top:12px;}
+  /* final cta */
+  .final{background:var(--teal);color:#fff;text-align:center;}
+  .final .wrap{padding:64px 22px;}
+  .final h2{font-size:clamp(24px,3.6vw,34px);font-weight:900;margin-bottom:14px;letter-spacing:-.4px;}
+  .final p{color:#bfe0e6;font-size:15px;margin-bottom:26px;}
+  .final .facil{color:#9fc0c9;}
+  .final .facil a{color:#FFCC00;}
+  footer{background:#0a2029;color:#8fa9b3;padding:34px 0;font-size:13px;}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  footer .brand{font-weight:900;color:#fff;letter-spacing:1px;}
+  @media(max-width:760px){
+    .feature{grid-template-columns:1fr;gap:22px;}
+    .feature:nth-child(even) .fig{order:0;}
+    .step-grid{grid-template-columns:1fr 1fr;}
+    .hero-badges{gap:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="nav"><div class="wrap">
+  <div class="brand">FFP <b>Professional</b></div>
+  <div class="actions">
+    <a class="signin" href="/app">Sign in</a>
+    <a class="njoin" href="https://www.ffppassport.com/professional-signup.html">Join</a>
+  </div>
+</div></div>
+
+<header class="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <div class="kicker">Coach more · chase admin less</div>
+    <h1>Get discovered and booked by members already looking for you</h1>
+    <p class="lead">Get found by members already searching for a coach, fill your open slots, and take payment straight into your own account. FFP brings you the audience and runs the bookings — you keep 100%, and one Passport login opens your whole dashboard.</p>
+    <a class="btn" href="https://www.ffppassport.com/professional-signup.html">Join as a professional</a>
+    <div class="hero-badges">
+      <div class="hb"><b>One login</b><span>Passport = pro account</span></div>
+      <div class="hb"><b>Grant</b><span>recommends you</span></div>
+      <div class="hb"><b>Keep 100%</b><span>of your bookings</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="strip"><div class="wrap">
+  <h2>Your FFP Passport is your professional account</h2>
+  <p>Just sign up and get an FFP Passport — that's it. The <strong>same login</strong> instantly opens your professional dashboard, so you can add your services and start taking bookings. No separate professional sign-up or setup fee.</p>
+  <div class="price-pill">$20 / month · or $149 / year</div>
+</div></div>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Run your whole business from your phone</h2>
+      <p>Your clients, schedule, check-ins and payments — one app, built for coaches.</p>
+    </div>
+    <div class="center-shot"><img class="shot" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-6-screens.png" alt="The FFP professional app" loading="lazy"></div>
+  </div>
+</section>
+
+<section style="background:#f5f8f9;">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Everything you need to grow — and get booked</h2>
+      <p>Set it up once. Members find you, book the right thing, and pay you directly.</p>
+    </div>
+
+    <div class="feature">
+      <div class="fig"><img class="shot" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-profile.png" alt="Your public coach profile" loading="lazy"></div>
+      <div>
+        <h3>Clients who are already searching</h3>
+        <ul>
+          <li>Recommended by Grant, our AI guide</li>
+          <li>Found in FFP search across the UAE</li>
+          <li>Specialties, reviews &amp; intro video on show</li>
+          <li>A "Check availability" button on every visit</li>
+          <li>Built to turn views into booked sessions</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="fig"><img class="shot" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-schedule.png" alt="Your schedule and availability" loading="lazy"></div>
+      <div>
+        <h3>Open your slots — get booked in real time</h3>
+        <ul>
+          <li>Real-time — members book the moment you open a slot</li>
+          <li>View by day, week or month</li>
+          <li>Let members book, or assign clients yourself</li>
+          <li>Set capacity — 1:1 or small group</li>
+          <li>Open, close or move slots anytime</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="fig"><img class="shot" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-checkin.png" alt="QR check-in and reviews" loading="lazy"></div>
+      <div>
+        <h3>Check-ins that turn into reviews</h3>
+        <ul>
+          <li>QR check-in — scan theirs, or they scan yours</li>
+          <li>Automatic review request ~90 minutes later</li>
+          <li>Verified reviews from real sessions</li>
+          <li>Better reviews lift you in search &amp; with Grant</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="fig"><img class="shot" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/pro-ffp-coach.png" alt="FFP Coach — your AI assistant" loading="lazy"></div>
+      <div>
+        <h3>Your AI setup coach, built in</h3>
+        <ul>
+          <li>Guided, minutes-long setup</li>
+          <li>Help connecting payments with Stripe</li>
+          <li>Add services &amp; packages with a nudge</li>
+          <li>Day-to-day answers, anytime</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>How it works</h2>
+      <p>From sign-up to your first booking.</p>
+    </div>
+    <div class="step-grid">
+      <div class="step"><div class="n">1</div><h4>Create your profile</h4><p>Add your specialty, bio, photos and an intro video — it takes minutes.</p></div>
+      <div class="step"><div class="n">2</div><h4>Get verified</h4><p>Our team reviews you so members know every professional is trusted.</p></div>
+      <div class="step"><div class="n">3</div><h4>Set your availability</h4><p>Add your services and open your slots — toggle what's bookable online.</p></div>
+      <div class="step"><div class="n">4</div><h4>Get booked &amp; paid</h4><p>Members discover you, book a slot, and pay you directly — automatically.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Simple pricing</h2>
+      <p>One membership unlocks everything — no commission, no listing fees.</p>
+    </div>
+    <div class="pricecard">
+      <div class="tag">Your FFP Passport</div>
+      <h3>Everything, one membership</h3>
+      <div class="amt">$20<small> / month</small></div>
+      <div class="alt">✦ or $149 / year</div>
+      <ul>
+        <li>Sign up once — your Passport <strong>is</strong> your pro account</li>
+        <li>The same login opens the professional dashboard</li>
+        <li>Profile, availability, clients &amp; packages</li>
+        <li>Get discovered across the FFP app + Grant</li>
+        <li>Keep 100% of your bookings — paid straight to you</li>
+      </ul>
+      <a class="btn" style="width:100%;" href="https://www.ffppassport.com/professional-signup.html">Join as a professional</a>
+    </div>
+    <div class="facil">Run a full facility with a timetable, staff and memberships? The Business suite is a flat <strong>$99/month</strong> (first 2 months free) — <a href="https://findfitpeople.com/partner">see Facilities</a>.</div>
+  </div>
+</section>
+
+<section style="background:#f5f8f9;">
+  <div class="wrap">
+    <div class="sec-head"><h2>Questions, answered</h2></div>
+    <div class="faq">
+      <details><summary>How do I get the professional dashboard?</summary><p>Just sign up and get an FFP Passport ($20/month or $149/year). The same login opens your professional dashboard — there's no separate professional account, setup fee or commission.</p></details>
+      <details><summary>How do I get paid?</summary><p>You connect your own Stripe account, so clients pay you directly. FFP never holds your money and payouts are automatic.</p></details>
+      <details><summary>Do I control my availability?</summary><p>Fully. You set your services, open and close slots, and toggle which are bookable online — changes go live to members instantly.</p></details>
+      <details><summary>How do members find me?</summary><p>You appear in the FFP discovery app and are recommended by Grant — our AI guide — based on your specialty, location and availability.</p></details>
+      <details><summary>Do I keep what I earn?</summary><p>Yes — there's no commission on the Professionals plan. Clients pay you directly through your connected account and you keep 100% of every booking.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Ready to grow your client base?</h2>
+    <p>Get your FFP Passport, set your availability, and start getting booked by active members.</p>
+    <a class="btn" href="https://www.ffppassport.com/professional-signup.html">Join as a professional</a>
+    <div class="facil" style="margin-top:22px;">Already have an account? <a href="/app" style="color:#FFCC00;font-weight:800;">Sign in →</a></div>
+    <div class="facil">Run a facility with a full timetable? <a href="https://findfitpeople.com/partner">See Facilities →</a></div>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <div class="brand">FFP Professional</div>
+  <div>© 2026 Find Fit People. All rights reserved.</div>
+</div></footer>
+
+</body>
+</html>

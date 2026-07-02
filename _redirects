@@ -1,0 +1,4 @@
+# FFP Professional (ffpprofessional.com)
+# Landing page at the root; the app (sign-in gate + dashboard) served at /app.
+/app        /index.html      200
+/           /landing.html    200!

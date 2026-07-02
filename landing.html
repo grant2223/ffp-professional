@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#0e2f3d">
 <link rel="icon" href="/assets/icons/ffp-pro-32.png?v=3" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/assets/icons/ffp-pro-180.png?v=3">
+<link rel="manifest" href="/ffp-pro.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FFP Professional">
 <meta property="og:title" content="For professionals | Find Fit People">
 <meta property="og:description" content="Get discovered and booked by active members. Your FFP Passport unlocks the professional dashboard — $20/month or $149/year.">
 <meta property="og:image" content="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-6-screens.png">
@@ -56,6 +59,9 @@
   .shot{width:100%;border-radius:18px;box-shadow:0 20px 50px rgba(16,34,48,.12);border:1px solid var(--line);}
   .feature{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;margin-bottom:56px;}
   .feature:nth-child(even) .fig{order:2;}
+  .feature .fig{display:flex;justify-content:center;}
+  .feature .shot{max-width:290px;width:100%;}            /* phone screenshots — keep them modest */
+  .center-shot .shot{max-width:680px;}
   .feature h3{font-size:22px;font-weight:900;margin-bottom:12px;letter-spacing:-.3px;}
   .feature ul{list-style:none;}
   .feature li{position:relative;padding-left:26px;margin-bottom:10px;color:#33475b;font-size:14.5px;font-weight:500;}
@@ -110,7 +116,7 @@
 <body>
 
 <div class="nav"><div class="wrap">
-  <div class="brand">FFP <b>Professional</b></div>
+  <a class="brand" href="/" aria-label="FFP Professional"><img src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-logo-white.png" alt="FFP Professional" style="height:28px;width:auto;display:block;"></a>
   <div class="actions">
     <a class="signin" href="/app">Sign in</a>
     <a class="njoin" href="https://www.ffppassport.com/professional-signup.html">Join</a>

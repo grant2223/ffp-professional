@@ -28,13 +28,40 @@ async function renderMembers(){
   try{ var r=await window.supabase.rpc('pro_list_clients',{p_pro:pid}); _members=(r&&r.data)?r.data:[]; }catch(e){ _members=[]; }
   renderMembersList();
 }
+// "Invite a client to FFP Passport" — copies the coach's referral link so a client who joins through it is
+// credited to the coach (their kickback). Sits at the top of the Clients list.
+function _proInviteBtnHtml(){
+  return '<button onclick="proCopyInviteLink(this)" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;margin:2px 0 6px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;color:#fff;background:#0a3e44;">'
+    +'<span class="ms" style="font-size:18px;">person_add</span> Invite a client to FFP Passport</button>'
+    +'<div class="psub" style="margin:0 2px 12px;font-size:11px;">Copy your link and share it — when a client joins the Passport through it, it\'s credited to you.</div>';
+}
 function renderMembersList(){
   var host=document.getElementById('mem-list'); if(!host) return;
   var box=document.getElementById('mem-search'); var q=(box?box.value:'').trim().toLowerCase();
   var items=_members;
   if(q) items=_members.filter(function(m){ return ((m.full_name||'')+' '+(m.email||'')+' '+(m.phone||'')+' '+(m.tags||'')).toLowerCase().indexOf(q)!==-1; });
-  if(!items.length){ host.innerHTML=_members.length?'<div class="psub" style="margin:10px 2px;">No matches.</div>':emptyState('No clients yet','Add your first client. Scheduling, packages and payments all link back here.','Add client','openMemberModal()'); return; }
-  host.innerHTML='<div class="psub" style="margin:0 2px 8px;">'+_members.length+' client'+(_members.length===1?'':'s')+'</div>'+items.map(memberRow).join('');
+  var _inv=_proInviteBtnHtml();
+  if(!items.length){ host.innerHTML=_inv+(_members.length?'<div class="psub" style="margin:10px 2px;">No matches.</div>':emptyState('No clients yet','Add your first client. Scheduling, packages and payments all link back here.','Add client','openMemberModal()')); return; }
+  host.innerHTML=_inv+'<div class="psub" style="margin:0 2px 8px;">'+_members.length+' client'+(_members.length===1?'':'s')+'</div>'+items.map(memberRow).join('');
+}
+async function proCopyInviteLink(btn){
+  try{
+    if(btn) btn.disabled=true;
+    var url=window._proInviteUrl||'';
+    if(!url){
+      var email=''; try{ var s=await window.supabase.auth.getUser(); email=(s&&s.data&&s.data.user&&s.data.user.email)||''; }catch(e){}
+      if(!email){ showToast('Sign in to get your invite link','error'); if(btn)btn.disabled=false; return; }
+      var r=await fetch('https://ffp-passport-backend.vercel.app/api/pro/invite?email='+encodeURIComponent(email));
+      var j=await r.json();
+      if(!r.ok||!j||!j.url){ showToast('Could not get your invite link','error'); if(btn)btn.disabled=false; return; }
+      url=j.url; window._proInviteUrl=url;
+    }
+    var ok=false;
+    try{ await navigator.clipboard.writeText(url); ok=true; }catch(e){}
+    if(!ok){ try{ var ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); ok=document.execCommand('copy'); document.body.removeChild(ta); }catch(e2){} }
+    showToast(ok?'Invite link copied — share it with your client':('Link: '+url), ok?'success':'error');
+  }catch(e){ showToast('Could not copy invite link','error'); }
+  if(btn) btn.disabled=false;
 }
 function memberRow(m){
   var initials=(m.full_name||'?').split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();

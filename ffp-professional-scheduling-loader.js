@@ -129,13 +129,40 @@ async function openSlotPeople(slotId){
   var clientList=sorted.length
     ? sorted.map(function(c){ var on=chosen.indexOf(c.id)!==-1; return '<label class="slp-row" data-name="'+escHtml(String(c.full_name||'').toLowerCase())+'" style="display:flex;align-items:center;gap:12px;padding:12px 4px;cursor:pointer;border-bottom:1px solid var(--ffp-border);"><input type="checkbox" class="slp-cl" value="'+c.id+'" '+(on?'checked':'')+' style="width:20px;height:20px;accent-color:var(--ffp-purple);flex:0 0 auto;"> <span style="font-size:16px;font-weight:600;color:var(--ffp-text);">'+escHtml(c.full_name)+'</span></label>'; }).join('')
     : '<div class="psub" style="margin:4px 0;">No clients yet — add them in the Clients tab first.</div>';
-  openModalShell('', 'Recurring clients',
+  openModalShell('', 'Manage clients',
     '<div class="psub" style="margin:0 0 10px;"><b>Ticking adds this person to EVERY week of this slot</b> (a standing/recurring spot). Members who book a single session appear automatically — you don\'t add them here. Untick to remove someone\'s recurring spot.</div>'+
+    '<button class="btn btn-sec btn-block" style="justify-content:flex-start;gap:9px;margin:0 0 10px;" onclick="openMoveClient(\''+slotId+'\')"><span class="ms">swap_horiz</span> Move a client to another slot</button>'+
     (sorted.length>6?'<input class="input" id="slp-search" placeholder="Search clients…" oninput="_slpFilter()" style="margin:0 0 8px;">':'')+
-    '<div id="slp-clients" style="max-height:46vh;overflow-y:auto;">'+clientList+'</div>',
+    '<div id="slp-clients" style="max-height:44vh;overflow-y:auto;">'+clientList+'</div>',
     '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="saveSlotPeople(\''+slotId+'\')">Save</button>');
 }
 function _slpFilter(){ var b=document.getElementById('slp-search'); var q=(b?b.value:'').trim().toLowerCase(); var rows=document.querySelectorAll('#slp-clients .slp-row'); for(var i=0;i<rows.length;i++){ var n=rows[i].getAttribute('data-name')||''; rows[i].style.display=(!q||n.indexOf(q)!==-1)?'flex':'none'; } }
+// ── Move a recurring client from THIS slot to another of the coach's slots ──
+function _dayName(wd){ for(var i=0;i<WEEKDAYS.length;i++){ if(WEEKDAYS[i][1]===Number(wd)) return WEEKDAYS[i][0]; } return ''; }
+function _slotLabel(s){ return (s.title||s.service_name||'Session')+' · '+_dayName(s.weekday)+' '+String(s.start_time||'').slice(0,5); }
+function openMoveClient(fromSlotId){
+  var slot=(_proSlotsCache||[]).find(function(s){return s.id===fromSlotId;});
+  var clients=(slot&&slot.clients)||[];
+  if(!clients.length){ showToast('No recurring clients in this slot to move','error'); return; }
+  var others=(_proSlotsCache||[]).filter(function(s){ return s.id!==fromSlotId && s.status!=='paused'; });
+  if(!others.length){ showToast('You have no other slots to move them to','error'); return; }
+  var clientOpts=clients.map(function(c){ return '<option value="'+c.id+'">'+escHtml(c.full_name||'Client')+'</option>'; }).join('');
+  var slotOpts=others.map(function(s){ return '<option value="'+s.id+'">'+escHtml(_slotLabel(s))+'</option>'; }).join('');
+  openModalShell('', 'Move a client',
+    '<div class="psub" style="margin:0 0 10px;">Move a client\'s standing spot from this slot to another one. Their existing bookings aren\'t changed.</div>'+
+    '<div class="field"><div class="label">Client</div><select class="select" id="mv-client">'+clientOpts+'</select></div>'+
+    '<div class="field" style="margin-top:10px;"><div class="label">Move to</div><select class="select" id="mv-slot">'+slotOpts+'</select></div>',
+    '<button class="btn btn-ghost" onclick="openSlotPeople(\''+fromSlotId+'\')">Back</button><button class="btn btn-pri" onclick="doMoveClient(\''+fromSlotId+'\')"><span class="ms">swap_horiz</span> Move</button>');
+}
+async function doMoveClient(fromSlotId){
+  var pid=_proProvId(); var cid=(document.getElementById('mv-client')||{}).value||''; var to=(document.getElementById('mv-slot')||{}).value||'';
+  if(!cid||!to){ showToast('Pick a client and a slot','error'); return; }
+  try{
+    var r=await window.supabase.rpc('pro_move_slot_client',{p_pro:pid,p_from:fromSlotId,p_to:to,p_client:cid});
+    if(r&&r.error) throw r.error; var d=r&&r.data; if(d&&d.ok===false) throw new Error(d.error||'move_failed');
+    showToast('Client moved','success'); closeModal(); _loadSlotsCache().then(_schedRefresh);
+  }catch(e){ console.error('[FFP move client]',e); showToast('Could not move the client','error'); }
+}
 async function saveSlotPeople(slotId){
   if(!(await ffpConfirm({title:"Save who's in this session?",body:'Anyone you removed will lose their spot.',confirm:'Save',danger:false,icon:'group'}))) return;
   var pid=_proProvId(); var ids=[]; document.querySelectorAll('.slp-cl:checked').forEach(function(c){ids.push(c.value);});
@@ -333,27 +360,22 @@ async function openOccActions(slotId,date,blocked){
       +'<span class="ms" style="font-size:20px;flex:0 0 auto;margin-top:1px;">'+ic+'</span>'
       +'<span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span style="font-weight:800;font-size:13.5px;">'+lbl+'</span><span style="font-weight:600;font-size:11px;opacity:.72;line-height:1.35;">'+sub+'</span></span></button>';
   };
-  var secTitle=function(t){ return '<div class="form-section-title" style="margin:14px 0 7px;">'+t+'</div>'; };
+  var secTitle=function(t){ return '<div class="form-section-title" style="margin:16px 0 7px;">'+t+'</div>'; };
   var blockOpt=blocked
     ? opt('event_available','Make available again','Let members book this date again.','unblockOcc(\''+slotId+'\',\''+date+'\')')
-    : opt('event_busy','Block this date','Grey it out — members can’t book this one date.','cancelOcc(\''+slotId+'\',\''+date+'\')');
+    : opt('event_busy','Block this session','No one can book this date.','cancelOcc(\''+slotId+'\',\''+date+'\')');
   openModalShell('', 'Session options',
     noteHtml +
-    '<div class="psub" style="margin:0 0 12px;">'+escHtml(date)+(blocked?' · <span style="color:#8a99a8;font-weight:700;">Blocked</span>':'')+'</div>'+
+    '<div class="psub" style="margin:0 0 4px;">'+escHtml(date)+(blocked?' · <span style="color:#8a99a8;font-weight:700;">Blocked</span>':'')+'</div>'+
     clientHtml +
+    secTitle('This session · '+escHtml(date))+
     '<div style="display:flex;flex-direction:column;gap:8px;">'+
-      opt('group_add','Add or remove people','Who has a standing spot in this session, every week.','closeModal(); openSlotPeople(\''+slotId+'\')','btn-pri')+
-    '</div>'+
-    secTitle('Just this session · '+escHtml(date))+
-    '<div style="display:flex;flex-direction:column;gap:8px;">'+
-      opt('event','Add to my Google Calendar','Put this one date in your calendar.','proAddOccToCal(\''+slotId+'\',\''+date+'\')')+
-      opt('event_repeat','Reschedule just this week','Move only this week’s session to a new time.','openReschedule(\''+slotId+'\',\''+date+'\',\'this_week\')')+
+      opt('group','Manage clients','Add, remove or move a client. Single-session bookings appear on their own.','closeModal(); openSlotPeople(\''+slotId+'\')','btn-pri')+
       blockOpt+
     '</div>'+
-    secTitle('The standing slot · every week')+
+    secTitle('This slot · the weekly time')+
     '<div style="display:flex;flex-direction:column;gap:8px;">'+
-      opt('update','Shift this slot from now on','Change the day/time for this and all future weeks.','openReschedule(\''+slotId+'\',\''+date+'\',\'from_now\')')+
-      opt('edit','Edit standing slot','Name, service, capacity and recurring clients.','closeModal(); _loadSlotsCache().then(function(){openSlotModal(\''+slotId+'\');})')+
+      opt('delete','Delete slot','Removes the standing weekly slot for good. Past attendance is kept.','confirmEndSlot(\''+slotId+'\')')+
     '</div>',
     '<button class="btn btn-ghost" onclick="closeModal()">Close</button>');
 }
@@ -457,8 +479,7 @@ async function prfRefund(bookingId,btn){
   }catch(e){ showToast('Could not refund','error'); if(btn){btn.disabled=false;btn.style.opacity='1';} }
 }
 function confirmEndSlot(slotId){
-  openModalShell('', 'End this slot?', '<div class="psub" style="margin:6px 0;">This removes the standing slot and stops it repeating. Past attendance is kept.</div>',
-    '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="endSlot(\''+slotId+'\')">End slot</button>');
+  ffpConfirm({title:'Delete this slot?',body:'Removes the standing weekly slot and stops it repeating. Past attendance is kept.',confirm:'Delete slot',danger:true,icon:'delete'}).then(function(ok){ if(ok) endSlot(slotId); });
 }
 async function endSlot(slotId){
   var pid=_proProvId();

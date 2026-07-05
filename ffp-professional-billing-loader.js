@@ -151,6 +151,7 @@ async function renderBankDetails(){
     '<div class="psub" style="margin:10px 0 0;font-size:11.5px;">These appear in the "Pay to" section of every invoice you send (unpaid invoices only).</div></div>';
 }
 async function saveBankDetails(){
+  if(!window.confirm('Save these payout bank details? Client payments will be sent to this account — double-check the account number and IBAN.')) return;
   var pid=_billProvId(); if(!pid) return;
   var g=function(id){ var el=document.getElementById('bk-'+id); return el?el.value.trim():''; };
   var payload={ bank_account_name:g('bank_account_name'), bank_name:g('bank_name'), bank_account_number:g('bank_account_number'), bank_iban:g('bank_iban'), bank_swift:g('bank_swift'), bank_notes:g('bank_notes') };
@@ -196,6 +197,7 @@ async function openInvoicePreview(id){
 async function shareInvoice(id){
   var node=document.getElementById('inv-doc'); var p=_invFind(id);
   if(!node||!p){ showToast('Open the invoice first','error'); return; }
+  if(!window.confirm('Send this invoice to the client? It includes a live payment link.')) return;
   showToast('Preparing invoice…','info');
   var biz=await _ensureBillBiz(); var bizName=biz.display_name||(window.FFP_PROVIDER&&FFP_PROVIDER.name)||'Your business';
   var inv=_invNo(p), fileName='Invoice-'+inv+'.jpg';
@@ -268,6 +270,7 @@ async function savePayment(id,mode){
   // Recording a real PACKAGE payment also GRANTS the client that package's credits → a client is required.
   var grantPackage = (!id && mode==='payment' && pkgId);
   if(grantPackage && !clientId){ showToast('Choose the client who bought this package — they receive its credits','error'); return; }
+  if(grantPackage){ var _pkgTxt=(_svcSel && _svcSel.options && _svcSel.options[_svcSel.selectedIndex]) ? _svcSel.options[_svcSel.selectedIndex].text : 'this package'; if(!window.confirm('Record this payment and grant the client the credits for “'+_pkgTxt+'”?')) return; }
   var pid=_billProvId(); if(!pid) return;
   var payload={description:desc,amount_aed:amount,client_id:clientId,status:mode==='invoice'?'pending':'paid'};
   if(mode==='invoice'){ payload.due_date=g('due_date'); } else { payload.method=g('method')||'cash'; payload.paid_on=g('paid_on'); }

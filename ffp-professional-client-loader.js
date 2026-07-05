@@ -199,7 +199,7 @@ function _fiveButtons(id){
     sb('health_and_safety','Health','openClientHealth(\''+id+'\')')+
     sb('card_membership','Packages','openMembership(\''+id+'\')')+
     sb('assignment','Forms','clientAssessment(\''+id+'\')')+
-    sb('event_repeat','Check-ins','openCheckinSchedule(\''+id+'\')')+
+    sb('event_repeat','Progress check-ins','openCheckinSchedule(\''+id+'\')')+
     sb('sticky_note_2','Notes','openClientNotes(\''+id+'\')')+
     sb('edit','Edit','openMemberModal(\''+id+'\')')+
   '</div>';
@@ -1072,7 +1072,7 @@ var _ckClient=null, _ckTpls=[];
 function _ckCadenceLabel(c){ return c==='fortnightly'?'Every 2 weeks':(c==='monthly'?'Every month':'Every week'); }
 async function openCheckinSchedule(id){
   var pid=_memProvId(); if(!pid) return; _ckClient=id;
-  openModalShell('lg','Check-in schedule','<div class="psub" style="padding:8px 0;">Loading…</div>','<button class="btn btn-ghost" onclick="clientProfile(\''+id+'\')">Back</button>');
+  openModalShell('lg','Progress check-ins','<div class="psub" style="padding:8px 0;">Loading…</div>','<button class="btn btn-ghost" onclick="clientProfile(\''+id+'\')">Back</button>');
   var scheds=[], tpls=[], linked=false, cname='';
   try{ var r=await window.supabase.rpc('pro_list_checkin_schedules',{p_pro:pid,p_client:id}); scheds=(r&&r.data)||[]; }catch(e){}
   try{ var rt=await window.supabase.rpc('pro_list_form_templates',{p_pro:pid}); tpls=(rt&&rt.data)||[]; }catch(e){}
@@ -1107,7 +1107,7 @@ async function openCheckinSchedule(id){
     '</div>';
   var foot='<button class="btn btn-ghost left" onclick="clientProfile(\''+id+'\')">Back</button>'+
     (tpls.length?'<button class="btn btn-pri" onclick="saveCheckinSchedule()"><span class="ms">add</span> Schedule it</button>':'');
-  openModalShell('lg','Check-in schedule',body,foot);
+  openModalShell('lg','Progress check-ins',body,foot);
 }
 async function saveCheckinSchedule(){
   var pid=_memProvId(); if(!pid||!_ckClient) return;

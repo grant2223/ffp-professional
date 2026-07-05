@@ -62,7 +62,7 @@
   function build() {
     injectStyles();
     var fab = document.createElement('button'); fab.id = 'ffpa-fab'; fab.setAttribute('aria-label', 'Ask Grant');
-    fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span class="dot"></span>';
+    fab.innerHTML = '<span class="ms" style="font-size:27px;line-height:1;">sports</span><span class="dot"></span>';
     fab.onclick = toggle;
     document.body.appendChild(fab);
 
@@ -87,6 +87,8 @@
     var inp = document.getElementById('ffpa-in'); if (inp) setTimeout(function () { inp.focus(); }, 80);
   }
   function close() { var p = document.getElementById('ffpa-panel'); if (p) p.classList.remove('open'); }
+  // Open the coach chat from elsewhere (e.g. the Grow panel) and optionally seed a first question.
+  window.ffpCoachAsk = function (text) { try { open(); if (text) setTimeout(function () { send(String(text)); }, 90); } catch (e) {} };
 
   function greet() {
     var pro = role() === 'pro';

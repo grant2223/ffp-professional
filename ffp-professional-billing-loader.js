@@ -151,7 +151,7 @@ async function renderBankDetails(){
     '<div class="psub" style="margin:10px 0 0;font-size:11.5px;">These appear in the "Pay to" section of every invoice you send (unpaid invoices only).</div></div>';
 }
 async function saveBankDetails(){
-  if(!window.confirm('Save these payout bank details? Client payments will be sent to this account — double-check the account number and IBAN.')) return;
+  if(!(await ffpConfirm({title:'Save payout details?',body:'Client payments will be sent to this account — double-check the account number and IBAN.',confirm:'Save',danger:false,icon:'account_balance'}))) return;
   var pid=_billProvId(); if(!pid) return;
   var g=function(id){ var el=document.getElementById('bk-'+id); return el?el.value.trim():''; };
   var payload={ bank_account_name:g('bank_account_name'), bank_name:g('bank_name'), bank_account_number:g('bank_account_number'), bank_iban:g('bank_iban'), bank_swift:g('bank_swift'), bank_notes:g('bank_notes') };
@@ -197,7 +197,7 @@ async function openInvoicePreview(id){
 async function shareInvoice(id){
   var node=document.getElementById('inv-doc'); var p=_invFind(id);
   if(!node||!p){ showToast('Open the invoice first','error'); return; }
-  if(!window.confirm('Send this invoice to the client? It includes a live payment link.')) return;
+  if(!(await ffpConfirm({title:'Send this invoice?',body:'It goes to the client with a live payment link.',confirm:'Send',danger:false,icon:'send'}))) return;
   showToast('Preparing invoice…','info');
   var biz=await _ensureBillBiz(); var bizName=biz.display_name||(window.FFP_PROVIDER&&FFP_PROVIDER.name)||'Your business';
   var inv=_invNo(p), fileName='Invoice-'+inv+'.jpg';
@@ -270,7 +270,7 @@ async function savePayment(id,mode){
   // Recording a real PACKAGE payment also GRANTS the client that package's credits → a client is required.
   var grantPackage = (!id && mode==='payment' && pkgId);
   if(grantPackage && !clientId){ showToast('Choose the client who bought this package — they receive its credits','error'); return; }
-  if(grantPackage){ var _pkgTxt=(_svcSel && _svcSel.options && _svcSel.options[_svcSel.selectedIndex]) ? _svcSel.options[_svcSel.selectedIndex].text : 'this package'; if(!window.confirm('Record this payment and grant the client the credits for “'+_pkgTxt+'”?')) return; }
+  if(grantPackage){ var _pkgTxt=(_svcSel && _svcSel.options && _svcSel.options[_svcSel.selectedIndex]) ? _svcSel.options[_svcSel.selectedIndex].text : 'this package'; if(!(await ffpConfirm({title:'Record payment + grant credits?',body:'This records the payment and grants the client the credits for "'+_pkgTxt+'".',confirm:'Record',danger:false,icon:'paid'}))) return; }
   var pid=_billProvId(); if(!pid) return;
   var payload={description:desc,amount_aed:amount,client_id:clientId,status:mode==='invoice'?'pending':'paid'};
   if(mode==='invoice'){ payload.due_date=g('due_date'); } else { payload.method=g('method')||'cash'; payload.paid_on=g('paid_on'); }
@@ -287,7 +287,7 @@ async function savePayment(id,mode){
 }
 function markPaid(id){ openModalShell('','Mark as paid','<div class="form-section"><div class="form-section-title">Method</div><div class="form-grid"><div class="field full"><select class="select" id="mp-method">'+Object.keys(PAY_METHODS).map(function(k){return '<option value="'+k+'">'+PAY_METHODS[k]+'</option>';}).join('')+'</select></div></div></div>','<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="doMarkPaid(\''+id+'\')">Mark paid</button>'); }
 async function doMarkPaid(id){ var pid=_billProvId(); var m=document.getElementById('mp-method'); try{ var r=await window.supabase.rpc('pro_mark_paid',{p_pro:pid,p_id:id,p_method:m?m.value:'cash'}); if(r&&r.error)throw r.error; showToast('Marked paid','success'); }catch(e){ showToast('Could not update','error'); } closeModal(); renderInvoices(); renderPayments(); }
-function confirmDeletePayment(id,mode){ openModalShell('',(mode==='invoice'?'Delete invoice?':'Delete payment?'),'<div class="psub" style="margin:6px 0;">This removes the record.</div>','<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="doDeletePayment(\''+id+'\',\''+mode+'\')">Delete</button>'); }
+function confirmDeletePayment(id,mode){ ffpConfirm({title:(mode==='invoice'?'Delete invoice?':'Delete payment?'),body:'This permanently removes the record.',confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(ok) doDeletePayment(id,mode); }); }
 async function doDeletePayment(id,mode){ var pid=_billProvId(); try{ var r=await window.supabase.rpc('pro_delete_payment',{p_pro:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Deleted','success'); }catch(e){ showToast('Could not delete','error'); } closeModal(); if(mode==='invoice')renderInvoices(); else renderPayments(); }
 
 // First open

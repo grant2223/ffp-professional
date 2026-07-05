@@ -109,7 +109,7 @@ async function _renderPausedStrap(host){
   host.insertAdjacentHTML('beforeend', html);
 }
 async function pauseSlot(id){
-  if(!confirm('Pause this slot? Members won\'t be able to book it until you resume.')) return;
+  if(!(await ffpConfirm({title:'Pause this slot?',body:"Members won't be able to book it until you resume.",confirm:'Pause',danger:false,icon:'pause_circle'}))) return;
   var pid=_proProvId(); try{ var r=await window.supabase.rpc('pro_set_slot_status',{p_pro:pid,p_id:id,p_status:'paused'}); if(r&&r.error)throw r.error; showToast('Slot paused','success'); }catch(e){ showToast('Could not pause','error'); }
   closeModal(); _loadSlotsCache().then(_schedRefresh);
 }
@@ -133,7 +133,7 @@ async function openSlotPeople(slotId){
     '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="saveSlotPeople(\''+slotId+'\')">Save</button>');
 }
 async function saveSlotPeople(slotId){
-  if(!confirm('Save changes to who\'s in this session? Anyone you removed will lose their spot.')) return;
+  if(!(await ffpConfirm({title:"Save who's in this session?",body:'Anyone you removed will lose their spot.',confirm:'Save',danger:false,icon:'group'}))) return;
   var pid=_proProvId(); var ids=[]; document.querySelectorAll('.slp-cl:checked').forEach(function(c){ids.push(c.value);});
   try{ var r=await window.supabase.rpc('pro_save_slot',{p_pro:pid,p_id:slotId,p:{client_ids:ids}}); if(r&&r.error)throw r.error; showToast('Updated','success'); closeModal(); _loadSlotsCache().then(_schedRefresh); }catch(e){ showToast('Could not update','error'); }
 }
@@ -385,7 +385,7 @@ function openReschedule(slotId,date,scope){
 }
 async function doReschedule(slotId,date,scope){
   var nd=document.getElementById('rs-date'); var nt=document.getElementById('rs-time');
-  if(!confirm('Apply this reschedule?' + (scope==='from_now' ? ' This shifts the slot from now on.' : ' This moves just this week.'))) return;
+  if(!(await ffpConfirm({title:'Apply this reschedule?',body:(scope==='from_now' ? 'This shifts the slot from now on.' : 'This moves just this week.'),confirm:'Reschedule',danger:false,icon:'event'}))) return;
   var pid=_proProvId();
   try{
     var r=await window.supabase.rpc('pro_reschedule_occurrence',{p_pro:pid,p_slot:slotId,p_occ_date:date,p_scope:scope,p_new_date:(nd&&nd.value)?nd.value:date,p_new_time:(nt&&nt.value)?nt.value:null});
@@ -394,7 +394,7 @@ async function doReschedule(slotId,date,scope){
   }catch(e){ showToast('Could not reschedule','error'); }
 }
 async function cancelOcc(slotId,date){
-  if(!confirm('Block this date? It will be greyed out on your calendar and members can no longer book it.')) return;
+  if(!(await ffpConfirm({title:'Block this date?',body:'It will be greyed out on your calendar and members can no longer book it.',confirm:'Block',danger:true,icon:'block'}))) return;
   var pid=_proProvId();
   try{
     var r=await window.supabase.rpc('pro_cancel_occurrence',{p_pro:pid,p_slot:slotId,p_occ_date:date});
@@ -423,7 +423,7 @@ function _prfRow(x){
 }
 function _prfMark(id,label){ var a=document.querySelector('#prf-list [data-bk="'+id+'"] .prf-act'); if(a) a.innerHTML='<span class="psub" style="color:#1f9d57;font-weight:700;margin:0;">'+label+'</span>'; }
 async function prfReturnCredit(bookingId,btn){
-  if(!confirm('Return the session credit to this member?')) return;
+  if(!(await ffpConfirm({title:'Return the session credit?',body:'The credit goes back to this member to use again.',confirm:'Return credit',danger:false,icon:'undo'}))) return;
   if(btn){btn.disabled=true;btn.style.opacity='.6';}
   var pid=_proProvId();
   try{ var r=await window.supabase.rpc('pro_return_credit',{p_pro:pid,p_booking:bookingId}); if(r&&r.error)throw r.error; var d=r&&r.data;
@@ -431,7 +431,7 @@ async function prfReturnCredit(bookingId,btn){
   }catch(e){ showToast('Could not return credit','error'); if(btn){btn.disabled=false;btn.style.opacity='1';} }
 }
 async function prfRefund(bookingId,btn){
-  if(!confirm('Issue a full refund to this member?')) return;
+  if(!(await ffpConfirm({title:'Issue a full refund?',body:'A full refund will be issued to this member.',confirm:'Refund',danger:true,icon:'payments'}))) return;
   if(btn){btn.disabled=true;btn.style.opacity='.6';}
   var pid=_proProvId();
   try{ var r=await window.supabase.rpc('pro_refund_booking',{p_pro:pid,p_booking:bookingId}); if(r&&r.error)throw r.error; var d=r&&r.data;

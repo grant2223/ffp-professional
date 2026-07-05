@@ -64,7 +64,7 @@ function serviceCard(sv){
       '</div>'+
       '<div style="display:flex;gap:6px;flex:0 0 auto;">'+
         '<button class="btn btn-ghost btn-sm" onclick="openServiceModal(\''+sv.id+'\')" title="Edit"><span class="ms">edit</span></button>'+
-        '<button class="btn btn-ghost btn-sm" onclick="confirmArchiveService(\''+sv.id+'\')" title="Archive"><span class="ms">delete</span></button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="confirmArchiveService(\''+sv.id+'\')" title="Archive"><span class="ms">archive</span></button>'+
       '</div>'+
     '</div>'+
   '</div>';

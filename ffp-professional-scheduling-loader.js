@@ -125,13 +125,17 @@ async function openSlotPeople(slotId){
   var slot=(_proSlotsCache||[]).find(function(s){return s.id===slotId;});
   if(!slot){ showToast('Could not load that slot — please reopen it','error'); return; }
   var chosen=(slot.clients||[]).map(function(c){return c.id;});
-  var clientList=_proClients.length
-    ? _proClients.map(function(c){ var on=chosen.indexOf(c.id)!==-1; return '<label style="display:flex;align-items:center;gap:9px;padding:8px 2px;cursor:pointer;border-bottom:1px solid var(--ffp-border);"><input type="checkbox" class="slp-cl" value="'+c.id+'" '+(on?'checked':'')+' style="width:17px;height:17px;accent-color:var(--ffp-purple);"> <span style="font-size:14px;">'+escHtml(c.full_name)+'</span></label>'; }).join('')
+  var sorted=(_proClients||[]).slice().sort(function(a,b){ return String(a.full_name||'').localeCompare(String(b.full_name||'')); });
+  var clientList=sorted.length
+    ? sorted.map(function(c){ var on=chosen.indexOf(c.id)!==-1; return '<label class="slp-row" data-name="'+escHtml(String(c.full_name||'').toLowerCase())+'" style="display:flex;align-items:center;gap:12px;padding:12px 4px;cursor:pointer;border-bottom:1px solid var(--ffp-border);"><input type="checkbox" class="slp-cl" value="'+c.id+'" '+(on?'checked':'')+' style="width:20px;height:20px;accent-color:var(--ffp-purple);flex:0 0 auto;"> <span style="font-size:16px;font-weight:600;color:var(--ffp-text);">'+escHtml(c.full_name)+'</span></label>'; }).join('')
     : '<div class="psub" style="margin:4px 0;">No clients yet — add them in the Clients tab first.</div>';
   openModalShell('', 'Recurring clients',
-    '<div class="psub" style="margin:0 0 8px;"><b>Ticking adds this person to EVERY week of this slot</b> (a standing/recurring spot). Members who book a single session appear automatically — you don\'t add them here. Untick to remove someone\'s recurring spot.</div><div id="slp-clients" style="max-height:340px;overflow-y:auto;">'+clientList+'</div>',
+    '<div class="psub" style="margin:0 0 10px;"><b>Ticking adds this person to EVERY week of this slot</b> (a standing/recurring spot). Members who book a single session appear automatically — you don\'t add them here. Untick to remove someone\'s recurring spot.</div>'+
+    (sorted.length>6?'<input class="input" id="slp-search" placeholder="Search clients…" oninput="_slpFilter()" style="margin:0 0 8px;">':'')+
+    '<div id="slp-clients" style="max-height:46vh;overflow-y:auto;">'+clientList+'</div>',
     '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="saveSlotPeople(\''+slotId+'\')">Save</button>');
 }
+function _slpFilter(){ var b=document.getElementById('slp-search'); var q=(b?b.value:'').trim().toLowerCase(); var rows=document.querySelectorAll('#slp-clients .slp-row'); for(var i=0;i<rows.length;i++){ var n=rows[i].getAttribute('data-name')||''; rows[i].style.display=(!q||n.indexOf(q)!==-1)?'flex':'none'; } }
 async function saveSlotPeople(slotId){
   if(!(await ffpConfirm({title:"Save who's in this session?",body:'Anyone you removed will lose their spot.',confirm:'Save',danger:false,icon:'group'}))) return;
   var pid=_proProvId(); var ids=[]; document.querySelectorAll('.slp-cl:checked').forEach(function(c){ids.push(c.value);});
@@ -324,20 +328,32 @@ async function openOccActions(slotId,date,blocked){
   var clientHtml=clients.length
     ? '<div style="margin:0 0 12px;"><div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:0 2px 6px;">Booked in</div>'+clients.map(function(c){ return '<div onclick="closeModal(); openProClientProfile(\''+c.id+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--ffp-bg-2);border:1px solid var(--ffp-border);border-radius:10px;margin-bottom:7px;cursor:pointer;"><span style="width:34px;height:34px;border-radius:50%;background:rgba(10,62,68,0.16);color:#0a3e44;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:0 0 auto;">'+escHtml((c.full_name||"?").slice(0,1).toUpperCase())+'</span><div style="flex:1;min-width:0;"><div style="font-weight:700;color:var(--ffp-text);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(c.full_name||"Client")+'</div><div class="psub" style="margin:0;">Tap for details</div></div><span class="ms" style="color:var(--ffp-text-dim);flex:0 0 auto;">chevron_right</span></div>'; }).join('')+'</div>'
     : '';
-  var blockBtn=blocked
-    ? '<button class="btn btn-sec btn-block" onclick="unblockOcc(\''+slotId+'\',\''+date+'\')"><span class="ms">event_available</span> Make available again</button>'
-    : '<button class="btn btn-ghost btn-block" onclick="cancelOcc(\''+slotId+'\',\''+date+'\')"><span class="ms">event_busy</span> Block this date (grey it out)</button>';
+  var opt=function(ic,lbl,sub,onclick,variant){
+    return '<button class="btn '+(variant||'btn-sec')+' btn-block" style="display:flex;align-items:flex-start;justify-content:flex-start;gap:11px;text-align:left;padding:12px 14px;" onclick="'+onclick+'">'
+      +'<span class="ms" style="font-size:20px;flex:0 0 auto;margin-top:1px;">'+ic+'</span>'
+      +'<span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span style="font-weight:800;font-size:13.5px;">'+lbl+'</span><span style="font-weight:600;font-size:11px;opacity:.72;line-height:1.35;">'+sub+'</span></span></button>';
+  };
+  var secTitle=function(t){ return '<div class="form-section-title" style="margin:14px 0 7px;">'+t+'</div>'; };
+  var blockOpt=blocked
+    ? opt('event_available','Make available again','Let members book this date again.','unblockOcc(\''+slotId+'\',\''+date+'\')')
+    : opt('event_busy','Block this date','Grey it out — members can’t book this one date.','cancelOcc(\''+slotId+'\',\''+date+'\')');
   openModalShell('', 'Session options',
     noteHtml +
     '<div class="psub" style="margin:0 0 12px;">'+escHtml(date)+(blocked?' · <span style="color:#8a99a8;font-weight:700;">Blocked</span>':'')+'</div>'+
     clientHtml +
     '<div style="display:flex;flex-direction:column;gap:8px;">'+
-      '<button class="btn btn-pri btn-block" style="padding:14px;font-size:14px;" onclick="closeModal(); openSlotPeople(\''+slotId+'\')"><span class="ms">group_add</span> Add or remove people</button>'+
-      '<button class="btn btn-sec btn-block" onclick="proAddOccToCal(\''+slotId+'\',\''+date+'\')"><span class="ms">event</span> Add to my Google Calendar</button>'+
-      '<button class="btn btn-sec btn-block" onclick="openReschedule(\''+slotId+'\',\''+date+'\',\'this_week\')"><span class="ms">event_repeat</span> Reschedule just this week</button>'+
-      '<button class="btn btn-sec btn-block" onclick="openReschedule(\''+slotId+'\',\''+date+'\',\'from_now\')"><span class="ms">update</span> Shift this slot from now on</button>'+
-      blockBtn +
-      '<button class="btn btn-ghost btn-block" onclick="closeModal(); _loadSlotsCache().then(function(){openSlotModal(\''+slotId+'\');})"><span class="ms">edit</span> Edit standing slot</button>'+
+      opt('group_add','Add or remove people','Who has a standing spot in this session, every week.','closeModal(); openSlotPeople(\''+slotId+'\')','btn-pri')+
+    '</div>'+
+    secTitle('Just this session · '+escHtml(date))+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      opt('event','Add to my Google Calendar','Put this one date in your calendar.','proAddOccToCal(\''+slotId+'\',\''+date+'\')')+
+      opt('event_repeat','Reschedule just this week','Move only this week’s session to a new time.','openReschedule(\''+slotId+'\',\''+date+'\',\'this_week\')')+
+      blockOpt+
+    '</div>'+
+    secTitle('The standing slot · every week')+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      opt('update','Shift this slot from now on','Change the day/time for this and all future weeks.','openReschedule(\''+slotId+'\',\''+date+'\',\'from_now\')')+
+      opt('edit','Edit standing slot','Name, service, capacity and recurring clients.','closeModal(); _loadSlotsCache().then(function(){openSlotModal(\''+slotId+'\');})')+
     '</div>',
     '<button class="btn btn-ghost" onclick="closeModal()">Close</button>');
 }

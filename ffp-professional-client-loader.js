@@ -28,21 +28,15 @@ async function renderMembers(){
   try{ var r=await window.supabase.rpc('pro_list_clients',{p_pro:pid}); _members=(r&&r.data)?r.data:[]; }catch(e){ _members=[]; }
   renderMembersList();
 }
-// "Invite a client to FFP Passport" — copies the coach's referral link so a client who joins through it is
-// credited to the coach (their kickback). Sits at the top of the Clients list.
-function _proInviteBtnHtml(){
-  return '<button onclick="proCopyInviteLink(this)" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;margin:2px 0 6px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;color:#fff;background:#0a3e44;">'
-    +'<span class="ms" style="font-size:18px;">person_add</span> Invite a client to FFP Passport</button>'
-    +'<div class="psub" style="margin:0 2px 12px;font-size:11px;">Copy your link and share it — when a client joins the Passport through it, it\'s credited to you.</div>';
-}
+// "Invite to Passport" (referral link) now lives as a button in the Clients header (index.html #panel-clients),
+// beside "Add client". proCopyInviteLink (below) is called from there. Single source — no injected button here.
 function renderMembersList(){
   var host=document.getElementById('mem-list'); if(!host) return;
   var box=document.getElementById('mem-search'); var q=(box?box.value:'').trim().toLowerCase();
   var items=_members;
   if(q) items=_members.filter(function(m){ return ((m.full_name||'')+' '+(m.email||'')+' '+(m.phone||'')+' '+(m.tags||'')).toLowerCase().indexOf(q)!==-1; });
-  var _inv=_proInviteBtnHtml();
-  if(!items.length){ host.innerHTML=_inv+(_members.length?'<div class="psub" style="margin:10px 2px;">No matches.</div>':emptyState('No clients yet','Add your first client. Scheduling, packages and payments all link back here.','Add client','openMemberModal()')); return; }
-  host.innerHTML=_inv+'<div class="psub" style="margin:0 2px 8px;">'+_members.length+' client'+(_members.length===1?'':'s')+'</div>'+items.map(memberRow).join('');
+  if(!items.length){ host.innerHTML=(_members.length?'<div class="psub" style="margin:10px 2px;">No matches.</div>':emptyState('No clients yet','Add your first client. Scheduling, packages and payments all link back here.','Add client','openMemberModal()')); return; }
+  host.innerHTML='<div class="psub" style="margin:0 2px 8px;">'+_members.length+' client'+(_members.length===1?'':'s')+'</div>'+items.map(memberRow).join('');
 }
 async function proCopyInviteLink(btn){
   try{
@@ -240,7 +234,7 @@ async function cnAdd(){
   }catch(e){ showToast('Could not add note','error'); }
 }
 async function cnDelete(nid){
-  if(!window.confirm('Delete this note? It will be permanently removed.')) return;
+  if(!(await ffpConfirm({title:'Delete this note?',body:'It will be permanently removed.',confirm:'Delete',danger:true,icon:'delete'}))) return;
   var pid=_memProvId();
   try{ var r=await window.supabase.rpc('pro_delete_client_note',{p_pro:pid,p_id:nid}); if(r&&r.error) throw r.error;
     _cnNotes=_cnNotes.filter(function(n){return String(n.id)!==String(nid);}); cnRender();
@@ -304,7 +298,7 @@ function afUpload(fid){
   inp.click();
 }
 async function afRemove(fid){
-  if(!window.confirm('Remove this form? A signed or completed form will be permanently deleted — this cannot be undone.')) return;
+  if(!(await ffpConfirm({title:'Remove this form?',body:'A signed or completed form will be permanently deleted — this cannot be undone.',confirm:'Remove',danger:true,icon:'delete'}))) return;
   var pid=_memProvId();
   try{ var r=await window.supabase.rpc('pro_delete_client_form',{p_pro:pid,p_form_id:fid}); if(r&&r.error) throw r.error;
     _afForms=_afForms.filter(function(f){return String(f.id)!==String(fid);}); afRender();
@@ -451,7 +445,7 @@ async function afSaveTemplate(){
   catch(e){ showToast('Could not save','error'); }
 }
 async function afDeleteTemplate(tid){
-  if(!window.confirm('Delete this form template? It won’t be available for new clients — copies already assigned stay with those clients.')) return;
+  if(!(await ffpConfirm({title:'Delete this template?',body:"It won't be available for new clients — copies already assigned stay with those clients.",confirm:'Delete',danger:true,icon:'delete'}))) return;
   var pid=_memProvId();
   try{ var r=await window.supabase.rpc('pro_delete_form_template',{p_pro:pid,p_id:tid}); if(r&&r.error) throw r.error; afManageTemplates(); }
   catch(e){ showToast('Could not delete','error'); }
@@ -520,7 +514,7 @@ async function saveMember(id){
     else { closeModal(); renderMembers(); }
   }catch(e){ showToast('Could not save client','error'); }
 }
-function confirmDeleteMember(id){ openModalShell('','Remove client?','<div class="psub" style="margin:6px 0;">This removes them from your client list.</div>','<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="doDeleteMember(\''+id+'\')">Remove</button>'); }
+function confirmDeleteMember(id){ ffpConfirm({title:'Remove client?',body:'This removes them from your client list. Their bookings and history stay on record.',confirm:'Remove',danger:true,icon:'person_remove'}).then(function(ok){ if(ok) doDeleteMember(id); }); }
 async function doDeleteMember(id){ var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_delete_client',{p_pro:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Client removed','success'); }catch(e){ showToast('Could not remove','error'); } closeModal(); renderMembers(); }
 
 // ─── Client health data (read-only, member-permissioned) ───
@@ -689,7 +683,7 @@ async function savePlan(id){
   var payload={name:name,service_ids:svcIds,pkg_type:g('pkg_type')||'sessions',price_aed:g('price_aed'),credits:g('credits'),period_days:g('period_days'),notes:g('notes'),pay_requirement:g('pay_requirement')||'optional'};
   try{ var r=await window.supabase.rpc('pro_save_package',{p_pro:pid,p_id:id||null,p:payload}); if(r&&r.error)throw r.error; showToast(id?'Package updated':'Package created','success'); closeModal(); renderPlans(); }catch(e){ showToast('Could not save package','error'); }
 }
-function confirmDeletePlan(id){ openModalShell('','Delete package?','<div class="psub" style="margin:6px 0;">Clients already assigned keep their record.</div>','<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="doDeletePlan(\''+id+'\')">Delete</button>'); }
+function confirmDeletePlan(id){ ffpConfirm({title:'Delete package?',body:"Clients already assigned keep their record. New clients won't be able to buy this package.",confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(ok) doDeletePlan(id); }); }
 async function doDeletePlan(id){ var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_delete_package',{p_pro:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Package deleted','success'); }catch(e){ showToast('Could not delete','error'); } closeModal(); renderPlans(); }
 
 // ── Client packages (Membership button) ──
@@ -723,7 +717,7 @@ async function assignPlan(clientId){
   try{ var r=await window.supabase.rpc('pro_assign_package',{p_pro:pid,p_client:clientId,p_package:sel.value,p_start:(start&&start.value)?start.value:null}); if(r&&r.error)throw r.error; showToast('Package assigned','success'); openMembership(clientId); }catch(e){ showToast('Could not assign','error'); }
 }
 async function cancelMemberPlan(id){
-  if(!window.confirm('Cancel this client’s active package? Their remaining sessions or credits will be cancelled.')) return;
+  if(!(await ffpConfirm({title:'Cancel this package?',body:"The client's remaining sessions or credits will be cancelled.",confirm:'Cancel package',danger:true,icon:'cancel'}))) return;
   var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_cancel_client_package',{p_pro:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Cancelled','success'); }catch(e){ showToast('Could not cancel','error'); }
   if(_curMembershipMember) openMembership(_curMembershipMember);
 }
@@ -768,7 +762,7 @@ async function sendBroadcast(){
   var payload={channel:_cmVal('channel')||'email',audience_type:t,audience_ref:ref,audience_label:label,subject:subject,body:body};
   try{ var r=await window.supabase.rpc('pro_save_broadcast',{p_pro:pid,p:payload}); if(r&&r.error)throw r.error; showToast('Message saved','success'); closeModal(); renderComms(); }catch(e){ showToast('Could not save','error'); }
 }
-function confirmDeleteBroadcast(id){ openModalShell('','Delete message?','<div class="psub" style="margin:6px 0;">This removes it from your history.</div>','<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-pri" onclick="doDeleteBroadcast(\''+id+'\')">Delete</button>'); }
+function confirmDeleteBroadcast(id){ ffpConfirm({title:'Delete message?',body:'This removes it from your history. Clients who already received it keep it.',confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(ok) doDeleteBroadcast(id); }); }
 async function doDeleteBroadcast(id){ var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_delete_broadcast',{p_pro:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Deleted','success'); }catch(e){ showToast('Could not delete','error'); } closeModal(); renderComms(); }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -1025,8 +1019,7 @@ function wkRunDistMin(ei,si,v){ try{ _wkDraft.exercises[ei].sets[si].seconds=(Nu
 function wkRunToggle(ei,si){ try{ var s=_wkDraft.exercises[ei].sets[si]; s.done=!s.done; }catch(e){} wkRunRender(); }
 function wkRunnerFinish(){ wkLogToPassport(_wkDraft.exercises); }
 function wkDelete(id){
-  openModalShell('','Delete workout?','<div class="psub" style="margin:6px 0;">This removes it from the client’s plan / history.</div>',
-    '<button class="btn btn-ghost" onclick="openClientWorkouts(\''+_wkClient+'\')">Cancel</button><button class="btn btn-pri" onclick="wkDoDelete(\''+id+'\')">Delete</button>');
+  ffpConfirm({title:'Delete workout?',body:"This removes it from the client's plan / history.",confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(ok) wkDoDelete(id); });
 }
 async function wkDoDelete(id){ var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_workout_delete',{p_professional:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Deleted','success'); }catch(e){ showToast('Could not delete','error'); } openClientWorkouts(_wkClient); }
 

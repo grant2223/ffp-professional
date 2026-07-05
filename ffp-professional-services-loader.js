@@ -21,6 +21,8 @@ var SERVICE_TYPES = (window.FFP_TAX && FFP_TAX.sessionTypes) || { one_to_one:'On
 function _svcProvId(){ return (window.FFP_PROVIDER || {}).id || null; }
 function _svcEsc(s){ return (typeof escHtml === 'function') ? escHtml(s == null ? '' : String(s)) : String(s == null ? '' : s); }
 function _svcToast(m, t){ if (typeof showToast === 'function') showToast(m, t); }
+// Small info icon beside a field label → branded popover (ffpInfoPop, defined in index.html). Text escaped into data-* attrs.
+function _svcInfo(title, body){ return '<button type="button" class="fld-i" data-t="'+_svcEsc(title)+'" data-b="'+_svcEsc(body)+'" onclick="ffpInfoPop(this)"><span class="ms">info</span></button>'; }
 
 async function _loadServicesCache(){
   var pid = _svcProvId(); if (!pid) { _proServicesCache = []; return _proServicesCache; }
@@ -89,15 +91,15 @@ async function openServiceModal(id){
 
   openModalShell('lg', (editing ? 'Edit service' : 'New service'),
     '<div class="form-section"><div class="form-section-title">Service</div><div class="form-grid">'+
-      '<div class="field full"><div class="label">Name</div><input class="input" id="sv-name" value="'+_svcEsc(s.name||'')+'" placeholder="e.g. 60-min Personal Training"></div>'+
-      '<div class="field"><div class="label">Type</div><select class="select" id="sv-service_type">'+typeOpts+'</select></div>'+
-      '<div class="field"><div class="label">Session length (min)</div><input class="input" type="number" min="1" id="sv-duration_min" value="'+_svcEsc(String(s.duration_min||''))+'"></div>'+
-      '<div class="field"><div class="label">Capacity <span style="color:var(--ffp-text-dim);">(per slot)</span></div><input class="input" type="number" min="1" id="sv-capacity" value="'+_svcEsc(String(s.capacity||1))+'"></div>'+
-      '<div class="field"><div class="label">Price per session ('+_svcCcy()+')</div><input class="input" type="number" min="0" id="sv-price_aed" value="'+_svcEsc(String(s.price_aed==null?'':s.price_aed))+'" placeholder="For a single booking"></div>'+
-      '<div class="field"><div class="label">Free cancellation (hrs) <span style="color:var(--ffp-text-dim);">(full refund/credit before start)</span></div><input class="input" type="number" min="0" step="1" id="sv-free_cancellation_hours" value="'+_svcEsc(String(s.free_cancellation_hours!=null?s.free_cancellation_hours:24))+'" placeholder="24"></div>'+
-      '<div class="field"><div class="label">Location</div><input class="input" id="sv-location" value="'+_svcEsc(s.location||'')+'" placeholder="Optional"></div>'+
-      '<div class="field full"><div class="label">Description</div><input class="input" id="sv-description" value="'+_svcEsc(s.description||'')+'" placeholder="What this service includes (optional)"></div>'+
-      '<div class="field full"><label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;background:rgba(10,62,68,0.07);border:1px solid var(--ffp-border-mid);border-radius:10px;padding:12px 14px;"><span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:13px;font-weight:800;color:var(--ffp-text);">Offer online</span><span style="font-size:11px;color:var(--ffp-text-dim);font-weight:600;">Members can self-book slots that use this service, up to capacity.</span></span><input type="checkbox" id="sv-bookable_online" '+(s.bookable_online?'checked':'')+' style="width:20px;height:20px;accent-color:var(--ffp-purple);flex:0 0 auto;cursor:pointer;"></label></div>'+
+      '<div class="field full"><div class="label">Name'+_svcInfo('Service name','The name clients see when they book — be specific, e.g. "60-min Personal Training" or "Group HIIT".')+'</div><input class="input" id="sv-name" value="'+_svcEsc(s.name||'')+'" placeholder="e.g. 60-min Personal Training"></div>'+
+      '<div class="field"><div class="label">Type'+_svcInfo('Service type','One on One, Group or Assessment. This sets how the session is described to members and how many can join.')+'</div><select class="select" id="sv-service_type">'+typeOpts+'</select></div>'+
+      '<div class="field"><div class="label">Session length (min)'+_svcInfo('Session length','How long one session runs, in minutes. Used to lay out your timetable and stop bookings overlapping.')+'</div><input class="input" type="number" min="1" id="sv-duration_min" value="'+_svcEsc(String(s.duration_min||''))+'"></div>'+
+      '<div class="field"><div class="label">Capacity <span style="color:var(--ffp-text-dim);">(per slot)</span>'+_svcInfo('Capacity per slot','How many people can book the same time slot. Set 1 for one-on-one, or higher for a group class.')+'</div><input class="input" type="number" min="1" id="sv-capacity" value="'+_svcEsc(String(s.capacity||1))+'"></div>'+
+      '<div class="field"><div class="label">Price per session ('+_svcCcy()+')'+_svcInfo('Price per session','What one session costs if a client pays per booking. Leave blank if this service is only ever sold as a package.')+'</div><input class="input" type="number" min="0" id="sv-price_aed" value="'+_svcEsc(String(s.price_aed==null?'':s.price_aed))+'" placeholder="For a single booking"></div>'+
+      '<div class="field"><div class="label">Free cancellation (hrs) <span style="color:var(--ffp-text-dim);">(full refund/credit before start)</span>'+_svcInfo('Free cancellation window','How many hours before the start a client can cancel for a full refund or credit. Cancel later than this and the session is forfeit.')+'</div><input class="input" type="number" min="0" step="1" id="sv-free_cancellation_hours" value="'+_svcEsc(String(s.free_cancellation_hours!=null?s.free_cancellation_hours:24))+'" placeholder="24"></div>'+
+      '<div class="field"><div class="label">Location'+_svcInfo('Location','Where the session takes place — a gym, studio or area. Optional, shown to clients when they book.')+'</div><input class="input" id="sv-location" value="'+_svcEsc(s.location||'')+'" placeholder="Optional"></div>'+
+      '<div class="field full"><div class="label">Description'+_svcInfo('Description','A short line on what the service includes. Optional, but it helps clients choose the right one.')+'</div><input class="input" id="sv-description" value="'+_svcEsc(s.description||'')+'" placeholder="What this service includes (optional)"></div>'+
+      '<div class="field full"><label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;background:rgba(10,62,68,0.07);border:1px solid var(--ffp-border-mid);border-radius:10px;padding:12px 14px;"><span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:13px;font-weight:800;color:var(--ffp-text);">Offer online'+_svcInfo('Offer online','When on, members can find this service and self-book any open slots themselves, up to the capacity. When off, only you can add people to a slot.')+'</span><span style="font-size:11px;color:var(--ffp-text-dim);font-weight:600;">Members can self-book slots that use this service, up to capacity.</span></span><input type="checkbox" id="sv-bookable_online" '+(s.bookable_online?'checked':'')+' style="width:20px;height:20px;accent-color:var(--ffp-purple);flex:0 0 auto;cursor:pointer;"></label></div>'+
     '</div>'+
       '<div class="psub" style="margin:2px 0 0;">A client books this service using credits from a <b>Package</b>. Packages are created in the Packages tab and can be tied to this service, its type, or any service.</div>'+
       _pkgHtml+
@@ -131,10 +133,7 @@ async function saveService(id){
 }
 
 function confirmArchiveService(id){
-  openModalShell('', 'Archive this service?',
-    '<div class="psub" style="margin:6px 0;">It stops being offered and is hidden from your list. Existing timetable slots and client packages are kept.</div>',
-    '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
-    '<button class="btn btn-pri" onclick="archiveService(\''+id+'\')">Archive</button>');
+  ffpConfirm({title:'Archive this service?',body:'It stops being offered and is hidden from your list. Existing timetable slots and client packages are kept.',confirm:'Archive',danger:false,icon:'archive'}).then(function(ok){ if(ok) archiveService(id); });
 }
 async function archiveService(id){
   var pid = _svcProvId(); if (!pid) return;

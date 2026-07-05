@@ -240,6 +240,7 @@ async function cnAdd(){
   }catch(e){ showToast('Could not add note','error'); }
 }
 async function cnDelete(nid){
+  if(!window.confirm('Delete this note? It will be permanently removed.')) return;
   var pid=_memProvId();
   try{ var r=await window.supabase.rpc('pro_delete_client_note',{p_pro:pid,p_id:nid}); if(r&&r.error) throw r.error;
     _cnNotes=_cnNotes.filter(function(n){return String(n.id)!==String(nid);}); cnRender();
@@ -450,6 +451,7 @@ async function afSaveTemplate(){
   catch(e){ showToast('Could not save','error'); }
 }
 async function afDeleteTemplate(tid){
+  if(!window.confirm('Delete this form template? It won’t be available for new clients — copies already assigned stay with those clients.')) return;
   var pid=_memProvId();
   try{ var r=await window.supabase.rpc('pro_delete_form_template',{p_pro:pid,p_id:tid}); if(r&&r.error) throw r.error; afManageTemplates(); }
   catch(e){ showToast('Could not delete','error'); }

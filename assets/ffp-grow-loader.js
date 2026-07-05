@@ -110,7 +110,8 @@ function _growBrandTab(){
     : '<div style="background:var(--ffp-bg-card);border-radius:18px;box-shadow:0 10px 26px rgba(10,62,68,.10);overflow:hidden;margin-bottom:20px;"><div style="height:5px;background:linear-gradient(90deg,#1d7a4d,#37b06a,#FFCC00);"></div><div style="padding:20px 18px;text-align:center;"><div style="font-size:30px;">🏆</div><div style="font-size:17px;font-weight:900;color:var(--ffp-text);margin:6px 0 3px;">Your blueprint is built</div><div class="psub">Every foundation nailed. Keep it sharp.</div></div></div>';
   var done = FFP_FOUNDATIONS.filter(function (f){ return !!_foundAns[f.code]; });
   var blueprint = done.length ? ('<div class="form-section-title">Your brand so far</div>' + done.map(_growBlueprintItem).join('')) : '';
-  return hero + card + blueprint;
+  var startBtn = '<button type="button" onclick="if(window.growStep1Open)growStep1Open()" style="width:100%;margin:0 0 18px;background:linear-gradient(135deg,#0a3e44,#2ba8e0);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(43,168,224,.28);display:flex;align-items:center;justify-content:center;gap:8px;"><span class="ms">play_circle</span> Start Step 1 · Know your strengths</button>';
+  return hero + startBtn + card + blueprint;
 }
 
 // ── HABITS: daily actions ──

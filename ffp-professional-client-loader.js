@@ -303,6 +303,7 @@ function afUpload(fid){
   inp.click();
 }
 async function afRemove(fid){
+  if(!window.confirm('Remove this form? A signed or completed form will be permanently deleted — this cannot be undone.')) return;
   var pid=_memProvId();
   try{ var r=await window.supabase.rpc('pro_delete_client_form',{p_pro:pid,p_form_id:fid}); if(r&&r.error) throw r.error;
     _afForms=_afForms.filter(function(f){return String(f.id)!==String(fid);}); afRender();
@@ -718,6 +719,7 @@ async function assignPlan(clientId){
   try{ var r=await window.supabase.rpc('pro_assign_package',{p_pro:pid,p_client:clientId,p_package:sel.value,p_start:(start&&start.value)?start.value:null}); if(r&&r.error)throw r.error; showToast('Package assigned','success'); openMembership(clientId); }catch(e){ showToast('Could not assign','error'); }
 }
 async function cancelMemberPlan(id){
+  if(!window.confirm('Cancel this client’s active package? Their remaining sessions or credits will be cancelled.')) return;
   var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_cancel_client_package',{p_pro:pid,p_id:id}); if(r&&r.error)throw r.error; showToast('Cancelled','success'); }catch(e){ showToast('Could not cancel','error'); }
   if(_curMembershipMember) openMembership(_curMembershipMember);
 }

@@ -15,14 +15,14 @@
   function toast(m, t) { if (typeof showToast === 'function') showToast(m, t); }
 
   var QS = [
-    { label: 'Your strength', q: 'Tell me about something you’re genuinely good at — or believe you could become great at. Describe it fully.' },
-    { label: 'Why', q: 'Walk me through why you believe you’re good at it — what makes you say that?' },
-    { label: 'Your knowledge', q: 'Describe everything you know about it — how you learned it, any courses, qualifications, reading or self-teaching.' },
-    { label: 'Your experience', q: 'Tell me about your experience with it — what you’ve done, lived or practised, and for how long.' },
-    { label: 'Your proof', q: 'Describe your proof — your own results or transformation, anyone you’ve helped even informally, anything that shows you can do this.' },
-    { label: 'Your people', q: 'Tell me about the people you relate to most and would love to help with this — who are they, and why them?' },
-    { label: 'The gaps', q: 'Be honest — what do you feel you’re still missing in knowledge or experience?' },
-    { label: 'World-class', q: 'Describe what world-class looks like to you here, and what it would take to get there.' }
+    { label: 'Your strength', q: 'What are you great at?' },
+    { label: 'Why', q: 'Why are you good at it?' },
+    { label: 'Your knowledge', q: 'What do you know about it?' },
+    { label: 'Your experience', q: 'What experience do you have?' },
+    { label: 'Your proof', q: 'What’s your proof?' },
+    { label: 'Your people', q: 'Who do you want to help?' },
+    { label: 'The gaps', q: 'What are you still missing?' },
+    { label: 'World-class', q: 'What would world-class look like?' }
   ];
 
   var idx = 0, ans = [], rec = null, recOn = false, lastOutcome = null;
@@ -62,12 +62,11 @@
     var q = QS[idx];
     document.getElementById('gs1-body').innerHTML =
       '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:8px;">Question ' + (idx + 1) + ' of ' + QS.length + ' · ' + esc(q.label) + '</div>'
-      + '<div style="font-size:21px;font-weight:900;color:var(--ffp-text,#0f2327);line-height:1.25;letter-spacing:-.3px;">' + esc(q.q) + '</div>'
-      + '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);margin:8px 0 14px;">Answer in as much detail as you can — there are no wrong answers. Type it, or tap the mic and just talk.</div>'
-      + '<textarea id="gs1-ta" rows="7" placeholder="Start typing, or tap the mic…" style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid var(--ffp-border-mid,#ccd9da);border-radius:14px;padding:14px;font-size:16px;font-family:inherit;color:var(--ffp-text,#0f2327);line-height:1.5;">' + esc(ans[idx] || '') + '</textarea>'
-      + '<div style="display:flex;align-items:center;gap:11px;margin-top:12px;">'
-        + '<button id="gs1-mic" onclick="window.__gs1.voice()" style="width:52px;height:52px;flex:0 0 auto;border-radius:50%;background:#0a3e44;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(10,62,68,.25);"><span class="ms" style="font-size:24px;">mic</span></button>'
-        + '<div id="gs1-michint" style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-weight:600;">Tap to speak your answer</div></div>';
+      + '<div style="font-size:24px;font-weight:900;color:var(--ffp-text,#0f2327);line-height:1.2;letter-spacing:-.4px;margin-bottom:16px;">' + esc(q.q) + '</div>'
+      + '<textarea id="gs1-ta" rows="6" placeholder="Type your answer, or tap the mic…" style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid var(--ffp-border-mid,#ccd9da);border-radius:14px;padding:14px;font-size:16px;font-family:inherit;color:var(--ffp-text,#0f2327);line-height:1.5;">' + esc(ans[idx] || '') + '</textarea>'
+      + '<div style="display:flex;align-items:center;gap:9px;margin-top:12px;">'
+        + '<button id="gs1-mic" onclick="window.__gs1.voice()" style="width:38px;height:38px;flex:0 0 auto;border-radius:50%;background:#0a3e44;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="ms" style="font-size:19px;">mic</span></button>'
+        + '<div id="gs1-michint" style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-weight:600;">Tap to speak</div></div>';
     document.getElementById('gs1-foot').innerHTML =
       (idx > 0 ? '<button onclick="window.__gs1.back()" style="flex:0 0 auto;background:#fff;color:#0a3e44;border:1.5px solid #dbe4e5;border-radius:13px;padding:14px 18px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;">Back</button>' : '')
       + '<button onclick="window.__gs1.next()" style="flex:1;background:linear-gradient(135deg,#0a3e44,#2ba8e0);color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(43,168,224,.28);">' + (idx < QS.length - 1 ? 'Next →' : 'See my result ✨') + '</button>';

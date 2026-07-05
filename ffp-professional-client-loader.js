@@ -465,12 +465,14 @@ function openMemberModal(id){
   if(!gn && !sn && m.full_name){ var _np=String(m.full_name).trim().split(/\s+/); gn=_np.shift()||''; sn=_np.join(' '); }
   window._mmPulled=null;
   openModalShell('lg',(editing?'Edit client':'Add client'),
+    '<div class="form-section"><div class="form-grid">'+
+      '<div class="field full"><div class="label">Client email</div><input class="input" id="mm-email" value="'+escHtml(m.email||'')+'" placeholder="name@email.com"></div>'+
+    '</div></div>'+
     '<button type="button" class="btn btn-sec btn-block" onclick="pullClientFromPassport()" style="justify-content:center;gap:8px;margin-bottom:6px;"><span class="ms">cloud_download</span> Pull from FFP Passport</button>'+
-    '<div class="psub" id="mm-pull-hint" style="margin:0 0 14px;">Enter their email below, then tap to auto-fill from their Passport.</div>'+
+    '<div class="psub" id="mm-pull-hint" style="margin:0 0 14px;">If they hold an FFP Passport, this auto-fills their details from the email above.</div>'+
     '<div class="form-section"><div class="form-section-title">Client</div><div class="form-grid">'+
       '<div class="field"><div class="label">Given names <span class="req">*</span></div><input class="input" id="mm-given_names" value="'+escHtml(gn)+'"></div>'+
       '<div class="field"><div class="label">Surname</div><input class="input" id="mm-surname" value="'+escHtml(sn)+'"></div>'+
-      '<div class="field full"><div class="label">Email</div><input class="input" id="mm-email" value="'+escHtml(m.email||'')+'"></div>'+
       '<div class="field full"><div class="label">Phone</div>'+(window._phoneField?_phoneField('mm-phone'):'<input class="input" id="mm-phone" value="'+escHtml(m.phone||'')+'">')+'</div>'+
       '<div class="field"><div class="label">Status</div><select class="select" id="mm-status">'+Object.keys(CLIENT_STATUS).map(function(k){return '<option value="'+k+'"'+(m.status===k?' selected':'')+'>'+escHtml(CLIENT_STATUS[k])+'</option>';}).join('')+'</select></div>'+
       '<div class="field"><div class="label">Since</div><input class="input" type="date" id="mm-join_date" value="'+jd+'"></div>'+

@@ -199,5 +199,16 @@ function growFoundationTalk(code){
   else _growToast('Coach is loading — try again', 'error');
 }
 
+// ── Live refresh: re-read the pulse through the day while Grow is open + visible (silent, no loading flash) ──
+async function _growRefreshPulse(){
+  var pid = _growProvId(); if (!pid) return;
+  try { var rp = await window.supabase.rpc('pro_grow_pulse', { p_pro: pid }); if (rp && rp.data) { _growPulse = rp.data; if (_growTab === 'now' && document.getElementById('grow-body')) _growPaint(); } } catch (e) {}
+}
+function _growPanelOpen(){ var p = document.getElementById('panel-grow'); return !!(p && p.classList.contains('active')); }
+if (!window._growPulseTimer){
+  window._growPulseTimer = setInterval(function(){ if (_growPanelOpen() && document.visibilityState === 'visible') _growRefreshPulse(); }, 120000);
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && _growPanelOpen()) _growRefreshPulse(); });
+}
+
 // First open (renderPanel('grow') also calls this once the script loads).
 try { if (document.getElementById('grow-body')) renderGrow(); } catch (e) {}

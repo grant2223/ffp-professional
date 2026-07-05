@@ -199,6 +199,7 @@ function _fiveButtons(id){
     sb('health_and_safety','Health','openClientHealth(\''+id+'\')')+
     sb('card_membership','Packages','openMembership(\''+id+'\')')+
     sb('assignment','Forms','clientAssessment(\''+id+'\')')+
+    sb('event_repeat','Check-ins','openCheckinSchedule(\''+id+'\')')+
     sb('sticky_note_2','Notes','openClientNotes(\''+id+'\')')+
     sb('edit','Edit','openMemberModal(\''+id+'\')')+
   '</div>';
@@ -1064,6 +1065,66 @@ function wkHubNew(){
       return '<button onclick="closeModal();openClientWorkouts(\''+m.id+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:11px;cursor:pointer;text-align:left;font-family:inherit;"><span class="ms" style="color:var(--ffp-purple);">person</span><span style="font-weight:700;font-size:13.5px;color:var(--ffp-text);">'+escHtml(m.full_name||'Client')+'</span></button>';
     }).join('')+'</div>',
     '<button class="btn btn-ghost" onclick="closeModal()">Close</button>');
+}
+
+// ─── COACH AUTOMATIONS — recurring CHECK-INS (a form auto-sent to the client on a cadence; responses land back in their record) ───
+var _ckClient=null, _ckTpls=[];
+function _ckCadenceLabel(c){ return c==='fortnightly'?'Every 2 weeks':(c==='monthly'?'Every month':'Every week'); }
+async function openCheckinSchedule(id){
+  var pid=_memProvId(); if(!pid) return; _ckClient=id;
+  openModalShell('lg','Check-in schedule','<div class="psub" style="padding:8px 0;">Loading…</div>','<button class="btn btn-ghost" onclick="clientProfile(\''+id+'\')">Back</button>');
+  var scheds=[], tpls=[], linked=false, cname='';
+  try{ var r=await window.supabase.rpc('pro_list_checkin_schedules',{p_pro:pid,p_client:id}); scheds=(r&&r.data)||[]; }catch(e){}
+  try{ var rt=await window.supabase.rpc('pro_list_form_templates',{p_pro:pid}); tpls=(rt&&rt.data)||[]; }catch(e){}
+  try{ var rs=await window.supabase.rpc('pro_client_access_status',{p_pro:pid,p_client:id}); linked=!!(rs&&rs.data&&rs.data.member_id); }catch(e){}
+  try{ var cm=(_members||[]).filter(function(m){return String(m.id)===String(id);})[0]; cname=(cm&&(cm.full_name||cm.given_names))||'this client'; }catch(e){ cname='this client'; }
+  _ckTpls=tpls;
+  var body='<div class="psub" style="margin:0 0 12px;">Automatically send a check-in form to '+escHtml(cname)+' on a schedule. Each one lands in their FFP Passport (with a reminder) and their answers come back to their record — no manual chasing.</div>';
+  if(!linked){
+    body+='<div style="background:rgba(43,168,224,.08);border:1px solid var(--ffp-border-mid);border-radius:12px;padding:12px 14px;margin:0 0 14px;">'+
+      '<div style="font-size:12.5px;font-weight:800;color:var(--ffp-text);margin-bottom:3px;">Check-ins reach clients on the FFP Passport</div>'+
+      '<div class="psub" style="margin:0 0 8px;">'+escHtml(cname)+' isn’t on the Passport yet, so they won’t receive these. Invite them — it’s free and takes a tap.</div>'+
+      '<button class="btn btn-sec btn-sm" onclick="if(window.proCopyInviteLink)proCopyInviteLink(this)"><span class="ms">share</span> Copy invite link</button></div>';
+  }
+  if(scheds.length){
+    body+='<div class="form-section-title">Active check-ins</div>';
+    body+=scheds.map(function(s){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:12px;padding:11px 13px;margin-bottom:8px;">'+
+        '<div style="min-width:0;"><div style="font-weight:800;font-size:13px;color:var(--ffp-text);">'+escHtml(s.template_title||'Check-in')+'</div>'+
+        '<div class="psub" style="margin:2px 0 0;">'+_ckCadenceLabel(s.cadence)+' · Next: '+escHtml(s.next_due||'—')+(s.last_sent_at?' · last sent ✓':'')+'</div></div>'+
+        '<button class="btn btn-ghost btn-sm" onclick="ckDelete(\''+s.id+'\')" title="Remove"><span class="ms">delete</span></button></div>';
+    }).join('');
+  }
+  var tplOpts=(tpls||[]).map(function(t){ return '<option value="'+t.id+'">'+escHtml(t.title||'Form')+'</option>'; }).join('');
+  var todayStr=new Date().toISOString().slice(0,10);
+  body+='<div class="form-section" style="margin-top:6px;"><div class="form-section-title">Add a check-in</div>'+
+    (tpls.length?('<div class="form-grid">'+
+      '<div class="field full"><div class="label">Check-in form</div><select class="select" id="ck-template">'+tplOpts+'</select></div>'+
+      '<div class="field"><div class="label">How often</div><select class="select" id="ck-cadence"><option value="weekly">Every week</option><option value="fortnightly">Every 2 weeks</option><option value="monthly">Every month</option></select></div>'+
+      '<div class="field"><div class="label">First one on</div><input class="input" type="date" id="ck-start" value="'+todayStr+'"></div>'+
+    '</div>')
+    :'<div class="psub" style="padding:6px 0;">Create a form first (Forms tab) — e.g. a weekly progress or wellbeing check-in — then schedule it here.</div>')+
+    '</div>';
+  var foot='<button class="btn btn-ghost left" onclick="clientProfile(\''+id+'\')">Back</button>'+
+    (tpls.length?'<button class="btn btn-pri" onclick="saveCheckinSchedule()"><span class="ms">add</span> Schedule it</button>':'');
+  openModalShell('lg','Check-in schedule',body,foot);
+}
+async function saveCheckinSchedule(){
+  var pid=_memProvId(); if(!pid||!_ckClient) return;
+  var tpl=(document.getElementById('ck-template')||{}).value||'';
+  var cad=(document.getElementById('ck-cadence')||{}).value||'weekly';
+  var start=(document.getElementById('ck-start')||{}).value||'';
+  if(!tpl){ showToast('Pick a check-in form','error'); return; }
+  try{
+    var r=await window.supabase.rpc('pro_save_checkin_schedule',{p_pro:pid,p_id:null,p_client:_ckClient,p_template:tpl,p_cadence:cad,p_next_due:start||null,p_active:true});
+    if(r&&r.error) throw r.error; var d=r&&r.data; if(d&&d.ok===false) throw new Error(d.error||'save_failed');
+    showToast('Check-in scheduled','success'); openCheckinSchedule(_ckClient);
+  }catch(e){ console.error('[FFP checkin] save',e); showToast('Could not schedule the check-in','error'); }
+}
+function ckDelete(sid){ ffpConfirm({title:'Remove this check-in?',body:'It stops sending. Check-ins already sent stay with the client.',confirm:'Remove',danger:true,icon:'delete'}).then(function(ok){ if(ok) ckDoDelete(sid); }); }
+async function ckDoDelete(sid){
+  var pid=_memProvId(); try{ var r=await window.supabase.rpc('pro_delete_checkin_schedule',{p_pro:pid,p_id:sid}); if(r&&r.error) throw r.error; showToast('Removed','success'); }catch(e){ showToast('Could not remove','error'); }
+  openCheckinSchedule(_ckClient);
 }
 
 // First open

@@ -475,6 +475,7 @@
   window.ffpCloseModal = window.ffpCloseModal || _closeModal;
 
   window.teamSettingsOpen = function () { window.FFP_TEAM.setTab = 'details'; _showTeamSettings(); };
+  window.teamSettingsBack = function () { var S = window.FFP_TEAM; S.tab = 'overview'; if (S.overview || S.players) _paint(); else _load(S.team); };
   var SET_TABS = [['players', 'Players'], ['benchmarks', 'Benchmarks'], ['details', 'Details']];
   function _yAdd(label, fn) { return '<button onclick="' + fn + '" style="background:#FFCC00;color:#0a1a24;border:none;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;">' + _ic('add', 15, '#0a1a24') + label + '</button>'; }
   function _showTeamSettings() {
@@ -489,7 +490,7 @@
     // persistent header: cover + logo crest (team identity, editable)
     var header = '<div style="position:relative;height:210px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
       '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
-        '<div style="display:flex;align-items:center;gap:9px;"><span onclick="teamBackToLanding()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">Team settings</div></div>' +
+        '<div style="display:flex;align-items:center;gap:9px;"><span onclick="teamSettingsBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">Team settings</div></div>' +
         '<div onclick="teamSetPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + 'Change header</div></div></div>' +
       '<div style="padding:0 16px;"><div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:16px;">' +
         '<div onclick="teamSetPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(10,26,36,.28),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;' + logoBg + '">' + (lg ? '' : _tEsc(_initials(team.name) || 'T')) + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +

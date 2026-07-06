@@ -441,8 +441,26 @@
       '<button class="ffpt-min" style="flex:1;min-width:130px;background:#2ba8e0;color:#fff;font-weight:800;cursor:pointer;" onclick="teamSkillCreateOpen()">+ New skill</button>' +
       '<button class="ffpt-min" style="flex:1;min-width:130px;background:#eef3f4;color:#0f2327;font-weight:800;cursor:pointer;" onclick="teamShowCreate();ffpCloseModal()">+ New team</button>' +
       (S.teams.length > 1 ? '<button class="ffpt-min" style="flex:1;min-width:130px;background:#eef3f4;color:#0f2327;font-weight:800;cursor:pointer;" onclick="teamSwitchOpen()">Switch team</button>' : '') + '</div>' +
+      '<div id="tg-reqs"></div>' +
       '<label class="ffpt-mlab">Team name</label><input class="ffpt-min" id="tg-name" value="' + _tEsc(team.name || '') + '"><label class="ffpt-mlab" style="margin-top:16px;">Roster</label>' + roster;
     openModalShell('sm', 'Team settings', body, _foot('Save name', 'teamRename()'));
+    _teamLoadReqs();
+  };
+  async function _teamLoadReqs() {
+    var S = window.FFP_TEAM, host = document.getElementById('tg-reqs'); if (!host) return;
+    var reqs = []; try { var r = await _tSb().rpc('pro_team_join_requests_list', { p_pro: S.pid }); reqs = (r && r.data) || []; } catch (e) {}
+    reqs = reqs.filter(function (x) { return x.team_id === S.team; });
+    if (!reqs.length) { host.innerHTML = ''; return; }
+    host.innerHTML = '<label class="ffpt-mlab" style="margin-top:16px;color:#0a3e44;">Requests to join · ' + reqs.length + '</label>' + reqs.map(function (q) {
+      return '<div id="tgr-' + q.id + '" style="display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid #e4ebec;">' + _av(q.name, q.photo, 32) + '<span style="font-weight:700;color:#0f2327;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(q.name) + '</span>' +
+        '<button style="border:none;background:#0a3e44;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamJoinDecide(\'' + q.id + '\',true)">Approve</button>' +
+        '<button style="border:1px solid #e4ebec;background:#fff;color:#869599;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamJoinDecide(\'' + q.id + '\',false)">Decline</button></div>';
+    }).join('');
+  }
+  window.teamJoinDecide = async function (reqId, approve) {
+    var S = window.FFP_TEAM;
+    try { await _tSb().rpc('pro_team_join_decide', { p_pro: S.pid, p_request: reqId, p_approve: approve }); var el = document.getElementById('tgr-' + reqId); if (el && el.parentNode) el.parentNode.removeChild(el); _tToast(approve ? 'Added to the team' : 'Declined', ''); if (approve) { try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {} } }
+    catch (e) { console.error(e); _tToast('Could not update', 'error'); }
   };
   window.teamRename = async function () { var S = window.FFP_TEAM, name = (document.getElementById('tg-name') || {}).value || ''; if (!name.trim()) { _tToast('Name can\'t be empty', 'error'); return; } try { await _tSb().rpc('pro_team_update', { p_pro: S.pid, p_team: S.team, p_name: name.trim() }); _closeModal(); _tToast('Saved', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not save', 'error'); } };
   window.teamRemoveMember = function (mid, name) { var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_team_remove_member', { p_pro: S.pid, p_team: S.team, p_member: mid }); _tToast('Removed', ''); _closeModal(); _load(S.team); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } }; if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'player') + '?', body: 'They\'ll no longer show in this team.', action: 'Remove', onOk: go }); else go(); };

@@ -175,7 +175,7 @@
     var cover = S.cCover ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(S.cCover) + '\');') : ('background:radial-gradient(120% 120% at 30% 0%,#0f3b4a 0%,#0a1a24 62%,#06121a 100%);');
     var logoInner = S.cLogo ? ('<img src="' + _tEsc(S.cLogo) + '" style="width:100%;height:100%;object-fit:cover;">') : (S.cName ? _tEsc(_initials(S.cName)) : 'FFP');
     host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' +
-      '<div style="position:relative;height:150px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
+      '<div style="position:relative;height:185px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
         '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
           '<div style="display:flex;align-items:center;gap:9px;">' + (canBack ? '<span onclick="teamBackFromCreate()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span>' : '') + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">New team</div></div>' +
           '<div onclick="teamPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + (S.cCover ? 'Change header' : 'Add header photo') + '</div></div>' +
@@ -461,19 +461,56 @@
   function _closeModal() { var ov = document.getElementById('ffp-modal'); if (ov) ov.classList.remove('show'); }
   window.ffpCloseModal = window.ffpCloseModal || _closeModal;
 
-  window.teamSettingsOpen = function () {
-    var S = window.FFP_TEAM, team = _teamMeta();
-    var roster = (S.players || []).map(function (p) { return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid #e4ebec;">' + _av(p.name, p.photo, 30) + '<span style="font-weight:700;color:#0f2327;">' + _tEsc(p.name) + '</span><button style="margin-left:auto;border:none;background:none;color:#e24b4a;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamRemoveMember(\'' + p.member_id + '\',\'' + _tEsc((p.name || '').replace(/\'/g, '')) + '\')">Remove</button></div>'; }).join('') || '<div style="color:#869599;font-size:13px;">No players yet.</div>';
-    var body = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">' +
-      '<button class="ffpt-min" style="flex:1;min-width:130px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="teamAddMemberOpen()">+ Add player</button>' +
-      '<button class="ffpt-min" style="flex:1;min-width:130px;background:#2ba8e0;color:#fff;font-weight:800;cursor:pointer;" onclick="teamMarkCreateOpen()">+ New mark</button>' +
-      '<button class="ffpt-min" style="flex:1;min-width:130px;background:#2ba8e0;color:#fff;font-weight:800;cursor:pointer;" onclick="teamSkillCreateOpen()">+ New skill</button>' +
-      '<button class="ffpt-min" style="flex:1;min-width:130px;background:#eef3f4;color:#0f2327;font-weight:800;cursor:pointer;" onclick="teamShowCreate();ffpCloseModal()">+ New team</button>' +
-      (S.teams.length > 1 ? '<button class="ffpt-min" style="flex:1;min-width:130px;background:#eef3f4;color:#0f2327;font-weight:800;cursor:pointer;" onclick="teamSwitchOpen()">Switch team</button>' : '') + '</div>' +
-      '<div id="tg-reqs"></div>' +
-      '<label class="ffpt-mlab">Team name</label><input class="ffpt-min" id="tg-name" value="' + _tEsc(team.name || '') + '"><label class="ffpt-mlab" style="margin-top:16px;">Roster</label>' + roster;
-    openModalShell('sm', 'Team settings', body, _foot('Save name', 'teamRename()'));
+  window.teamSettingsOpen = function () { _showTeamSettings(); };
+  function _showTeamSettings() {
+    var S = window.FFP_TEAM, host = document.getElementById('team-body'), team = _teamMeta(); if (!host) return;
+    _styles(); if (!S.sKey) S.sKey = Date.now();
+    if (S.sType == null) S.sType = (team.type && TYPES.some(function (t) { return t[0] === team.type; })) ? team.type : 'sports';
+    var cover = S.sCover ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(S.sCover) + '\');') : (team.cover_url ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(team.cover_url) + '\');') : ('background:linear-gradient(135deg,#1d6a8f,#0a3e44);'));
+    var lg = S.sLogo || team.logo_url, logoBg = lg ? ('background-size:cover;background-position:center;background-image:url(\'' + _tEsc(lg) + '\');') : '';
+    var nameV = (S.sName != null ? S.sName : (team.name || '')), sportV = (S.sSport != null ? S.sSport : (team.sport || '')), descV = (S.sDesc != null ? S.sDesc : (team.description || ''));
+    var roster = (S.players || []).map(function (p) { return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #e4ebec;">' + _av(p.name, p.photo, 34) + '<span style="flex:1;font-weight:700;color:#0f2327;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(p.name) + '</span><span style="color:#e24b4a;font-weight:800;font-size:13px;cursor:pointer;" onclick="teamRemoveMember(\'' + p.member_id + '\',\'' + _tEsc((p.name || '').replace(/\'/g, '')) + '\')">Remove</span></div>'; }).join('') || '<div style="color:#869599;font-size:13px;padding:8px 0;">No players yet.</div>';
+    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' +
+      '<div style="position:relative;height:185px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
+        '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
+          '<div style="display:flex;align-items:center;gap:9px;"><span onclick="teamBackToLanding()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">Team settings</div></div>' +
+          '<div onclick="teamSetPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + 'Change header</div></div></div>' +
+      '<div style="padding:0 16px 18px;">' +
+        '<div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:18px;">' +
+          '<div onclick="teamSetPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:linear-gradient(135deg,#2ba8e0,#0a3e44);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(43,168,224,.4),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;' + logoBg + '">' + (lg ? '' : _tEsc(_initials(team.name) || 'T')) + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
+          '<div style="padding-bottom:6px;"><div style="font-size:12px;font-weight:800;color:#0f2327;">Team logo</div><div style="font-size:11px;color:#869599;">Tap to change</div></div></div>' +
+        '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="ts-name" value="' + _tEsc(nameV) + '" style="margin-bottom:20px;">' +
+        '<div class="ffpt-clab">Type</div><div style="display:flex;gap:8px;margin-bottom:20px;" id="ts-types">' +
+        TYPES.map(function (t) { return '<button class="ffpt-typ' + (S.sType === t[0] ? ' on' : '') + '" onclick="teamSetType(\'' + t[0] + '\')">' + _ic(t[2], 21) + '<div style="font-size:10.5px;font-weight:700;margin-top:5px;">' + t[1] + '</div></button>'; }).join('') + '</div>' +
+        '<div class="ffpt-clab">Sport</div><div id="ts-sport-wrap" style="margin-bottom:20px;"><select class="ffpt-in" id="ts-sport">' + _sportOptions(sportV) + '</select></div>' +
+        '<div class="ffpt-clab">Description</div><textarea class="ffpt-in" id="ts-desc" rows="3" style="resize:vertical;">' + _tEsc(descV) + '</textarea>' +
+        '<div class="ffpt-band" style="margin:22px -16px;"></div>' +
+        '<div id="tg-reqs"></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Roster · ' + (S.players || []).length + '</div><span style="font-size:12.5px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamAddMemberOpen()">+ Add players</span></div>' + roster +
+        '<button class="ffpt-cta" style="margin-top:24px;" onclick="teamSettingsSave()">Save changes</button>' +
+        '<div onclick="teamDeleteConfirm()" style="text-align:center;margin-top:14px;color:#c0392b;font-size:12.5px;font-weight:800;cursor:pointer;">Delete team</div>' +
+      '</div></div></div>';
+    try { if (window.FFPSelect) FFPSelect.enhance(document.getElementById('ts-sport-wrap')); } catch (e) {}
     _teamLoadReqs();
+  }
+  function _capSet() { var S = window.FFP_TEAM, n = document.getElementById('ts-name'); if (n) S.sName = n.value; var sp = document.getElementById('ts-sport'); if (sp) S.sSport = sp.value; var d = document.getElementById('ts-desc'); if (d) S.sDesc = d.value; }
+  window.teamSetType = function (t) { _capSet(); window.FFP_TEAM.sType = t; document.querySelectorAll('#ts-types .ffpt-typ').forEach(function (b, i) { b.classList.toggle('on', TYPES[i][0] === t); }); };
+  window.teamSetPickCover = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-cover-' + S.team, aspect: 16 / 9, outW: 1280, outH: 720, title: 'Header image', onDone: function (url) { S.sCover = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
+  window.teamSetPickLogo = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-logo-' + S.team, aspect: 1, outW: 512, outH: 512, title: 'Team logo', onDone: function (url) { S.sLogo = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
+  function _clearSet() { var S = window.FFP_TEAM; S.sName = S.sSport = S.sDesc = S.sLogo = S.sCover = null; S.sType = null; S.sKey = null; }
+  window.teamSettingsSave = async function () {
+    _capSet(); var S = window.FFP_TEAM, name = (S.sName || '');
+    if (!name.trim()) { _tToast('Name can\'t be empty', 'error'); return; }
+    try {
+      await _tSb().rpc('pro_team_update', { p_pro: S.pid, p_team: S.team, p_name: name.trim(), p_type: S.sType || null, p_sport: S.sSport || null, p_description: S.sDesc || null, p_logo_url: S.sLogo || null, p_cover_url: S.sCover || null });
+      try { var lr = await _tSb().rpc('pro_teams_list', { p_pro: S.pid }); S.teams = (lr && lr.data) || S.teams; } catch (e) {}
+      _clearSet(); _tToast('Saved', ''); _load(S.team);
+    } catch (e) { console.error(e); _tToast('Could not save', 'error'); }
+  };
+  window.teamDeleteConfirm = function () {
+    var S = window.FFP_TEAM, team = _teamMeta();
+    var go = async function () { try { await _tSb().rpc('pro_team_delete', { p_pro: S.pid, p_team: S.team }); _clearSet(); _tToast('Team deleted', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not delete', 'error'); } };
+    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Delete ' + (team.name || 'this team') + '?', body: 'This removes the team, its marks and skills, and every recorded result. This can\'t be undone.', action: 'Delete team', onOk: go }); else if (confirm('Delete this team?')) go();
   };
   async function _teamLoadReqs() {
     var S = window.FFP_TEAM, host = document.getElementById('tg-reqs'); if (!host) return;

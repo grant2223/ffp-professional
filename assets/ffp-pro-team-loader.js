@@ -320,14 +320,11 @@
     html += '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;"><span style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#a32d2d;">' + (S.workView === 'week' ? 'Quiet all week' : 'Not yet') + ' · ' + quiet.length + '</span>' +
       quiet.slice(0, 5).map(function (w) { return '<div class="ffpt-sm">' + _tEsc(_initials(w.name)) + '</div>'; }).join('') + '<div style="flex:1;"></div>' +
       (quiet.length ? '<button style="background:#0a3e44;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;font-family:inherit;cursor:pointer;" onclick="teamNudge()">Nudge</button>' : '') + '</div></div>';
-    // Skills
+    // Skills — list EVERY skill (each with its own level columns), not a dropdown-selected one.
     var sk = ov.skills || [];
-    html += '<div class="ffpt-band"></div><div class="ffpt-sec">';
-    if (!sk.length) html += '<div class="st">Skills</div><div style="color:#869599;font-size:12.5px;font-weight:700;margin-top:10px;">No skills yet — add benchmarks in Team settings.</div>';
-    else {
-      if (S.ovSkill >= sk.length) S.ovSkill = 0; var cur = sk[S.ovSkill];
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="st">Skills</div><span style="font-size:12px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamSkillCycle()">' + _tEsc(cur.name) + ' ▾</span></div>' + _skillCols(cur);
-    }
+    html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:14px;">Skills</div>';
+    if (!sk.length) html += '<div style="color:#869599;font-size:12.5px;font-weight:700;">No skills yet — add them in Team settings.</div>';
+    else html += sk.map(function (s, i) { return '<div style="' + (i ? 'margin-top:20px;padding-top:16px;border-top:1px solid #eef3f4;' : '') + '"><div style="font-size:13.5px;font-weight:800;color:#0f2327;margin-bottom:11px;">' + _tEsc(s.name) + '</div>' + _skillCols(s) + '</div>'; }).join('');
     html += '</div>';
     // What they're training
     var tr = ov.training || [];

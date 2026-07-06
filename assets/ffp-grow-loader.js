@@ -1,269 +1,263 @@
 // ════════════════════════════════════════════════════════════════════════
-// FFP Professional — GROW · "Grow your business". Three tabs:
-//   ROAD MAP  — the 8-step journey (Foundation → Setting up the basics →
-//               Operational) + upskill bonus. Opens with an EXPLANATION, then a
-//               ring tracker (yellow = the step you're on, teal = done). One step
-//               at a time; each opens its own in-depth flow. Step 1 (strengths)
-//               is the guided flow in ffp-grow-step1.js.
-//   OVERVIEW  — the honest live pulse (real numbers → your #1 blocker + today).
-//   TASKS     — daily / weekly actions.
-// renderPanel('grow') → renderGrow().
-// RPCs: pro_grow_pulse / pro_grow_state / pro_grow_toggle / pro_grow_step_get
+// FFP Professional — GROW · guided STEP flow engine (reused by every road-map step).
+// Full-screen: the Coach asks a few OPEN questions one at a time, the coach
+// answers by TYPING or VOICE, then the AI synthesises their answers into a real
+// result they own. Saves to pro_grow_steps. Backend: POST /api/pro/grow/synthesize.
+//   window.growFlowOpen('strengths' | 'ideal_client')   — open a step
+//   window.growStep1Open()                              — back-compat (= strengths)
+// Add a new step = add one entry to FLOWS (questions + how to show the result).
 // ════════════════════════════════════════════════════════════════════════
+(function () {
+  if (window.__growFlowLoaded) return; window.__growFlowLoaded = true;
+  var API = (typeof PRO_API !== 'undefined' && PRO_API) || 'https://ffp-passport-backend.vercel.app';
+  function pid() { return (window.FFP_PROVIDER || {}).id || null; }
+  function mid() { var p = window.FFP_PROVIDER || {}; return p.member_id || p.id || null; }
+  function esc(s) { return (typeof escHtml === 'function') ? escHtml(s == null ? '' : String(s)) : String(s == null ? '' : s); }
+  function toast(m, t) { if (typeof showToast === 'function') showToast(m, t); }
 
-var _growTab = 'road';
-var _growState = null;
-var _growPulse = null;
-var _stepDone = {};
-var _growStepIdx = null;
-var _growRoadView = null; // null = auto, 'intro', 'ring'
+  function _row(label, val) {
+    if (!val) return '';
+    return '<div style="padding:12px 0;border-bottom:1px solid var(--ffp-border,#e4ebec);"><div style="font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8a99a0;margin-bottom:4px;">' + esc(label) + '</div><div style="font-size:14px;font-weight:600;color:var(--ffp-text,#0f2327);line-height:1.45;">' + esc(val) + '</div></div>';
+  }
+  function _headline(over, big) {
+    return '<div style="background:#fff;border-radius:18px;box-shadow:0 12px 30px rgba(10,62,68,.13);overflow:hidden;margin-bottom:16px;"><div style="height:6px;background:linear-gradient(90deg,#0a3e44,#2ba8e0,#FFCC00);"></div><div style="padding:17px;"><div style="font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2ba8e0;margin-bottom:8px;">' + esc(over) + '</div><div style="font-size:19px;font-weight:800;color:var(--ffp-text,#0f2327);line-height:1.35;">' + esc(big) + '</div></div></div>';
+  }
 
-var GROW_STEPS = [
-  { code:'strengths',    phase:'Foundation',              plain:'Understand your strengths & weaknesses', flow:'strengths' },
-  { code:'ideal_client', phase:'Setting up the basics',   plain:'Understand your ideal client', flow:'ideal_client' },
-  { code:'offer',        phase:'Setting up the basics',   plain:'Create your initial offer', flow:'offer' },
-  { code:'delivery_plan',phase:'Setting up the basics',   plain:"How you'll deliver it", flow:'delivery_plan' },
-  { code:'operations',   phase:'Operational',             plain:'Set up daily operations', flow:'operations' },
-  { code:'funnel',       phase:'Operational',             plain:'Build your sales funnel', flow:'funnel' },
-  { code:'sessions',     phase:'Operational',             plain:'Deliver world-class sessions', flow:'sessions' },
-  { code:'retention',    phase:'Operational',             plain:'Look after your clients', flow:'retention' }
-];
-var GROW_BONUS = { plain:'Keep yourself current & upskill' };
-function _growPhaseNum(name){ return name === 'Foundation' ? 1 : (name === 'Setting up the basics' ? 2 : 3); }
+  function outcomeStrengths(o) {
+    var hasProof = o.has_proof !== false;
+    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:10px;">Your result</div>'
+      + _headline("Who you're built to help", o.audience_line || '');
+    if (o.strengths && o.strengths.length) html += '<div style="font-size:9.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#8a99a0;margin-bottom:8px;">Your strengths</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;">' + o.strengths.map(function (s) { return '<div style="background:#e5f6f1;color:#0a3e44;border-radius:99px;padding:7px 13px;font-size:12.5px;font-weight:800;">' + esc(s) + '</div>'; }).join('') + '</div>';
+    if (hasProof) { if (o.proof) html += '<div style="display:flex;gap:10px;background:#e5f6ee;border:1px solid #c3e9d5;border-radius:14px;padding:13px 15px;margin-bottom:16px;"><span class="ms" style="color:#1d7a4d;">verified</span><div style="font-size:13px;color:#0f2327;font-weight:600;line-height:1.45;">' + esc(o.proof) + '</div></div>'; }
+    else { html += '<div style="background:#fff8e8;border:1px solid #f0d9a0;border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:11px;font-weight:800;color:#9a6b00;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Your development plan — build the proof</div>' + (o.development_plan || []).map(function (d) { return '<div style="display:flex;gap:8px;padding:5px 0;"><span class="ms" style="color:#c8871a;font-size:18px;">arrow_right</span><div style="font-size:13px;color:#0f2327;font-weight:600;line-height:1.4;">' + esc(d) + '</div></div>'; }).join('') + '</div>'; }
+    if (o.note) html += '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-style:italic;">' + esc(o.note) + '</div>';
+    return html;
+  }
+  function outcomeIdealClient(o) {
+    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:10px;">Your ideal client</div>'
+      + _headline('Your one line', o.one_liner || o.profile || '');
+    if (o.profile && o.one_liner) html += '<div style="font-size:13.5px;color:var(--ffp-text,#0f2327);font-weight:600;line-height:1.5;margin-bottom:14px;">' + esc(o.profile) + '</div>';
+    html += _row('Their biggest problem', o.problem) + _row('What winning looks like', o.outcome) + _row('Where to find them', o.where) + _row('Why you', o.edge);
+    if (o.note) html += '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-style:italic;margin-top:14px;">' + esc(o.note) + '</div>';
+    return html;
+  }
 
-function _growProvId(){ return (window.FFP_PROVIDER || {}).id || null; }
-function _growEsc(s){ return (typeof escHtml === 'function') ? escHtml(s == null ? '' : String(s)) : String(s == null ? '' : s); }
-function _growToast(m, t){ if (typeof showToast === 'function') showToast(m, t); }
+  function outcomeGeneric(o) {
+    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:10px;">Your result</div>' + _headline(o.title || 'Your plan', o.summary || '');
+    if (o.points && o.points.length) html += o.points.map(function (p) { return _row(p.label, p.value); }).join('');
+    if (o.note) html += '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-style:italic;margin-top:14px;">' + esc(o.note) + '</div>';
+    return html;
+  }
 
-function _growTabs(){
-  var t = function (id, label){ var on = (_growTab === id);
-    return '<button type="button" onclick="growTab(\''+id+'\')" style="padding:11px 0;margin-right:26px;border:none;background:none;font-size:13.5px;font-weight:'+(on?'800':'700')+';color:'+(on?'var(--ffp-purple)':'var(--ffp-text-dim)')+';border-bottom:3px solid '+(on?'var(--ffp-purple)':'transparent')+';margin-bottom:-1px;font-family:inherit;cursor:pointer;">'+label+'</button>'; };
-  return '<div style="display:flex;border-bottom:1px solid var(--ffp-border-mid);margin-bottom:18px;">' + t('road','Road map') + t('now','Overview') + t('habits','Tasks') + '</div>';
-}
+  var FLOWS = {
+    strengths: {
+      code: 'strengths', title: 'Step 1 · Your strengths', outcome: outcomeStrengths,
+      qs: [
+        { label: 'Your strength', q: 'What are you great at?' },
+        { label: 'Why', q: 'Why are you good at it?' },
+        { label: 'Your knowledge', q: 'What do you know about it?' },
+        { label: 'Your experience', q: 'What experience do you have?' },
+        { label: 'Your proof', q: 'What’s your proof?' },
+        { label: 'Your people', q: 'Who do you want to help?' },
+        { label: 'The gaps', q: 'What are you still missing?' },
+        { label: 'World-class', q: 'What would world-class look like?' }
+      ]
+    },
+    ideal_client: {
+      code: 'ideal_client', title: 'Step 2 · Your ideal client', outcome: outcomeIdealClient,
+      qs: [
+        { label: 'Who', q: 'Who exactly do you want to work with?' },
+        { label: 'Their struggle', q: 'What’s their biggest struggle?' },
+        { label: 'Tried before', q: 'What have they already tried?' },
+        { label: 'Winning', q: 'What does winning look like for them?' },
+        { label: 'Where', q: 'Where do you find these people?' },
+        { label: 'Why you', q: 'Why are you the right coach for them?' }
+      ]
+    },
+    offer: {
+      code: 'offer', title: 'Step 3 · Your offer', outcome: outcomeGeneric,
+      qs: [
+        { label: 'The offer', q: 'What will you offer them?' },
+        { label: 'The result', q: 'What result does it get them?' },
+        { label: "What's included", q: 'How long is it, and what’s included?' },
+        { label: 'The value', q: 'What makes it worth it?' },
+        { label: 'Different', q: 'How is it more than just sessions?' }
+      ]
+    },
+    delivery_plan: {
+      code: 'delivery_plan', title: 'Step 4 · Your delivery', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Day to day', q: 'How will you coach them day to day?' },
+        { label: 'Between sessions', q: 'What happens between sessions?' },
+        { label: 'Tools', q: 'What tools or app will you use?' },
+        { label: 'Progress', q: 'How will you track their progress?' },
+        { label: 'Accountability', q: 'How will you keep them accountable?' }
+      ]
+    },
+    operations: {
+      code: 'operations', title: 'Step 5 · Daily operations', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Your week', q: 'What does your working week look like?' },
+        { label: 'Bookings', q: 'How do you handle bookings and scheduling?' },
+        { label: 'Records', q: 'How do you keep client records and notes?' },
+        { label: 'Money', q: 'How do you handle payments and invoicing?' },
+        { label: 'Admin', q: 'What admin do you need to stay on top of?' }
+      ]
+    },
+    funnel: {
+      code: 'funnel', title: 'Step 6 · Your sales funnel', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Next clients', q: 'Where will your next clients come from?' },
+        { label: 'Referrals', q: 'What’s your plan for referrals?' },
+        { label: 'Social', q: 'What will you post, and where?' },
+        { label: 'Network', q: 'Who could you network or partner with?' },
+        { label: 'Paid', q: 'Will you run any paid ads?' }
+      ]
+    },
+    sessions: {
+      code: 'sessions', title: 'Step 7 · World-class sessions', outcome: outcomeGeneric,
+      qs: [
+        { label: 'World-class', q: 'What makes your session world-class?' },
+        { label: 'Start & end', q: 'How do you start and finish a session?' },
+        { label: 'Communication', q: 'How do you communicate between sessions?' },
+        { label: 'Looked after', q: 'How do you make each client feel looked after?' },
+        { label: 'Improving', q: 'How do you keep improving your delivery?' }
+      ]
+    },
+    retention: {
+      code: 'retention', title: 'Step 8 · Looking after clients', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Why they stay', q: 'Why do clients stay with you?' },
+        { label: 'Check-ins', q: 'How do you check in on their progress?' },
+        { label: 'Motivation', q: 'How do you handle a client losing motivation?' },
+        { label: 'Re-signing', q: 'How do you get them to continue or re-sign?' },
+        { label: 'Referrals', q: 'How do you turn happy clients into referrals?' }
+      ]
+    },
+    upskill: {
+      code: 'upskill', title: 'Bonus · Stay current', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Get better', q: 'What do you want to get better at?' },
+        { label: 'Learn next', q: 'What will you learn or study next?' },
+        { label: 'Learn from', q: 'Who do you learn from?' },
+        { label: 'Stay current', q: 'How will you stay current in your field?' },
+        { label: 'Make time', q: 'How will you make time for it?' }
+      ]
+    }
+  };
 
-// ── ROAD MAP ──
-function _growDoneCount(){ var c = 0; for (var i = 0; i < GROW_STEPS.length; i++){ if (_stepDone[GROW_STEPS[i].code]) c++; } return c; }
-function _growActiveIdx(){ for (var i = 0; i < GROW_STEPS.length; i++){ if (!_stepDone[GROW_STEPS[i].code]) return i; } return -1; }
-function _growRingSegments(activeIdx){
-  var N = GROW_STEPS.length, cx = 115, cy = 115, r = 96, gap = 7, seg = 360 / N, out = '';
-  for (var i = 0; i < N; i++){
-    var a0 = (-90 + i * seg + gap / 2) * Math.PI / 180;
-    var a1 = (-90 + (i + 1) * seg - gap / 2) * Math.PI / 180;
-    var x0 = (cx + r * Math.cos(a0)).toFixed(1), y0 = (cy + r * Math.sin(a0)).toFixed(1);
-    var x1 = (cx + r * Math.cos(a1)).toFixed(1), y1 = (cy + r * Math.sin(a1)).toFixed(1);
-    var d = 'M ' + x0 + ' ' + y0 + ' A ' + r + ' ' + r + ' 0 0 1 ' + x1 + ' ' + y1;
-    var done = !!_stepDone[GROW_STEPS[i].code];
-    if (i === activeIdx){
-      out += '<path d="' + d + '" fill="none" stroke="#FFCC00" stroke-width="14" stroke-linecap="round" filter="url(#growGlow)"/>';
-      out += '<path d="' + d + '" fill="none" stroke="#FFCC00" stroke-width="14" stroke-linecap="round"/>';
-    } else {
-      out += '<path d="' + d + '" fill="none" stroke="' + (done ? '#0a3e44' : '#edf1f2') + '" stroke-width="14" stroke-linecap="round"/>';
+  var cur = null, idx = 0, ans = [], rec = null, recOn = false, lastOutcome = null;
+
+  function ensure() {
+    if (document.getElementById('gs1-ov')) return;
+    var ov = document.createElement('div'); ov.id = 'gs1-ov';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:4000;background:var(--ffp-bg,#f4f7f8);display:none;flex-direction:column;';
+    ov.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;padding-top:calc(16px + env(safe-area-inset-top));border-bottom:1px solid var(--ffp-border,#e4ebec);flex:0 0 auto;">'
+        + '<div id="gs1-title" style="font-size:15px;font-weight:900;color:var(--ffp-text,#0f2327);"></div>'
+        + '<button onclick="window.__gs1.close()" style="background:none;border:none;color:var(--ffp-text-muted,#5a6b6e);cursor:pointer;"><span class="ms" style="font-size:24px;">close</span></button></div>'
+      + '<div id="gs1-prog" style="display:flex;gap:5px;padding:12px 18px 0;flex:0 0 auto;width:100%;max-width:620px;margin:0 auto;box-sizing:border-box;"></div>'
+      + '<div id="gs1-body" style="flex:1 1 auto;overflow-y:auto;padding:18px;width:100%;max-width:620px;margin:0 auto;box-sizing:border-box;"></div>'
+      + '<div id="gs1-foot" style="padding:14px 18px;padding-bottom:calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--ffp-border,#e4ebec);display:flex;gap:10px;flex:0 0 auto;width:100%;max-width:620px;margin:0 auto;box-sizing:border-box;"></div>';
+    document.body.appendChild(ov);
+  }
+
+  function answersObj() { var o = {}; for (var i = 0; i < cur.qs.length; i++) o['q' + (i + 1)] = ans[i] || ''; return o; }
+  function capture() { var ta = document.getElementById('gs1-ta'); if (ta) ans[idx] = ta.value; }
+
+  async function loadSaved() {
+    var p = pid(); if (!p) return;
+    try {
+      var r = await window.supabase.rpc('pro_grow_step_get', { p_pro: p, p_code: cur.code });
+      var d = r && r.data;
+      if (d && d.answers) { for (var i = 0; i < cur.qs.length; i++) ans[i] = d.answers['q' + (i + 1)] || ''; if (document.getElementById('gs1-ov').style.display === 'flex') render(); }
+    } catch (e) {}
+  }
+
+  function open(key) {
+    cur = FLOWS[key]; if (!cur) { toast('Coming soon', 'info'); return; }
+    ensure(); idx = 0; ans = cur.qs.map(function () { return ''; });
+    var tt = document.getElementById('gs1-title'); if (tt) tt.textContent = cur.title;
+    document.getElementById('gs1-ov').style.display = 'flex'; render(); loadSaved();
+  }
+  function close() { stopVoice(); var o = document.getElementById('gs1-ov'); if (o) o.style.display = 'none'; }
+
+  function render() {
+    var prog = document.getElementById('gs1-prog');
+    if (prog) { var s = ''; for (var i = 0; i < cur.qs.length; i++) s += '<div style="flex:1;height:5px;border-radius:99px;background:' + (i < idx ? '#0a3e44' : (i === idx ? '#FFCC00' : '#dbe4e5')) + ';"></div>'; prog.innerHTML = s; }
+    var q = cur.qs[idx];
+    document.getElementById('gs1-body').innerHTML =
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:8px;">Question ' + (idx + 1) + ' of ' + cur.qs.length + ' · ' + esc(q.label) + '</div>'
+      + '<div style="font-size:24px;font-weight:900;color:var(--ffp-text,#0f2327);line-height:1.2;letter-spacing:-.4px;margin-bottom:16px;">' + esc(q.q) + '</div>'
+      + '<textarea id="gs1-ta" rows="6" placeholder="Type your answer, or tap the mic…" style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid var(--ffp-border-mid,#ccd9da);border-radius:14px;padding:14px;font-size:16px;font-family:inherit;color:var(--ffp-text,#0f2327);line-height:1.5;">' + esc(ans[idx] || '') + '</textarea>'
+      + '<div style="display:flex;align-items:center;gap:9px;margin-top:12px;">'
+        + '<button id="gs1-mic" onclick="window.__gs1.voice()" style="width:38px;height:38px;flex:0 0 auto;border-radius:50%;background:#0a3e44;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="ms" style="font-size:19px;">mic</span></button>'
+        + '<div id="gs1-michint" style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-weight:600;">Tap to speak</div></div>';
+    document.getElementById('gs1-foot').innerHTML =
+      (idx > 0 ? '<button onclick="window.__gs1.back()" style="flex:0 0 auto;background:#fff;color:#0a3e44;border:1.5px solid #dbe4e5;border-radius:13px;padding:14px 18px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;">Back</button>' : '')
+      + '<button onclick="window.__gs1.next()" style="flex:1;background:linear-gradient(135deg,#0a3e44,#2ba8e0);color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(43,168,224,.28);">' + (idx < cur.qs.length - 1 ? 'Next →' : 'See my result ✨') + '</button>';
+  }
+
+  function setMic(on) {
+    var b = document.getElementById('gs1-mic'); if (b) { b.style.background = on ? '#d64545' : '#0a3e44'; b.innerHTML = '<span class="ms" style="font-size:19px;">' + (on ? 'stop' : 'mic') + '</span>'; }
+    var h = document.getElementById('gs1-michint'); if (h) h.textContent = on ? 'Listening… tap to stop' : 'Tap to speak';
+  }
+  function stopVoice() { if (rec) { try { rec.stop(); } catch (e) {} } rec = null; recOn = false; setMic(false); }
+  function voice() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast('Voice isn’t supported here — type your answer', 'error'); return; }
+    if (recOn) { stopVoice(); return; }
+    var ta = document.getElementById('gs1-ta'); if (!ta) return;
+    var base = ta.value;
+    rec = new SR(); rec.lang = 'en-GB'; rec.continuous = true; rec.interimResults = true;
+    rec.onresult = function (e) { var t = ''; for (var i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript; ta.value = (base ? base + ' ' : '') + t; };
+    rec.onerror = function () { stopVoice(); };
+    rec.onend = function () { recOn = false; setMic(false); };
+    try { rec.start(); recOn = true; setMic(true); } catch (e) { recOn = false; }
+  }
+
+  async function saveAnswers() { var p = pid(); if (!p) return; try { await window.supabase.rpc('pro_grow_step_save', { p_pro: p, p_code: cur.code, p_answers: answersObj() }); } catch (e) {} }
+
+  function next() { capture(); stopVoice(); if (idx < cur.qs.length - 1) { idx++; render(); saveAnswers(); } else { finish(); } }
+  function back() { capture(); stopVoice(); if (idx > 0) { idx--; render(); } }
+
+  async function finish() {
+    capture(); stopVoice();
+    document.getElementById('gs1-body').innerHTML = '<div style="text-align:center;padding:54px 12px;"><div style="font-size:15px;font-weight:800;color:#0a3e44;">Turning your answers into your result…</div><div class="spin" style="margin:20px auto;"></div></div>';
+    document.getElementById('gs1-foot').innerHTML = '';
+    await saveAnswers();
+    try {
+      var r = await fetch(API + '/api/pro/grow/synthesize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ member_id: mid(), step: cur.code, answers: answersObj() }) });
+      var j = await r.json();
+      if (!r.ok || !j || !j.outcome) throw new Error('synth');
+      showOutcome(j.outcome);
+    } catch (e) {
+      document.getElementById('gs1-body').innerHTML = '<div style="text-align:center;padding:44px 16px;color:#5a6b6e;font-weight:600;">Couldn’t build your result — check your connection and try again.</div>';
+      document.getElementById('gs1-foot').innerHTML = '<button onclick="window.__gs1.retry()" style="flex:1;background:#0a3e44;color:#fff;border:none;border-radius:13px;padding:14px;font-weight:800;font-family:inherit;cursor:pointer;">Try again</button>';
     }
   }
-  return out;
-}
-function _growRoadIntro(){
-  var stepRow = function (n, txt){
-    return '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">'
-      + '<div style="width:38px;height:38px;flex:0 0 auto;border-radius:11px;background:#fff6d6;color:#a67c00;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">'+n+'</div>'
-      + '<div style="font-size:14.5px;font-weight:600;color:var(--ffp-text);line-height:1.35;">'+txt+'</div></div>';
-  };
-  return '<div style="position:relative;background:var(--ffp-bg-card);border:1px solid var(--ffp-border);border-radius:16px;padding:26px 20px 24px;max-width:420px;margin:0 auto;box-shadow:0 10px 30px rgba(10,62,68,.08);">'
-    + '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--ffp-text-dim);margin-bottom:6px;">Your road map</div>'
-    + '<div style="font-size:26px;font-weight:800;letter-spacing:-.6px;color:var(--ffp-text);line-height:1.1;">Let\'s build your business, properly</div>'
-    + '<div style="font-size:14px;color:var(--ffp-text-muted);line-height:1.55;margin-top:10px;">8 steps that set up a strong coaching business — your foundation first, then the basics, then running it day to day. We do them with you, one at a time.</div>'
-    + '<div style="height:1px;background:var(--ffp-bg-3);margin:20px 0;"></div>'
-    + '<div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--ffp-text-dim);margin-bottom:14px;">How it works</div>'
-    + stepRow(1, 'Answer a few questions — type or talk.')
-    + stepRow(2, 'We shape your answers into your plan.')
-    + '<div style="margin-bottom:22px;">' + stepRow(3, 'Lock it in and move to the next.').replace('margin-bottom:16px;', 'margin-bottom:0;') + '</div>'
-    + '<button type="button" onclick="growRoadBegin()" style="width:100%;background:var(--ffp-purple);color:#fff;border:none;border-radius:11px;padding:15px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:inherit;cursor:pointer;box-shadow:0 8px 20px rgba(10,62,68,.22);">Begin</button></div>';
-}
-function _growRoadRing(){
-  var N = GROW_STEPS.length;
-  var active = _growActiveIdx();
-  if (_growStepIdx == null) _growStepIdx = (active < 0 ? 0 : active);
-  var vi = _growStepIdx;
-  var f = GROW_STEPS[vi];
-  var done = !!_stepDone[f.code];
-  var isActive = (vi === active);
-  var built = !!f.flow;
-  var num = vi + 1;
 
-  var ring = '<div style="position:relative;display:flex;justify-content:center;margin:2px 0 8px;">'
-    + '<svg viewBox="0 0 230 230" style="width:224px;height:224px;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Step '+num+' of '+N+'">'
-    + '<defs><filter id="growGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter></defs>'
-    + _growRingSegments(active)
-    + '<text x="115" y="90" text-anchor="middle" font-size="11" font-weight="800" letter-spacing="2.5" fill="#869599" font-family="Montserrat,system-ui">STEP</text>'
-    + '<text x="115" y="135" text-anchor="middle" font-size="60" font-weight="800" fill="#0a3e44" font-family="Montserrat,system-ui">'+num+'</text>'
-    + '<text x="115" y="157" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="2" fill="#a3afb2" font-family="Montserrat,system-ui">OF '+N+'</text></svg>'
-    + '<button type="button" onclick="growStepNav(-1)" '+(vi===0?'disabled':'')+' style="position:absolute;left:0;top:50%;transform:translateY(-50%);background:none;border:none;cursor:'+(vi===0?'default':'pointer')+';color:'+(vi===0?'#dbe4e5':'#0a3e44')+';padding:6px;font-family:inherit;"><span class="ms" style="font-size:26px;">chevron_left</span></button>'
-    + '<button type="button" onclick="growStepNav(1)" '+(vi===N-1?'disabled':'')+' style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:none;cursor:'+(vi===N-1?'default':'pointer')+';color:'+(vi===N-1?'#dbe4e5':'#0a3e44')+';padding:6px;font-family:inherit;"><span class="ms" style="font-size:26px;">chevron_right</span></button>'
-    + '</div>';
-
-  var overline = 'Phase ' + _growPhaseNum(f.phase) + ' · ' + f.phase;
-  var label = done ? 'Review' : (built ? 'Start' : 'Coming soon');
-  var muted = (!built && !done);
-  var bstyle = muted
-    ? 'background:#eef3f4;color:#a3afb2;box-shadow:none;cursor:default;'
-    : 'background:var(--ffp-purple);color:#fff;box-shadow:0 8px 20px rgba(10,62,68,.22);cursor:pointer;';
-  var btn = '<button type="button"'+(muted?'':' onclick="growStepStart()"')+' style="position:relative;width:100%;'+bstyle+'border:none;border-radius:11px;padding:15px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:inherit;">'+label+'</button>';
-
-  var nextHtml = '';
-  if (vi < N - 1){
-    var nx = GROW_STEPS[vi + 1];
-    nextHtml = '<div style="position:relative;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px;color:#a3afb2;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;"><span class="ms" style="font-size:14px;">arrow_forward</span> Next · '+_growEsc(nx.plain)+'</div>';
+  function showOutcome(o) {
+    lastOutcome = o;
+    document.getElementById('gs1-body').innerHTML = cur.outcome(o);
+    document.getElementById('gs1-foot').innerHTML =
+      '<button onclick="window.__gs1.sharpen()" style="flex:0 0 auto;background:#fff;color:#0a3e44;border:1.5px solid #dbe4e5;border-radius:13px;padding:14px 16px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;">Sharpen</button>'
+      + '<button onclick="window.__gs1.nail()" style="flex:1;background:linear-gradient(135deg,#0a3e44,#2ba8e0);color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(43,168,224,.28);">Nail it ✓</button>';
   }
 
-  var card = '<div style="position:relative;background:var(--ffp-bg-card);border:1px solid var(--ffp-border);border-radius:16px;padding:28px 18px 28px;max-width:420px;margin:0 auto;box-shadow:0 10px 30px rgba(10,62,68,.08);overflow:hidden;">'
-    + '<div style="position:absolute;top:-70px;left:50%;transform:translateX(-50%);width:250px;height:210px;background:radial-gradient(circle, rgba(255,204,0,.16), transparent 65%);pointer-events:none;"></div>'
-    + ring
-    + '<div style="position:relative;text-align:center;font-size:10.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#c8a038;margin-bottom:6px;">'+_growEsc(overline)+'</div>'
-    + '<div style="position:relative;text-align:center;font-size:23px;font-weight:700;letter-spacing:-.3px;color:var(--ffp-text);line-height:1.15;margin:0 8px 22px;">'+_growEsc(f.plain)+'</div>'
-    + btn + nextHtml + '</div>';
-
-  var bonus = '<div onclick="growUpskill()" style="max-width:420px;margin:12px auto 0;background:var(--ffp-bg-card);border:1px solid var(--ffp-border);border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:11px;cursor:pointer;">'
-    + '<span class="ms" style="color:#c8a038;">workspace_premium</span>'
-    + '<div style="flex:1;min-width:0;"><div style="font-size:9.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--ffp-text-dim);">Bonus · ongoing</div>'
-    + '<div style="font-size:13.5px;font-weight:700;color:var(--ffp-text);">'+_growEsc(GROW_BONUS.plain)+'</div></div>'
-    + '<span class="ms" style="color:var(--ffp-text-dim);">chevron_right</span></div>';
-
-  var howLink = '<div style="text-align:center;margin-top:14px;"><button type="button" onclick="growRoadIntro()" style="background:none;border:none;color:var(--ffp-blue);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">How this works</button></div>';
-
-  return card + bonus + howLink;
-}
-function _growRoadmapTab(){
-  var view = _growRoadView || (_growDoneCount() === 0 ? 'intro' : 'ring');
-  return view === 'intro' ? _growRoadIntro() : _growRoadRing();
-}
-function growRoadBegin(){ _growRoadView = 'ring'; _growPaint(); }
-function growRoadIntro(){ _growRoadView = 'intro'; _growPaint(); }
-function growStepNav(d){
-  var n = GROW_STEPS.length;
-  var vi = (_growStepIdx == null ? 0 : _growStepIdx) + d;
-  if (vi < 0) vi = 0; if (vi > n - 1) vi = n - 1;
-  _growStepIdx = vi; _growPaint();
-}
-function growStepStart(){
-  var active = _growActiveIdx();
-  var vi = (_growStepIdx == null ? (active < 0 ? 0 : active) : _growStepIdx);
-  var f = GROW_STEPS[vi]; if (!f) return;
-  if (f.flow){ if (window.growFlowOpen) growFlowOpen(f.flow); else _growToast('Loading…', 'error'); return; }
-  _growToast('This step is coming soon — we\'re building it next', 'info');
-}
-function growUpskill(){
-  if (window.growFlowOpen) growFlowOpen('upskill');
-  else _growToast('Loading…', 'error');
-}
-
-// ── OVERVIEW: the live pulse (real numbers → your #1 blocker + today) ──
-function _pulseDot(status){
-  var c = status === 'strong' ? '#1d7a4d' : (status === 'watch' ? '#c8871a' : '#d64545');
-  return '<span style="width:11px;height:11px;border-radius:50%;flex:0 0 auto;background:'+c+';box-shadow:0 0 8px '+c+'88;"></span>';
-}
-function _growNowTab(){
-  var p = _growPulse || {};
-  var blocker = p.blocker || 'Reading your business…';
-  var today = p.today || '';
-  var reads = p.reads || [];
-  var hero = '<div style="position:relative;background:linear-gradient(135deg,#0a3e44 0%,#0e5a63 60%,#127d78 100%);border-radius:20px;padding:19px 18px;color:#fff;margin-bottom:8px;overflow:hidden;box-shadow:0 12px 30px rgba(10,62,68,.28);">'
-    + '<div style="position:absolute;inset:0;background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,.10) 1px, transparent 0);background-size:16px 16px;opacity:.6;"></div>'
-    + '<div style="position:relative;"><div style="font-size:10px;font-weight:800;letter-spacing:1.6px;color:#8fe0d0;">YOUR BUSINESS · RIGHT NOW</div>'
-    + '<div style="font-size:17px;font-weight:800;line-height:1.35;margin:8px 0 12px;">'+_growEsc(blocker)+'</div>'
-    + '<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cfe6e0;font-weight:600;line-height:1.4;"><span class="ms" style="font-size:17px;color:#FFCC00;flex:0 0 auto;">bolt</span><span>'+_growEsc(today)+'</span></div></div></div>';
-  var rows = reads.map(function (r){
-    return '<div onclick="growTalkArea(\''+_growEsc(r.area)+'\')" style="display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--ffp-border);cursor:pointer;">'
-      + _pulseDot(r.status)
-      + '<div style="flex:1;min-width:0;font-size:14px;font-weight:800;color:var(--ffp-text);">'+_growEsc(r.area)+'</div>'
-      + '<div style="font-size:12px;font-weight:700;color:var(--ffp-text-muted);white-space:nowrap;">'+_growEsc(r.metric)+'</div>'
-      + '<span class="ms" style="color:var(--ffp-text-dim);flex:0 0 auto;">chevron_right</span></div>';
-  }).join('');
-  var coach = '<button type="button" style="width:100%;margin-top:18px;background:linear-gradient(135deg,#0a3e44,#2ba8e0);color:#fff;border:none;border-radius:13px;padding:14px;font-size:14.5px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 8px 18px rgba(43,168,224,.30);display:flex;align-items:center;justify-content:center;gap:8px;" onclick="growTalkPulse()"><span class="ms">sports</span> Work through it with your Coach</button>';
-  return hero + rows + coach;
-}
-function growTalkPulse(){
-  var p = _growPulse || {};
-  var seed = 'Give me a straight diagnostic of my coaching business and hold me accountable. Right now: ' + (p.clients||0) + ' clients, ' + (p.new_30d||0) + ' new in 30 days, AED ' + (p.revenue_30d||0) + ' collected and AED ' + (p.pending||0) + ' unpaid, ' + (p.posts_7d||0) + ' of my own training posts this week. My biggest blocker looks like: ' + (p.blocker||'') + ' Ask me sharp questions, tell me the truth, and give me my single next move.';
-  if (window.ffpCoachAsk) window.ffpCoachAsk(seed);
-  else _growToast('Coach is loading — try again', 'error');
-}
-function growTalkArea(area){
-  if (window.ffpCoachAsk) window.ffpCoachAsk('Coach me on ' + area + ' for my business — where am I falling short, and what is my single next move? Be direct with me.');
-  else _growToast('Coach is loading — try again', 'error');
-}
-
-// ── TASKS: daily / weekly actions ──
-function _growStat(n, label, accent){
-  return '<div style="flex:1;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:14px;padding:14px 8px;text-align:center;">'
-    + '<div style="font-size:24px;font-weight:900;color:'+(accent||'var(--ffp-text)')+';line-height:1;">'+n+'</div>'
-    + '<div class="psub" style="margin:5px 0 0;text-transform:uppercase;font-size:9.5px;font-weight:800;letter-spacing:.6px;">'+label+'</div></div>';
-}
-function _growRow(h){
-  var done = !!h.done;
-  var bd = done ? 'var(--ffp-purple)' : 'var(--ffp-border-mid)';
-  return '<button type="button" onclick="growToggle(\''+h.code+'\',this)" data-code="'+h.code+'" class="grow-row" '
-    + 'style="width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--ffp-bg-card);border:1px solid '+bd+';border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-family:inherit;">'
-    + '<span style="width:24px;height:24px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border:2px solid '+bd+';background:'+(done?'var(--ffp-purple)':'transparent')+';color:#fff;">'+(done?'<span class="ms" style="font-size:16px;">check</span>':'')+'</span>'
-    + '<span style="flex:1;min-width:0;font-weight:800;font-size:14px;color:var(--ffp-text);'+(done?'opacity:.5;':'')+'">'+_growEsc(h.title)+'</span>'
-    + '<span style="flex:0 0 auto;font-size:11px;font-weight:800;color:var(--ffp-text-dim);">+'+(h.points||0)+'</span></button>';
-}
-function _growHabitsTab(){
-  var st = _growState || {}; var habits = st.habits || [];
-  var daily = habits.filter(function (h){ return h.frequency === 'daily'; });
-  var weekly = habits.filter(function (h){ return h.frequency === 'weekly'; });
-  var streak = st.streak || 0, wd = st.week_done || 0, wp = st.week_points || 0;
-  var head = '<div style="display:flex;gap:10px;margin-bottom:16px;">' + _growStat((streak>0?'🔥 ':'')+streak, 'Day streak', 'var(--ffp-purple)') + _growStat(wd, 'This week') + _growStat(wp, 'Points') + '</div>';
-  return head
-    + (daily.length ? ('<div class="form-section-title">Do today</div>' + daily.map(_growRow).join('')) : '')
-    + (weekly.length ? ('<div class="form-section-title" style="margin-top:16px;">This week</div>' + weekly.map(_growRow).join('')) : '');
-}
-
-function _growPaint(){
-  var host = document.getElementById('grow-body'); if (!host) return;
-  var content = _growTab === 'now' ? _growNowTab() : (_growTab === 'habits' ? _growHabitsTab() : _growRoadmapTab());
-  host.innerHTML = _growTabs() + content;
-}
-function growTab(t){ _growTab = t; _growPaint(); }
-
-async function renderGrow(){
-  var host = document.getElementById('grow-body'); if (!host) return;
-  var pid = _growProvId();
-  if (!pid){ host.innerHTML = '<div class="psub" style="padding:12px 0;">Sign in to see Grow.</div>'; return; }
-  host.innerHTML = '<div class="ov-empty" style="padding:16px;">Reading your business…</div>';
-  var st = {}, pulse = {};
-  try { var rp = await window.supabase.rpc('pro_grow_pulse', { p_pro: pid }); pulse = (rp && rp.data) || {}; } catch (e) { console.error('[FFP Grow] pulse', e); }
-  try { var r = await window.supabase.rpc('pro_grow_state', { p_pro: pid }); st = (r && r.data) || {}; } catch (e) { console.error('[FFP Grow] state', e); }
-  _growPulse = pulse; _growState = st;
-  _stepDone = {};
-  for (var gi = 0; gi < GROW_STEPS.length; gi++){
-    var gs = GROW_STEPS[gi]; if (!gs.flow) continue;
-    try { var rsg = await window.supabase.rpc('pro_grow_step_get', { p_pro: pid, p_code: gs.code }); var sd = rsg && rsg.data; if (sd && sd.status === 'done') _stepDone[gs.code] = true; } catch (e) {}
+  function sharpen() {
+    var line = (lastOutcome && (lastOutcome.audience_line || lastOutcome.one_liner || lastOutcome.profile)) || '';
+    if (window.ffpCoachAsk) { close(); window.ffpCoachAsk('Help me sharpen this until it is razor-sharp: "' + line + '". Ask me questions and push me to be more specific.'); }
+    else { idx = 0; render(); }
   }
-  _growStepIdx = null; _growRoadView = null;
-  _growPaint();
-}
+  async function nail() {
+    var p = pid(); if (!p) { close(); return; }
+    try { await window.supabase.rpc('pro_grow_step_complete', { p_pro: p, p_code: cur.code, p_outcome: lastOutcome }); toast('Step complete 🎉', 'success'); } catch (e) { toast('Saved', 'success'); }
+    close();
+    try { if (typeof renderGrow === 'function') renderGrow(); } catch (e) {}
+  }
 
-async function growToggle(code, el){
-  var pid = _growProvId(); if (!pid) return;
-  if (el) el.style.opacity = '0.55';
-  try {
-    var r = await window.supabase.rpc('pro_grow_toggle', { p_pro: pid, p_code: code });
-    if (r && r.error) throw r.error;
-    var d = r && r.data; if (d && d.ok === false) throw new Error(d.error || 'toggle_failed');
-    renderGrow();
-  } catch (e) { console.error('[FFP Grow] toggle', e); _growToast('Could not update — try again', 'error'); if (el) el.style.opacity = '1'; }
-}
-
-// ── Live refresh: re-read the pulse while Overview is open + visible (silent, no loading flash) ──
-async function _growRefreshPulse(){
-  var pid = _growProvId(); if (!pid) return;
-  try { var rp = await window.supabase.rpc('pro_grow_pulse', { p_pro: pid }); if (rp && rp.data) { _growPulse = rp.data; if (_growTab === 'now' && document.getElementById('grow-body')) _growPaint(); } } catch (e) {}
-}
-function _growPanelOpen(){ var p = document.getElementById('panel-grow'); return !!(p && p.classList.contains('active')); }
-if (!window._growPulseTimer){
-  window._growPulseTimer = setInterval(function(){ if (_growPanelOpen() && document.visibilityState === 'visible') _growRefreshPulse(); }, 120000);
-  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && _growPanelOpen()) _growRefreshPulse(); });
-}
-
-// First open (renderPanel('grow') also calls this once the script loads).
-try { if (document.getElementById('grow-body')) renderGrow(); } catch (e) {}
+  window.growFlowOpen = open;
+  window.growStep1Open = function () { open('strengths'); };
+  window.__gs1 = { close: close, voice: voice, next: next, back: back, nail: nail, sharpen: sharpen, retry: finish };
+})();

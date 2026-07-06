@@ -396,7 +396,13 @@
     if (marks.length) {
       if (S.heroMark >= marks.length) S.heroMark = 0; var m = marks[S.heroMark];
       var dl = (m.current != null && m.previous != null) ? '<div style="font-size:13px;font-weight:800;color:#37E0C6;">▼ ' + _fmtGap(m.current, m.previous, m.unit) + '</div>' : '<div style="font-size:12px;color:rgba(255,255,255,.5);">first result</div>';
-      var away = (m.target != null && m.current != null) ? ('target ' + _fmtVal(m.target, m.unit) + '<br><b style="color:#fff;">' + _fmtGap(m.current, m.target, m.unit) + ' away</b>') : (m.target != null ? 'target ' + _fmtVal(m.target, m.unit) : '');
+      var away = '';
+      if (m.target != null && m.current != null) {
+        // Direction-aware: if the athlete has BEATEN the target, say "under" (lower-is-better) / "over" (higher-is-better), not "away".
+        var lbT = _lowerBetter(m.direction), metT = lbT ? (Number(m.current) <= Number(m.target)) : (Number(m.current) >= Number(m.target));
+        var wordT = metT ? (lbT ? 'under' : 'over') : 'away', colT = metT ? '#37E0C6' : '#fff';
+        away = 'target ' + _fmtVal(m.target, m.unit) + '<br><b style="color:' + colT + ';">' + _fmtGap(m.current, m.target, m.unit) + ' ' + wordT + '</b>';
+      } else if (m.target != null) { away = 'target ' + _fmtVal(m.target, m.unit); }
       html += '<div class="ffpt-hero" style="padding:16px;"><div class="ffpt-glow" style="left:-20px;right:auto;background:radial-gradient(circle,rgba(55,224,198,.2),transparent 62%);"></div>' +
         '<div style="position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div style="display:flex;align-items:baseline;gap:9px;"><div style="font-size:34px;font-weight:800;color:#fff;line-height:1;">' + _fmtVal(m.current, m.unit) + '</div>' + dl + '</div>' +
         '<div style="font-size:10.5px;color:rgba(255,255,255,.55);text-align:right;line-height:1.4;">' + away + '</div></div>' + _dotSVG(m) +
@@ -441,8 +447,9 @@
         '<div style="position:relative;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;margin-bottom:12px;">Awaiting the first result — log one to start the graph.</div>';
     }
     var vals = hist.map(function (h) { return Number(h.value); }), all = vals.concat(m.target != null ? [Number(m.target)] : []);
-    var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), span = (mx - mn) || 1, lb = _lowerBetter(m.direction);
-    function y(v) { var f = (Number(v) - mn) / span; return lb ? (8 + 44 * f) : (52 - 44 * f); }
+    var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), span = (mx - mn) || 1;
+    // Raw number-line axis: HIGHER value = HIGHER on the graph (no direction flip). Dot above the dashed target line = value above target.
+    function y(v) { var f = (Number(v) - mn) / span; return 52 - 44 * f; }
     var n = hist.length; function x(i) { return n === 1 ? 150 : (16 + i * 268 / (n - 1)); }
     var line = hist.map(function (h, i) { return x(i).toFixed(0) + ',' + y(h.value).toFixed(0); }).join(' ');
     var dots = hist.map(function (h, i) { var last = i === n - 1; return '<circle cx="' + x(i).toFixed(0) + '" cy="' + y(h.value).toFixed(0) + '" r="' + (last ? 5.5 : 4) + '" fill="' + (last ? '#37E0C6' : '#8fe0d0') + '"' + (last ? ' stroke="#0a1a24" stroke-width="2"' : '') + '/>'; }).join('');

@@ -21,12 +21,12 @@ var _growRoadView = null; // null = auto, 'intro', 'ring'
 var GROW_STEPS = [
   { code:'strengths',    phase:'Foundation',              plain:'Understand your strengths & weaknesses', flow:'strengths' },
   { code:'ideal_client', phase:'Setting up the basics',   plain:'Understand your ideal client', flow:'ideal_client' },
-  { code:'offer',        phase:'Setting up the basics',   plain:'Create your initial offer' },
-  { code:'delivery_plan',phase:'Setting up the basics',   plain:"How you'll deliver it" },
-  { code:'operations',   phase:'Operational',             plain:'Set up daily operations' },
-  { code:'funnel',       phase:'Operational',             plain:'Build your sales funnel' },
-  { code:'sessions',     phase:'Operational',             plain:'Deliver world-class sessions' },
-  { code:'retention',    phase:'Operational',             plain:'Look after your clients' }
+  { code:'offer',        phase:'Setting up the basics',   plain:'Create your initial offer', flow:'offer' },
+  { code:'delivery_plan',phase:'Setting up the basics',   plain:"How you'll deliver it", flow:'delivery_plan' },
+  { code:'operations',   phase:'Operational',             plain:'Set up daily operations', flow:'operations' },
+  { code:'funnel',       phase:'Operational',             plain:'Build your sales funnel', flow:'funnel' },
+  { code:'sessions',     phase:'Operational',             plain:'Deliver world-class sessions', flow:'sessions' },
+  { code:'retention',    phase:'Operational',             plain:'Look after your clients', flow:'retention' }
 ];
 var GROW_BONUS = { plain:'Keep yourself current & upskill' };
 function _growPhaseNum(name){ return name === 'Foundation' ? 1 : (name === 'Setting up the basics' ? 2 : 3); }
@@ -152,8 +152,8 @@ function growStepStart(){
   _growToast('This step is coming soon — we\'re building it next', 'info');
 }
 function growUpskill(){
-  if (window.ffpCoachAsk) window.ffpCoachAsk('Coach me on staying current and upskilling as a coach — what should I be learning or improving right now, and how do I keep my edge?');
-  else _growToast('Coach is loading — try again', 'error');
+  if (window.growFlowOpen) growFlowOpen('upskill');
+  else _growToast('Loading…', 'error');
 }
 
 // ── OVERVIEW: the live pulse (real numbers → your #1 blocker + today) ──

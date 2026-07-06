@@ -84,7 +84,7 @@
       '.ffpt-cardg{background:#eef3f4;border:none;border-radius:0;max-width:none;margin:0;box-shadow:none;overflow:hidden;min-height:calc(100dvh - 96px);}',
       '.ffpt-hero{position:relative;background:radial-gradient(120% 95% at 50% 0%,#0f3b4a 0%,#0a1a24 62%,#06121a 100%);padding:15px 16px 16px;overflow:hidden;}',
       '.ffpt-glow{position:absolute;top:-40px;right:-30px;width:230px;height:180px;background:radial-gradient(circle,rgba(43,168,224,.26),transparent 62%);pointer-events:none;}',
-      '.ffpt-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#2ba8e0,#0a3e44);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;flex:0 0 auto;}',
+      '.ffpt-logo{width:30px;height:30px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:11px;flex:0 0 auto;box-shadow:0 1px 4px rgba(0,0,0,.18);}',
       '.ffpt-tabrow{display:flex;gap:22px;padding:0 16px;border-bottom:1px solid #e4ebec;}',
       '.ffpt-tab{padding:11px 0;font-size:13px;font-weight:700;color:#869599;cursor:pointer;background:none;border:none;font-family:inherit;}',
       '.ffpt-tab.on{font-weight:800;color:#0a3e44;border-bottom:3px solid #0a3e44;margin-bottom:-1px;}',
@@ -183,7 +183,7 @@
       '</div>' +
       '<div style="padding:0 16px 18px;">' +
         '<div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:18px;">' +
-          '<div onclick="teamPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:linear-gradient(135deg,#2ba8e0,#0a3e44);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(43,168,224,.4),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;">' + logoInner + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
+          '<div onclick="teamPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(10,26,36,.28),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;">' + logoInner + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
           '<div style="padding-bottom:6px;"><div style="font-size:12px;font-weight:800;color:#0f2327;">Add a team logo</div><div style="font-size:11px;color:#869599;">Optional · shows on the players\' cards</div></div></div>' +
         '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="tc-name" placeholder="Riverside U18s" value="' + _tEsc(S.cName || '') + '" style="margin-bottom:20px;">' +
         '<div class="ffpt-clab">Type</div><div style="display:flex;gap:8px;margin-bottom:20px;" id="tc-types">' +
@@ -268,13 +268,27 @@
       fits.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.ovMark ? ' ony' : '') + '" onclick="teamOvMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') + '</div></div>';
     return h;
   }
+  // Empty graph — drawn full-height even with no players/results so the header always reads as a graph.
   function _barPlaceholder() {
-    return '<div style="position:relative;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;border:1px dashed rgba(255,255,255,.14);border-radius:12px;"><div style="text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;line-height:1.6;">' + _ic('bar_chart', 26, 'rgba(255,255,255,.35)') + '<br>Record a result to see<br>the squad graph</div></div>';
+    var S = window.FFP_TEAM, players = (S.players || []);
+    var names = players.length ? players.map(function (p) { return p.name; }) : ['', '', '', '', '', ''];
+    var deco = [52, 78, 40, 88, 60, 70, 46, 66, 56, 82];
+    var n = names.length, slot = 284 / n, bw = Math.min(16, slot - 4), base = 108;
+    var rects = '', labs = '';
+    for (var i = 0; i < n; i++) {
+      var hh = deco[i % deco.length] * 0.78, x = 8 + i * slot + (slot - bw) / 2, y = base - hh;
+      rects += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(0) + '" width="' + bw.toFixed(1) + '" height="' + hh.toFixed(0) + '" rx="2" fill="rgba(255,255,255,.09)"/>';
+      if (players.length) labs += '<text x="' + (8 + i * slot + slot / 2).toFixed(1) + '" y="' + (base + 11) + '" text-anchor="middle" font-size="7" font-weight="700" fill="rgba(255,255,255,.4)" font-family="Montserrat">' + _tEsc(_initials(names[i])) + '</text>';
+    }
+    var avg = '<line x1="6" y1="' + (base - 60) + '" x2="272" y2="' + (base - 60) + '" stroke="rgba(255,255,255,.26)" stroke-width="1.3" stroke-dasharray="4 3"/><text x="297" y="' + (base - 57) + '" text-anchor="end" font-size="8" font-weight="800" fill="rgba(255,255,255,.45)" font-family="Montserrat">avg</text>';
+    var svg = '<svg viewBox="0 0 300 ' + (base + 18) + '" style="position:relative;width:100%;height:auto;display:block;margin-bottom:8px;" xmlns="http://www.w3.org/2000/svg">' + avg + rects + labs + '</svg>';
+    var cap = '<div style="position:relative;text-align:center;color:rgba(255,255,255,.5);font-size:11.5px;font-weight:600;margin-bottom:12px;">' + _ic('bar_chart', 15, 'rgba(255,255,255,.4)') + ' Record a benchmark result to bring this to life</div>';
+    return svg + cap;
   }
   function _barSVG(f) {
     var bars = f.bars || [], lb = _lowerBetter(f.direction);
     var vals = bars.map(function (b) { return b.value; }).filter(function (v) { return v != null; });
-    if (!vals.length) return '<div style="position:relative;color:rgba(255,255,255,.55);font-size:12px;margin-bottom:12px;">No results recorded yet.</div>';
+    if (!vals.length) return _barPlaceholder();
     function sc(v) { return lb ? -Number(v) : Number(v); }
     var scr = vals.map(sc), mn = Math.min.apply(null, scr), mx = Math.max.apply(null, scr), span = (mx - mn) || 1;
     var n = bars.length, slot = 284 / n, bw = Math.min(16, slot - 4), base = 74, top = 12;
@@ -387,7 +401,7 @@
         '<div style="position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div style="display:flex;align-items:baseline;gap:9px;"><div style="font-size:34px;font-weight:800;color:#fff;line-height:1;">' + _fmtVal(m.current, m.unit) + '</div>' + dl + '</div>' +
         '<div style="font-size:10.5px;color:rgba(255,255,255,.55);text-align:right;line-height:1.4;">' + away + '</div></div>' + _dotSVG(m) +
         '<div style="position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">' + marks.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.heroMark ? ' ony' : '') + '" onclick="teamHeroMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') + '<button class="ffpt-pill" style="background:rgba(255,255,255,.08);" onclick="teamRecordOpen(\'' + m.id + '\',\'measured\')">+ log</button></div></div>';
-    } else html += '<div class="ffpt-hero" style="padding:16px;color:rgba(255,255,255,.75);font-size:13px;">No marks set yet. <button class="ffpt-pill ony" style="margin-left:6px;" onclick="teamMarkCreateOpen()">+ Add a mark</button></div>';
+    } else html += '<div class="ffpt-hero" style="padding:18px 16px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;">No benchmarks yet — add them in Team settings.</div>';
     var wk = d.week || {};
     html += '<div class="ffpt-sec"><div style="display:flex;gap:9px;"><div class="ffpt-tile"><div class="tv">' + (d.streak || 0) + '</div><div class="tl">Day streak</div></div><div class="ffpt-tile"><div class="tv">' + (wk.sessions || 0) + '</div><div class="tl">This week</div></div><div class="ffpt-tile"><div class="tv" style="font-size:15px;">' + _relDay(d.last_logged) + '</div><div class="tl">Last logged</div></div></div></div>';
     var sk = d.skills || [];
@@ -460,40 +474,51 @@
   function _closeModal() { var ov = document.getElementById('ffp-modal'); if (ov) ov.classList.remove('show'); }
   window.ffpCloseModal = window.ffpCloseModal || _closeModal;
 
-  window.teamSettingsOpen = function () { _showTeamSettings(); };
+  window.teamSettingsOpen = function () { window.FFP_TEAM.setTab = 'details'; _showTeamSettings(); };
+  var SET_TABS = [['players', 'Players'], ['benchmarks', 'Benchmarks'], ['details', 'Details']];
+  function _yAdd(label, fn) { return '<button onclick="' + fn + '" style="background:#FFCC00;color:#0a1a24;border:none;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;">' + _ic('add', 15, '#0a1a24') + label + '</button>'; }
   function _showTeamSettings() {
     var S = window.FFP_TEAM, host = document.getElementById('team-body'), team = _teamMeta(); if (!host) return;
     _styles(); if (!S.sKey) S.sKey = Date.now();
+    if (!S.setTab) S.setTab = 'details';
     if (S.sType == null) S.sType = (team.type && TYPES.some(function (t) { return t[0] === team.type; })) ? team.type : 'sports';
     var cover = S.sCover ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(S.sCover) + '\');') : (team.cover_url ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(team.cover_url) + '\');') : ('background:linear-gradient(135deg,#1d6a8f,#0a3e44);'));
     var lg = S.sLogo || team.logo_url, logoBg = lg ? ('background-size:cover;background-position:center;background-image:url(\'' + _tEsc(lg) + '\');') : '';
     var nameV = (S.sName != null ? S.sName : (team.name || '')), sportV = (S.sSport != null ? S.sSport : (team.sport || '')), descV = (S.sDesc != null ? S.sDesc : (team.description || ''));
-    var roster = (S.players || []).map(function (p) { return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #e4ebec;">' + _av(p.name, p.photo, 34) + '<span style="flex:1;font-weight:700;color:#0f2327;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(p.name) + '</span><span style="color:#e24b4a;font-weight:800;font-size:13px;cursor:pointer;" onclick="teamRemoveMember(\'' + p.member_id + '\',\'' + _tEsc((p.name || '').replace(/\'/g, '')) + '\')">Remove</span></div>'; }).join('') || '<div style="color:#869599;font-size:13px;padding:8px 0;">No players yet.</div>';
-    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' +
-      '<div style="position:relative;height:185px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
-        '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
-          '<div style="display:flex;align-items:center;gap:9px;"><span onclick="teamBackToLanding()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">Team settings</div></div>' +
-          '<div onclick="teamSetPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + 'Change header</div></div></div>' +
-      '<div style="padding:0 16px 18px;">' +
-        '<div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:18px;">' +
-          '<div onclick="teamSetPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:linear-gradient(135deg,#2ba8e0,#0a3e44);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(43,168,224,.4),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;' + logoBg + '">' + (lg ? '' : _tEsc(_initials(team.name) || 'T')) + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
-          '<div style="padding-bottom:6px;"><div style="font-size:12px;font-weight:800;color:#0f2327;">Team logo</div><div style="font-size:11px;color:#869599;">Tap to change</div></div></div>' +
-        '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="ts-name" value="' + _tEsc(nameV) + '" style="margin-bottom:20px;">' +
+
+    // persistent header: cover + logo crest (team identity, editable)
+    var header = '<div style="position:relative;height:210px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
+      '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
+        '<div style="display:flex;align-items:center;gap:9px;"><span onclick="teamBackToLanding()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">Team settings</div></div>' +
+        '<div onclick="teamSetPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + 'Change header</div></div></div>' +
+      '<div style="padding:0 16px;"><div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:16px;">' +
+        '<div onclick="teamSetPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(10,26,36,.28),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;' + logoBg + '">' + (lg ? '' : _tEsc(_initials(team.name) || 'T')) + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
+        '<div style="padding-bottom:6px;flex:1;min-width:0;"><div style="font-size:16px;font-weight:900;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(team.name || 'Team') + '</div><div style="font-size:11px;color:#869599;">Tap the logo to change</div></div></div></div>';
+
+    var tabs = '<div class="ffpt-tabrow">' + SET_TABS.map(function (t) { return '<button class="ffpt-tab' + (S.setTab === t[0] ? ' on' : '') + '" onclick="teamSetTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>';
+
+    var body = '';
+    if (S.setTab === 'details') {
+      body = '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="ts-name" value="' + _tEsc(nameV) + '" style="margin-bottom:20px;">' +
         '<div class="ffpt-clab">Type</div><div style="display:flex;gap:8px;margin-bottom:20px;" id="ts-types">' +
         TYPES.map(function (t) { return '<button class="ffpt-typ' + (S.sType === t[0] ? ' on' : '') + '" onclick="teamSetType(\'' + t[0] + '\')">' + _ic(t[2], 21) + '<div style="font-size:10.5px;font-weight:700;margin-top:5px;">' + t[1] + '</div></button>'; }).join('') + '</div>' +
         '<div class="ffpt-clab">Sport</div><div id="ts-sport-wrap" style="margin-bottom:20px;"><select class="ffpt-in" id="ts-sport">' + _sportOptions(sportV) + '</select></div>' +
         '<div class="ffpt-clab">Description</div><textarea class="ffpt-in" id="ts-desc" rows="3" style="resize:vertical;">' + _tEsc(descV) + '</textarea>' +
-        '<div class="ffpt-band" style="margin:22px -16px;"></div>' +
-        _benchmarksSectionHtml() +
-        '<div class="ffpt-band" style="margin:22px -16px;"></div>' +
-        '<div id="tg-reqs"></div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Roster · ' + (S.players || []).length + '</div><span style="font-size:12.5px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamAddMemberOpen()">+ Add players</span></div>' + roster +
         '<button class="ffpt-cta" style="margin-top:24px;" onclick="teamSettingsSave()">Save changes</button>' +
-        '<div onclick="teamDeleteConfirm()" style="text-align:center;margin-top:14px;color:#c0392b;font-size:12.5px;font-weight:800;cursor:pointer;">Delete team</div>' +
-      '</div></div></div>';
-    try { if (window.FFPSelect) FFPSelect.enhance(document.getElementById('ts-sport-wrap')); } catch (e) {}
-    _teamLoadReqs();
+        '<div onclick="teamDeleteConfirm()" style="text-align:center;margin-top:14px;color:#c0392b;font-size:12.5px;font-weight:800;cursor:pointer;">Delete team</div>';
+    } else if (S.setTab === 'benchmarks') {
+      body = _benchmarksSectionHtml();
+    } else {
+      var roster = (S.players || []).map(function (p) { return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #e4ebec;">' + _av(p.name, p.photo, 34) + '<span style="flex:1;font-weight:700;color:#0f2327;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(p.name) + '</span><span style="color:#e24b4a;font-weight:800;font-size:13px;cursor:pointer;" onclick="teamRemoveMember(\'' + p.member_id + '\',\'' + _tEsc((p.name || '').replace(/\'/g, '')) + '\')">Remove</span></div>'; }).join('') || '<div style="color:#869599;font-size:13px;padding:8px 0;">No players yet — add from your clients or share your invite link.</div>';
+      body = '<div id="tg-reqs"></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 4px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Roster · ' + (S.players || []).length + '</div>' + _yAdd('Add players', 'teamAddMemberOpen()') + '</div>' + roster;
+    }
+
+    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' + header + tabs + '<div style="padding:16px;">' + body + '</div></div></div>';
+    if (S.setTab === 'details') { try { if (window.FFPSelect) FFPSelect.enhance(document.getElementById('ts-sport-wrap')); } catch (e) {} }
+    if (S.setTab === 'players') _teamLoadReqs();
   }
+  window.teamSetTab = function (t) { var S = window.FFP_TEAM; if (S.setTab === 'details') _capSet(); S.setTab = t; _showTeamSettings(); };
   function _capSet() { var S = window.FFP_TEAM, n = document.getElementById('ts-name'); if (n) S.sName = n.value; var sp = document.getElementById('ts-sport'); if (sp) S.sSport = sp.value; var d = document.getElementById('ts-desc'); if (d) S.sDesc = d.value; }
   window.teamSetType = function (t) { _capSet(); window.FFP_TEAM.sType = t; document.querySelectorAll('#ts-types .ffpt-typ').forEach(function (b, i) { b.classList.toggle('on', TYPES[i][0] === t); }); };
   window.teamSetPickCover = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-cover-' + S.team, aspect: 16 / 9, outW: 1280, outH: 720, title: 'Header image', onDone: function (url) { S.sCover = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
@@ -518,13 +543,13 @@
     fits.forEach(function (f) { rows += _benchRow(f.id, 'measured', f.name, f.target != null ? ('Target ' + _fmtVal(f.target, f.unit)) : 'No target set'); });
     sk.forEach(function (s) { var tl = s.target_level, ln = (s.levels || []).filter(function (l) { return l.level_no === tl; })[0]; rows += _benchRow(s.id, 'skill', s.name, tl ? ('Target · ' + (ln ? ln.name : ('Level ' + tl))) : 'No target set'); });
     if (!rows) rows = '<div style="color:#869599;font-size:12.5px;font-weight:700;padding:10px 0;">No benchmarks yet — add the tests &amp; skills this squad is measured on.</div>';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Benchmarks</div><span style="font-size:12.5px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamAddBenchmark()">+ Add</span></div><div style="font-size:11.5px;color:#869599;margin-bottom:2px;">What this squad is measured on.</div>' + rows;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 2px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Benchmarks</div>' + _yAdd('Add', 'teamAddBenchmark()') + '</div><div style="font-size:11.5px;color:#869599;margin-bottom:2px;">What this squad is measured on.</div>' + rows;
   }
   function _benchRow(id, kind, name, sub) {
     var ico = kind === 'skill' ? 'my_location' : 'timer', bg = kind === 'skill' ? 'background:#eaf1fb;color:#2ba8e0;' : 'background:#e5f6f1;color:#0a3e44;';
     return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #e4ebec;"><div style="width:36px;height:36px;border-radius:10px;' + bg + 'display:flex;align-items:center;justify-content:center;flex:0 0 auto;">' + _ic(ico, 20) + '</div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(name) + '</div><div style="font-size:11px;color:#869599;">' + _tEsc(sub) + '</div></div><span onclick="teamBenchDelete(\'' + id + '\',\'' + _tEsc((name || '').replace(/\'/g, '')) + '\')" style="color:#c0392b;cursor:pointer;flex:0 0 auto;">' + _ic('delete_outline', 20) + '</span></div>';
   }
-  window.teamAddBenchmark = function () { if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('measured'); };
+  window.teamAddBenchmark = function () { window.FFP_TEAM.setTab = 'benchmarks'; if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('measured'); };
   window.teamBenchDelete = function (id, name) {
     var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_benchmark_delete', { p_pro: S.pid, p_benchmark: id }); _tToast('Benchmark removed', ''); try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {} _showTeamSettings(); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } };
     if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'benchmark') + '?', body: 'This deletes the benchmark and all recorded results for it.', action: 'Remove', onOk: go }); else go();
@@ -609,8 +634,8 @@
   };
   window.teamApCopy = function () { var url = window._proInviteUrl || window.FFP_TEAM._invite; if (!url) { _tToast('Link not ready yet', 'error'); return; } var ok = false; try { navigator.clipboard.writeText(url); ok = true; } catch (e) {} if (!ok) { try { var ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); } catch (e2) {} } _tToast(ok ? 'Invite link copied' : ('Link: ' + url), ok ? '' : 'error'); };
   window.teamApEmail = function () { var url = window._proInviteUrl || window.FFP_TEAM._invite || ''; var team = _teamMeta(); try { window.location.href = 'mailto:?subject=' + encodeURIComponent('Join ' + (team.name || 'my team') + ' on FFP Passport') + '&body=' + encodeURIComponent('Join our team on FFP Passport — sign up here: ' + url); } catch (e) {} };
-  window.teamApDone = function () { _load(window.FFP_TEAM.team); };
-  window.teamAddMemberOpen = function () { _showAddPlayerPage(); };
+  window.teamApDone = function () { var S = window.FFP_TEAM; S.setTab = 'players'; _showTeamSettings(); };
+  window.teamAddMemberOpen = function () { window.FFP_TEAM.setTab = 'players'; _showAddPlayerPage(); };
 
   // ── New benchmark — full-bleed page (Measured templates / Skill locked levels) ──
   var SKILL_LEVELS = ['Developing', 'Competent', 'Proficient', 'Advanced', 'Elite'];
@@ -678,15 +703,16 @@
     _showBenchmarkPage();
   };
   function _clearBench() { var S = window.FFP_TEAM; S.bTemplate = null; S.bCustom = false; S.bName = null; S.bTargetVal = null; S.bDescs = null; S.bMeasure = null; S.bDir = null; S.bTargetLevel = null; S.bUnit = null; }
-  window.teamBenchBack = function () { _clearBench(); _load(window.FFP_TEAM.team); };
+  window.teamBenchBack = function () { var S = window.FFP_TEAM; S.setTab = 'benchmarks'; _clearBench(); _showTeamSettings(); };
   function _parseTarget(v, meas) { if (v == null || v === '') return null; v = String(v).trim(); if (meas === 'time' && /^\d+:\d{1,2}$/.test(v)) { var p = v.split(':'); return Number(p[0]) * 60 + Number(p[1]); } var n = Number(v); return isNaN(n) ? null : n; }
+  async function _afterBenchSave() { var S = window.FFP_TEAM; try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {} try { var lr = await _tSb().rpc('pro_teams_list', { p_pro: S.pid }); S.teams = (lr && lr.data) || S.teams; } catch (e) {} S.setTab = 'benchmarks'; _showTeamSettings(); }
   window.teamBenchSave = async function () {
     _capBench(); var S = window.FFP_TEAM;
     if (S.bKind === 'skill') {
       var sname = S.bName || ''; if (!sname.trim()) { _tToast('Name the skill', 'error'); return; }
       var levels = SKILL_LEVELS.map(function (nm, i) { return { level_no: i + 1, name: nm, description: (S.bDescs[i] || null) }; });
-      try { await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels }); _tToast('Skill added', ''); _clearBench(); _load(S.team); }
-      catch (e) { console.error(e); _tToast('Could not add skill', 'error'); }
+      try { await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels }); _tToast('Benchmark added', ''); _clearBench(); _afterBenchSave(); }
+      catch (e) { console.error(e); _tToast('Could not add benchmark', 'error'); }
       return;
     }
     var mname = S.bTemplate ? S.bTemplate.name : (S.bName || '');
@@ -696,8 +722,8 @@
     try {
       await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: mname.trim(), p_unit: unit, p_target_value: target, p_direction: S.bDir || 'lower' });
       if (S.bCustom) { try { await _tSb().rpc('benchmark_template_save', { p_pro: S.pid, p_name: mname.trim(), p_measure_type: S.bMeasure, p_direction: S.bDir, p_unit_hint: unit }); } catch (e) {} }
-      _tToast('Mark added', ''); _clearBench(); _load(S.team);
-    } catch (e) { console.error(e); _tToast('Could not add mark', 'error'); }
+      _tToast('Benchmark added', ''); _clearBench(); _afterBenchSave();
+    } catch (e) { console.error(e); _tToast('Could not add benchmark', 'error'); }
   };
   window.teamMarkCreateOpen = function () { _clearBench(); _showBenchmarkPage('measured'); };
   window.teamSkillCreateOpen = function () { _clearBench(); _showBenchmarkPage('skill'); };

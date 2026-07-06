@@ -331,7 +331,7 @@
     html += '</div>';
     // What they're training
     var tr = ov.training || [];
-    html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:14px;">What they\'re training</div>';
+    html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:4px;">Training Focus</div><div style="font-size:11.5px;color:#869599;margin-bottom:13px;">Activities the squad is logging — sessions &amp; share.</div>';
     if (tr.length) {
       var mx = Math.max.apply(null, tr.map(function (x) { return x.sessions; }).concat([1]));
       html += tr.slice(0, 6).map(function (x, i) {
@@ -480,23 +480,47 @@
     return head + days + panel;
   }
   window.teamHeroMark = function (i) { window.FFP_TEAM.heroMark = i; _paint(); };
-  window.teamOpenActivity = function (id) {
-    var S = window.FFP_TEAM, d = S.detail || {}, a = (d.recent || []).find(function (x) { return x.id === id; });
-    if (!a) { _tToast('Activity not found', 'error'); return; }
+  function _actCloseFoot() { return '<button class="ffpt-min" style="width:auto;padding:11px 20px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>'; }
+  function _paceStr(km, min) { if (!km || !min) return null; var p = min / km, m = Math.floor(p), s = Math.round((p - m) * 60); return m + ':' + (s < 10 ? '0' : '') + s + ' /km'; }
+  function _renderActivityCard(a) {
     var grad = 'linear-gradient(135deg,#0e5a63,#0a1a24)';
-    var cover = a.photo_url
-      ? '<div style="height:200px;border-radius:12px;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(a.photo_url) + '\');margin-bottom:14px;position:relative;">' + (a.verified ? '<span style="position:absolute;top:10px;right:10px;background:rgba(8,20,32,.6);color:#37E0C6;border-radius:100px;padding:4px 10px;font-size:11px;font-weight:800;">' + _ic('verified', 13) + ' Verified</span>' : '') + '</div>'
-      : '<div style="height:120px;border-radius:12px;background:' + grad + ';display:flex;align-items:center;justify-content:center;margin-bottom:14px;">' + _ic(_sportIcon(a.category, a.activity), 44, '#fff') + '</div>';
-    var tile = function (val, lab) { return '<div class="ffpt-tile"><div class="tv">' + val + '</div><div class="tl">' + lab + '</div></div>'; };
-    var tiles = '';
-    if (a.distance_km) tiles += tile(a.distance_km + '<span style="font-size:11px;color:#869599;">km</span>', 'Distance');
-    if (a.duration_min) tiles += tile(a.duration_min + '<span style="font-size:11px;color:#869599;">min</span>', 'Time');
-    tiles += tile('<span style="font-size:14px;">' + _relDay(a.logged_at) + '</span>', 'Logged');
-    var body = cover +
-      '<div style="font-size:18px;font-weight:900;color:#0f2327;">' + _tEsc(a.activity || 'Activity') + '</div>' +
-      (a.category ? '<div style="font-size:12px;color:#869599;margin-top:2px;">' + _tEsc(a.category) + '</div>' : '') +
-      '<div style="display:flex;gap:9px;margin-top:14px;">' + tiles + '</div>';
-    if (typeof openModalShell === 'function') openModalShell('sm', 'Activity', body, '<button class="ffpt-min" style="width:auto;padding:11px 20px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>');
+    var photos = (a.photos && a.photos.length ? a.photos : (a.photo_url ? [a.photo_url] : []));
+    var verBadge = a.verified ? '<span style="position:absolute;top:10px;right:10px;background:rgba(8,20,32,.6);color:#37E0C6;border-radius:100px;padding:4px 10px;font-size:11px;font-weight:800;">' + _ic('verified', 13) + ' Verified</span>' : '';
+    var cover;
+    if (photos.length) {
+      cover = '<div style="height:210px;border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(photos[0]) + '\');">' + verBadge + (photos.length > 1 ? '<span style="position:absolute;bottom:10px;right:10px;background:rgba(8,20,32,.6);color:#fff;border-radius:100px;padding:3px 9px;font-size:11px;font-weight:800;">' + _ic('collections', 13) + ' ' + photos.length + '</span>' : '') + '</div>';
+      if (photos.length > 1) cover += '<div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;">' + photos.slice(1, 6).map(function (u) { return '<div style="flex:0 0 auto;width:64px;height:64px;border-radius:9px;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(u) + '\');"></div>'; }).join('') + '</div>';
+    } else {
+      cover = '<div style="height:120px;border-radius:12px;background:' + grad + ';display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;">' + _ic(_sportIcon(a.category, a.activity), 44, '#fff') + verBadge + '</div>';
+    }
+    var place = [a.venue, a.area, a.city, a.country].filter(Boolean).filter(function (v, i, arr) { return arr.indexOf(v) === i; }).join(', ');
+    var when = a.logged_at ? (new Date(a.logged_at).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + new Date(a.logged_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) : '';
+    var tile = function (val, lab) { return '<div class="ffpt-tile" style="min-width:78px;"><div class="tv">' + val + '</div><div class="tl">' + lab + '</div></div>'; };
+    var u = function (t) { return '<span style="font-size:11px;color:#869599;font-weight:700;">' + t + '</span>'; };
+    var tiles = [];
+    if (a.distance_km) tiles.push(tile(a.distance_km + u(' km'), 'Distance'));
+    if (a.duration_min) tiles.push(tile(a.duration_min + u(' min'), 'Time'));
+    var pace = _paceStr(a.distance_km, a.duration_min); if (pace) tiles.push(tile('<span style="font-size:15px;">' + pace.replace(' /km', '') + '</span>' + u(' /km'), 'Pace'));
+    if (a.calories) tiles.push(tile(a.calories + u(' kcal'), 'Energy'));
+    if (a.avg_heart_rate) tiles.push(tile(a.avg_heart_rate + u(' bpm'), 'Avg HR'));
+    if (a.steps) tiles.push(tile(a.steps, 'Steps'));
+    var tilesHtml = tiles.length ? '<div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-top:14px;">' + tiles.join('') + '</div>' : '';
+    return cover +
+      '<div style="font-size:19px;font-weight:900;color:#0f2327;line-height:1.15;">' + _tEsc(a.activity || 'Activity') + '</div>' +
+      (a.category ? '<div style="font-size:12px;color:#869599;margin-top:2px;">' + _tEsc(a.category) + (a.intensity ? ' · ' + _tEsc(a.intensity) : '') + '</div>' : '') +
+      (place ? '<div style="display:flex;align-items:center;gap:5px;margin-top:8px;color:#5a6b6e;font-size:12.5px;font-weight:600;">' + _ic('place', 15, '#0a3e44') + _tEsc(place) + '</div>' : '') +
+      (when ? '<div style="display:flex;align-items:center;gap:5px;margin-top:4px;color:#869599;font-size:12px;">' + _ic('schedule', 14, '#869599') + when + '</div>' : '') +
+      tilesHtml +
+      (a.notes ? '<div style="margin-top:14px;padding:12px 13px;background:#f4f7f8;border-radius:11px;font-size:13px;color:#0f2327;line-height:1.5;white-space:pre-wrap;">' + _tEsc(a.notes) + '</div>' : '');
+  }
+  window.teamOpenActivity = async function (id) {
+    var S = window.FFP_TEAM;
+    if (typeof openModalShell === 'function') openModalShell('sm', 'Activity', '<div style="padding:26px 0;text-align:center;color:#869599;font-weight:700;">Loading activity…</div>', _actCloseFoot());
+    var a = null;
+    try { var r = await _tSb().rpc('pro_activity_detail', { p_pro: S.pid, p_activity: id }); a = (r && r.data) || null; } catch (e) { console.error('[FFP Team] activity', e); }
+    if (!a) { a = ((S.detail || {}).recent || []).find(function (x) { return x.id === id; }); }   // fallback to the summary row
+    if (!a) { _tToast('Could not load activity', 'error'); ffpCloseModal(); return; }
+    if (typeof openModalShell === 'function') openModalShell('sm', 'Activity', _renderActivityCard(a), _actCloseFoot());
     else _tToast(a.activity || 'Activity', '');
   };
   async function teamNutriDay(dateStr) {

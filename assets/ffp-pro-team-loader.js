@@ -146,35 +146,42 @@
   function _showCreatePage() {
     var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
     if (!S.cType) S.cType = 'sports';
-    var back = S.teams && S.teams.length ? '<span onclick="teamBackFromCreate()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.7)') + '</span>' : _ic('shield', 20, 'rgba(255,255,255,.5)');
+    if (!S.cKey) S.cKey = Date.now();
+    var canBack = S.teams && S.teams.length;
+    var cover = S.cCover ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(S.cCover) + '\');') : ('background:radial-gradient(120% 120% at 30% 0%,#0f3b4a 0%,#0a1a24 62%,#06121a 100%);');
+    var logoInner = S.cLogo ? ('<img src="' + _tEsc(S.cLogo) + '" style="width:100%;height:100%;object-fit:cover;">') : (S.cName ? _tEsc(_initials(S.cName)) : 'FFP');
     host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' +
-      '<div class="ffpt-hero" style="padding:16px 18px 20px;"><div class="ffpt-glow" style="right:-30px;"></div>' +
-      '<div style="position:relative;display:flex;align-items:center;gap:10px;margin-bottom:14px;">' + back + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">New team</div></div>' +
-      '<div style="position:relative;font-size:24px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1;">Create your team</div>' +
-      '<div style="position:relative;font-size:13px;font-weight:600;color:rgba(255,255,255,.62);margin-top:7px;">Everything your players log to their Passport shows up here.</div>' +
-      '<div style="position:relative;margin-top:16px;">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;"><div class="ffpt-sn">1</div><span style="font-size:12.5px;font-weight:700;color:rgba(255,255,255,.85);">Add your players</span></div>' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;"><div class="ffpt-sn">2</div><span style="font-size:12.5px;font-weight:700;color:rgba(255,255,255,.85);">Set the marks &amp; skills that matter</span></div>' +
-      '<div style="display:flex;align-items:center;gap:10px;"><div class="ffpt-sn">3</div><span style="font-size:12.5px;font-weight:700;color:rgba(255,255,255,.85);">See who\'s hitting them</span></div>' +
-      '</div></div>' +
-      '<div style="padding:18px 16px;">' +
-      '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="tc-name" placeholder="Riverside U18s" style="margin-bottom:20px;">' +
-      '<div class="ffpt-clab">Type</div><div style="display:flex;gap:8px;margin-bottom:20px;" id="tc-types">' +
-      TYPES.map(function (t) { return '<button class="ffpt-typ' + (S.cType === t[0] ? ' on' : '') + '" onclick="teamCType(\'' + t[0] + '\')">' + _ic(t[2], 21) + '<div style="font-size:10.5px;font-weight:700;margin-top:5px;">' + t[1] + '</div></button>'; }).join('') + '</div>' +
-      '<div class="ffpt-clab">Sport</div><div id="tc-sport-wrap" style="margin-bottom:20px;"><select class="ffpt-in" id="tc-sport">' + _sportOptions('') + '</select></div>' +
-      '<div class="ffpt-clab">Description</div><textarea class="ffpt-in" id="tc-desc" rows="3" style="resize:vertical;margin-bottom:22px;" placeholder="What this team is about…"></textarea>' +
-      '<button class="ffpt-cta" onclick="teamCreateSave()">Create team</button>' +
+      '<div style="position:relative;height:150px;overflow:hidden;' + cover + '"><div class="ffpt-glow" style="right:-30px;"></div>' +
+        '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
+          '<div style="display:flex;align-items:center;gap:9px;">' + (canBack ? '<span onclick="teamBackFromCreate()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span>' : '') + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">New team</div></div>' +
+          '<div onclick="teamPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + (S.cCover ? 'Change header' : 'Add header photo') + '</div></div>' +
+        '<div style="position:relative;padding:10px 16px 0;"><div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.4px;text-shadow:0 2px 8px rgba(0,0,0,.4);">Create your team</div><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.78);margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.4);">Everything your players log to their Passport shows up here.</div></div>' +
+      '</div>' +
+      '<div style="padding:0 16px 18px;">' +
+        '<div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:18px;">' +
+          '<div onclick="teamPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:linear-gradient(135deg,#2ba8e0,#0a3e44);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(43,168,224,.4),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;">' + logoInner + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
+          '<div style="padding-bottom:6px;"><div style="font-size:12px;font-weight:800;color:#0f2327;">Add a team logo</div><div style="font-size:11px;color:#869599;">Optional · shows on the players\' cards</div></div></div>' +
+        '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="tc-name" placeholder="Riverside U18s" value="' + _tEsc(S.cName || '') + '" style="margin-bottom:20px;">' +
+        '<div class="ffpt-clab">Type</div><div style="display:flex;gap:8px;margin-bottom:20px;" id="tc-types">' +
+        TYPES.map(function (t) { return '<button class="ffpt-typ' + (S.cType === t[0] ? ' on' : '') + '" onclick="teamCType(\'' + t[0] + '\')">' + _ic(t[2], 21) + '<div style="font-size:10.5px;font-weight:700;margin-top:5px;">' + t[1] + '</div></button>'; }).join('') + '</div>' +
+        '<div class="ffpt-clab">Sport</div><div id="tc-sport-wrap" style="margin-bottom:20px;"><select class="ffpt-in" id="tc-sport">' + _sportOptions(S.cSport || '') + '</select></div>' +
+        '<div class="ffpt-clab">Description</div><textarea class="ffpt-in" id="tc-desc" rows="3" style="resize:vertical;margin-bottom:22px;" placeholder="What this team is about…">' + _tEsc(S.cDesc || '') + '</textarea>' +
+        '<button class="ffpt-cta" onclick="teamCreateSave()">Create team</button>' +
       '</div></div></div>';
     try { if (window.FFPSelect) FFPSelect.enhance(document.getElementById('tc-sport-wrap')); } catch (e) {}
   }
-  window.teamCType = function (t) { window.FFP_TEAM.cType = t; document.querySelectorAll('#tc-types .ffpt-typ').forEach(function (b, i) { b.classList.toggle('on', TYPES[i][0] === t); }); };
-  window.teamBackFromCreate = function () { var S = window.FFP_TEAM; if (S.teams && S.teams.length) { if (!S.team) S.team = S.teams[0].id; _load(S.team); } };
+  function _capCreate() { var S = window.FFP_TEAM, n = document.getElementById('tc-name'); if (n) S.cName = n.value; var sp = document.getElementById('tc-sport'); if (sp) S.cSport = sp.value; var d = document.getElementById('tc-desc'); if (d) S.cDesc = d.value; }
+  window.teamPickCover = function () { _capCreate(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Photo upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-cover-' + S.pid + '-' + S.cKey, aspect: 16 / 9, outW: 1280, outH: 720, title: 'Header image', onDone: function (url) { S.cCover = url; _showCreatePage(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
+  window.teamPickLogo = function () { _capCreate(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Photo upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-logo-' + S.pid + '-' + S.cKey, aspect: 1, outW: 512, outH: 512, title: 'Team logo', onDone: function (url) { S.cLogo = url; _showCreatePage(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
+  window.teamCType = function (t) { _capCreate(); window.FFP_TEAM.cType = t; document.querySelectorAll('#tc-types .ffpt-typ').forEach(function (b, i) { b.classList.toggle('on', TYPES[i][0] === t); }); };
+  function _clearCreate() { var S = window.FFP_TEAM; S.cName = S.cSport = S.cDesc = S.cCover = S.cLogo = null; S.cKey = null; }
+  window.teamBackFromCreate = function () { var S = window.FFP_TEAM; _clearCreate(); if (S.teams && S.teams.length) { if (!S.team) S.team = S.teams[0].id; _load(S.team); } };
   window.teamCreateSave = async function () {
     var S = window.FFP_TEAM, name = (document.getElementById('tc-name') || {}).value || '';
     if (!name.trim()) { _tToast('Give the team a name', 'error'); return; }
     var sport = (document.getElementById('tc-sport') || {}).value || null;
     var desc = (document.getElementById('tc-desc') || {}).value || null;
-    try { var r = await _tSb().rpc('pro_team_create', { p_pro: S.pid, p_name: name.trim(), p_type: S.cType || 'sports', p_sport: sport, p_description: desc }); S.team = (r && r.data) || null; S.tab = 'overview'; _tToast('Team created', ''); renderTeam(); }
+    try { var r = await _tSb().rpc('pro_team_create', { p_pro: S.pid, p_name: name.trim(), p_type: S.cType || 'sports', p_sport: sport, p_description: desc, p_logo_url: S.cLogo || null, p_cover_url: S.cCover || null }); S.team = (r && r.data) || null; S.tab = 'overview'; _clearCreate(); _tToast('Team created', ''); renderTeam(); }
     catch (e) { console.error(e); _tToast('Could not create team', 'error'); }
   };
   window.teamShowCreate = _showCreatePage;
@@ -440,21 +447,157 @@
   window.teamRename = async function () { var S = window.FFP_TEAM, name = (document.getElementById('tg-name') || {}).value || ''; if (!name.trim()) { _tToast('Name can\'t be empty', 'error'); return; } try { await _tSb().rpc('pro_team_update', { p_pro: S.pid, p_team: S.team, p_name: name.trim() }); _closeModal(); _tToast('Saved', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not save', 'error'); } };
   window.teamRemoveMember = function (mid, name) { var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_team_remove_member', { p_pro: S.pid, p_team: S.team, p_member: mid }); _tToast('Removed', ''); _closeModal(); _load(S.team); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } }; if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'player') + '?', body: 'They\'ll no longer show in this team.', action: 'Remove', onOk: go }); else go(); };
 
-  window.teamAddMemberOpen = async function () {
-    var S = window.FFP_TEAM;
-    openModalShell('sm', 'Add a player', '<div id="tam-list" style="max-height:52vh;overflow:auto;">Loading your clients…</div><div style="margin-top:10px;font-size:12px;color:#869599;">Only your Passport clients appear here — they log activity + meals to their Passport, which flows into this team.</div>', '<button class="ffpt-min" style="width:auto;padding:11px 18px;background:#eef3f4;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Done</button>');
+  // ── Add players — full-bleed page (invite/referral link + your clients + email) ──
+  async function _showAddPlayerPage() {
+    var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
+    var team = _teamMeta();
+    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' +
+      '<div class="ffpt-hero" style="padding:16px 18px 18px;"><div class="ffpt-glow" style="right:-30px;background:radial-gradient(circle,rgba(255,204,0,.22),transparent 62%);"></div>' +
+        '<div style="position:relative;display:flex;align-items:center;gap:11px;"><span onclick="teamApDone()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span><div class="ffpt-logo">' + _tEsc(_initials(team.name) || 'T') + '</div><div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#fff;">Add players</div><div style="font-size:11px;color:rgba(255,255,255,.55);">' + _tEsc(team.name || 'Team') + '</div></div></div></div>' +
+      '<div style="padding:16px;">' +
+        '<div style="background:linear-gradient(135deg,#0a3e44,#2ba8e0);border-radius:15px;padding:15px;margin-bottom:20px;color:#fff;box-shadow:0 10px 26px rgba(43,168,224,.3);">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;">' + _ic('link', 17, '#FFCC00') + '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Share your invite link</div></div>' +
+          '<div style="display:flex;align-items:center;gap:8px;"><div id="ap-linktext" style="flex:1;background:rgba(255,255,255,.14);border-radius:9px;padding:10px 12px;font-size:12.5px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">loading…</div><button onclick="teamApCopy()" style="background:#FFCC00;color:#0a3e44;border:none;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">Copy</button></div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.78);margin-top:9px;">They sign up to the Passport through your link (you get the referral), then you add them below.</div>' +
+        '</div>' +
+        '<div class="ffpt-clab">Add from your clients</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e4ebec;border-radius:11px;padding:11px 13px;margin-bottom:12px;">' + _ic('search', 16, '#869599') + '<input id="ap-search" oninput="teamApFilter(this.value)" placeholder="Search clients" style="border:none;outline:none;background:transparent;flex:1;font-size:14px;font-family:inherit;color:#0f2327;"></div>' +
+        '<div id="ap-list"><div style="color:#869599;font-size:13px;padding:8px 0;">Loading your clients…</div></div>' +
+        '<div onclick="teamApEmail()" style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:7px;color:#0a3e44;font-size:12.5px;font-weight:700;cursor:pointer;">' + _ic('mail', 16) + ' Invite someone by email</div>' +
+        '<button class="ffpt-cta" style="margin-top:16px;" onclick="teamApDone()">Done</button>' +
+      '</div></div></div>';
+    _teamLoadInvite();
     var existing = {}; (S.players || []).forEach(function (p) { existing[p.member_id] = 1; });
     var cands = []; try { var r = await _tSb().rpc('pro_team_candidate_members', { p_pro: S.pid }); cands = (r && r.data) || []; } catch (e) { console.error(e); }
-    var host = document.getElementById('tam-list'); if (!host) return;
-    if (!cands.length) { host.innerHTML = '<div style="color:#5a6b6e;font-size:13px;padding:8px 0;">No Passport clients yet. Invite clients from the Clients tab first.</div>'; return; }
-    host.innerHTML = cands.map(function (c) { var added = existing[c.id]; return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #e4ebec;">' + _av(c.name, c.photo, 36) + '<div style="min-width:0;"><div style="font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.name) + '</div><div style="font-size:11px;color:#869599;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.email || '') + '</div></div><button id="tam-b-' + c.id + '" style="margin-left:auto;padding:7px 13px;border-radius:9px;border:none;font-weight:800;cursor:pointer;font-family:inherit;' + (added ? 'background:#eef3f4;color:#869599;' : 'background:#0a3e44;color:#fff;') + '" ' + (added ? 'disabled' : '') + ' onclick="teamAddMember(\'' + c.id + '\',\'' + _tEsc((c.name || '').replace(/\'/g, '')) + '\')">' + (added ? 'Added' : 'Add') + '</button></div>'; }).join('');
+    S._apCands = cands.map(function (c) { return { id: c.id, name: c.name, email: c.email, photo: c.photo, added: !!existing[c.id] }; });
+    _renderApList('');
+  }
+  async function _teamLoadInvite() {
+    var el = document.getElementById('ap-linktext'); if (!el) return;
+    var url = window._proInviteUrl;
+    if (!url) {
+      var email = (window.FFP_PROVIDER || {}).email || '';
+      if (email) { try { var r = await fetch('https://ffp-passport-backend.vercel.app/api/pro/invite?email=' + encodeURIComponent(email)); var j = await r.json(); if (r.ok && j && j.url) { url = j.url; window._proInviteUrl = url; } } catch (e) {} }
+    }
+    el.textContent = url ? url.replace(/^https?:\/\//, '') : 'ffppassport.com';
+    window.FFP_TEAM._invite = url || '';
+  }
+  function _renderApList(q) {
+    var host = document.getElementById('ap-list'); if (!host) return;
+    var cands = window.FFP_TEAM._apCands || []; q = (q || '').toLowerCase();
+    var list = cands.filter(function (c) { return !q || (c.name || '').toLowerCase().indexOf(q) >= 0 || (c.email || '').toLowerCase().indexOf(q) >= 0; });
+    if (!list.length) { host.innerHTML = '<div style="color:#5a6b6e;font-size:13px;padding:10px 2px;">' + (cands.length ? 'No match.' : 'No Passport clients yet — share your link above to bring people in.') + '</div>'; return; }
+    host.innerHTML = list.map(function (c) {
+      return '<div style="display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:1px solid #e4ebec;">' + _av(c.name, c.photo, 38) +
+        '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.name) + '</div><div style="font-size:11px;color:#869599;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.email || '') + '</div></div>' +
+        (c.added ? '<div style="display:flex;align-items:center;gap:5px;background:#e5f6ee;color:#1d7a4d;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;">' + _ic('check', 14) + 'Added</div>' :
+          '<button style="border:1.5px solid #0a3e44;color:#0a3e44;background:#fff;border-radius:9px;padding:7px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamApAdd(\'' + c.id + '\',\'' + _tEsc((c.name || '').replace(/\'/g, '')) + '\')">Add</button>') + '</div>';
+    }).join('');
+  }
+  window.teamApFilter = function (v) { _renderApList(v); };
+  window.teamApAdd = async function (mid, name) {
+    var S = window.FFP_TEAM;
+    try {
+      await _tSb().rpc('pro_team_add_member', { p_pro: S.pid, p_team: S.team, p_member: mid, p_full_name: name || null });
+      var c = (S._apCands || []).find(function (x) { return x.id === mid; }); if (c) c.added = true;
+      _renderApList((document.getElementById('ap-search') || {}).value || '');
+      try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {}
+    } catch (e) { console.error(e); _tToast('Could not add', 'error'); }
   };
-  window.teamAddMember = async function (mid, name) { var S = window.FFP_TEAM, btn = document.getElementById('tam-b-' + mid); try { await _tSb().rpc('pro_team_add_member', { p_pro: S.pid, p_team: S.team, p_member: mid, p_full_name: name || null }); if (btn) { btn.textContent = 'Added'; btn.disabled = true; btn.style.background = '#eef3f4'; btn.style.color = '#869599'; } try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {} } catch (e) { console.error(e); _tToast('Could not add', 'error'); } };
+  window.teamApCopy = function () { var url = window._proInviteUrl || window.FFP_TEAM._invite; if (!url) { _tToast('Link not ready yet', 'error'); return; } var ok = false; try { navigator.clipboard.writeText(url); ok = true; } catch (e) {} if (!ok) { try { var ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); } catch (e2) {} } _tToast(ok ? 'Invite link copied' : ('Link: ' + url), ok ? '' : 'error'); };
+  window.teamApEmail = function () { var url = window._proInviteUrl || window.FFP_TEAM._invite || ''; var team = _teamMeta(); try { window.location.href = 'mailto:?subject=' + encodeURIComponent('Join ' + (team.name || 'my team') + ' on FFP Passport') + '&body=' + encodeURIComponent('Join our team on FFP Passport — sign up here: ' + url); } catch (e) {} };
+  window.teamApDone = function () { _load(window.FFP_TEAM.team); };
+  window.teamAddMemberOpen = function () { _showAddPlayerPage(); };
 
-  window.teamMarkCreateOpen = function () { openModalShell('sm', 'Add a fitness mark', '<label class="ffpt-mlab">Mark name</label><input class="ffpt-min" id="mk-name" placeholder="3km run, Beep test"><label class="ffpt-mlab">Unit</label><input class="ffpt-min" id="mk-unit" placeholder="s (seconds), level, kg"><label class="ffpt-mlab">Target (optional)</label><input class="ffpt-min" id="mk-target" inputmode="decimal" placeholder="900"><label class="ffpt-mlab">Better is…</label><select class="ffpt-min" id="mk-dir"><option value="lower">Lower (faster / less time)</option><option value="higher">Higher (more / further)</option></select><div style="margin-top:8px;font-size:12px;color:#869599;">For times use unit "s" — shows as m:ss.</div>', _foot('Create', 'teamMarkCreateSave()')); };
-  window.teamMarkCreateSave = async function () { var S = window.FFP_TEAM, name = (document.getElementById('mk-name') || {}).value || ''; if (!name.trim()) { _tToast('Name the mark', 'error'); return; } var tv = (document.getElementById('mk-target') || {}).value; tv = tv === '' ? null : Number(tv); try { await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: name.trim(), p_unit: (document.getElementById('mk-unit') || {}).value || null, p_target_value: tv, p_direction: (document.getElementById('mk-dir') || {}).value || 'lower' }); _closeModal(); _tToast('Mark added', ''); _load(S.team); } catch (e) { console.error(e); _tToast('Could not add mark', 'error'); } };
-  window.teamSkillCreateOpen = function () { openModalShell('sm', 'Add a skill', '<label class="ffpt-mlab">Skill name</label><input class="ffpt-min" id="sk-name" placeholder="Snatch, First touch"><label class="ffpt-mlab">Levels (one per line, low → high)</label><textarea class="ffpt-min" id="sk-levels" rows="5" style="resize:vertical;">Developing\nCompetent\nProficient\nAdvanced\nElite</textarea><label class="ffpt-mlab">Target level (number)</label><input class="ffpt-min" id="sk-target" inputmode="numeric" placeholder="3">', _foot('Create', 'teamSkillCreateSave()')); };
-  window.teamSkillCreateSave = async function () { var S = window.FFP_TEAM, name = (document.getElementById('sk-name') || {}).value || ''; if (!name.trim()) { _tToast('Name the skill', 'error'); return; } var lines = ((document.getElementById('sk-levels') || {}).value || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); if (lines.length < 2) { _tToast('Add at least 2 levels', 'error'); return; } var levels = lines.map(function (nm, i) { return { level_no: i + 1, name: nm }; }); var tl = (document.getElementById('sk-target') || {}).value; tl = tl === '' ? null : Number(tl); try { await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: name.trim(), p_target_level: tl, p_levels: levels }); _closeModal(); _tToast('Skill added', ''); _load(S.team); } catch (e) { console.error(e); _tToast('Could not add skill', 'error'); } };
+  // ── New benchmark — full-bleed page (Measured templates / Skill locked levels) ──
+  var SKILL_LEVELS = ['Developing', 'Competent', 'Proficient', 'Advanced', 'Elite'];
+  var _benchTpl = null;
+  async function _showBenchmarkPage(kind) {
+    var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
+    S.bKind = kind || S.bKind || 'measured';
+    if (S.bTargetLevel == null) S.bTargetLevel = 3;
+    if (!S.bDescs) S.bDescs = ['', '', '', '', ''];
+    if (!S.bMeasure) S.bMeasure = 'time';
+    if (!S.bDir) S.bDir = 'lower';
+    if (_benchTpl == null) { try { var r = await _tSb().rpc('benchmark_templates_list', { p_pro: S.pid }); _benchTpl = (r && r.data) || []; } catch (e) { _benchTpl = []; } }
+    host.innerHTML = _benchHtml();
+    try { if (window.FFPSelect) FFPSelect.enhance(document.getElementById('bm-tpl-wrap')); } catch (e) {}
+  }
+  function _measHint(meas) { var u = window.FFP_TEAM.bUnit; return meas === 'time' ? 'min:sec (e.g. 15:00)' : (meas === 'weight' ? (u || 'kg') : (u || 'number')); }
+  function _benchHtml() {
+    var S = window.FFP_TEAM, team = _teamMeta();
+    var head = '<div class="ffpt-hero" style="padding:16px 18px 16px;"><div class="ffpt-glow" style="right:-30px;"></div>' +
+      '<div style="position:relative;display:flex;align-items:center;gap:11px;"><span onclick="teamBenchBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span><div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#fff;">New benchmark</div><div style="font-size:11px;color:rgba(255,255,255,.55);">' + _tEsc(team.name || 'Team') + '</div></div></div></div>';
+    var toggle = '<div style="display:flex;gap:9px;margin-bottom:20px;">' +
+      '<button class="ffpt-typ' + (S.bKind === 'measured' ? ' on' : '') + '" onclick="teamBenchKind(\'measured\')">' + _ic('timer', 22) + '<div style="font-size:12.5px;font-weight:800;margin-top:5px;">Measured test</div></button>' +
+      '<button class="ffpt-typ' + (S.bKind === 'skill' ? ' on' : '') + '" onclick="teamBenchKind(\'skill\')">' + _ic('my_location', 22) + '<div style="font-size:12.5px;font-weight:800;margin-top:5px;">Skill</div></button></div>';
+    var body;
+    if (S.bKind === 'measured') {
+      var opts = '<option value="">Select a test…</option>' + (_benchTpl || []).map(function (t) { return '<option value="' + t.id + '"' + (S.bTemplate && S.bTemplate.id === t.id ? ' selected' : '') + '>' + _tEsc(t.name) + (t.category ? ' · ' + _tEsc(t.category) : '') + '</option>'; }).join('') + '<option value="custom"' + (S.bCustom ? ' selected' : '') + '>＋ Custom test</option>';
+      body = '<div class="ffpt-clab">Test or assessment</div><div id="bm-tpl-wrap" style="margin-bottom:7px;"><select class="ffpt-in" id="bm-tpl" onchange="teamBenchTemplate(this.value)">' + opts + '</select></div><div style="font-size:11.5px;color:#869599;margin-bottom:20px;">Pick a standard test — or create your own.</div>';
+      if (S.bCustom) body += '<div class="ffpt-clab">Test name</div><input class="ffpt-in" id="bm-name" value="' + _tEsc(S.bName || '') + '" placeholder="e.g. 3km run" style="margin-bottom:20px;">';
+      body += '<div class="ffpt-clab">What you measure</div><div style="display:flex;gap:8px;margin-bottom:20px;">' +
+        ['time', 'weight', 'level'].map(function (m) { var ic = { time: 'schedule', weight: 'fitness_center', level: 'stairs' }[m]; return '<button class="ffpt-typ' + (S.bMeasure === m ? ' on' : '') + '" onclick="teamBenchMeasure(\'' + m + '\')">' + _ic(ic, 19) + '<div style="font-size:11.5px;font-weight:800;margin-top:4px;text-transform:capitalize;">' + m + '</div></button>'; }).join('') + '</div>';
+      body += '<div class="ffpt-clab">Target</div><input class="ffpt-in" id="bm-target" value="' + _tEsc(S.bTargetVal || '') + '" placeholder="' + _measHint(S.bMeasure) + '" style="margin-bottom:20px;">';
+      body += '<div class="ffpt-clab">Better is <span style="text-transform:none;letter-spacing:0;color:#37b06a;font-weight:700;">· auto, tap to change</span></div><div style="display:flex;gap:9px;margin-bottom:22px;">' +
+        '<button class="ffpt-typ' + (S.bDir === 'lower' ? ' on' : '') + '" style="padding:12px;" onclick="teamBenchDir(\'lower\')">Lower · faster</button>' +
+        '<button class="ffpt-typ' + (S.bDir === 'higher' ? ' on' : '') + '" style="padding:12px;" onclick="teamBenchDir(\'higher\')">Higher · more</button></div>';
+    } else {
+      var COLS = ['#e24b4a', '#f0932b', '#37b06a', '#2ba8e0', '#8b5cf6'];
+      body = '<div class="ffpt-clab">Skill name</div><input class="ffpt-in" id="bm-skname" value="' + _tEsc(S.bName || '') + '" placeholder="Snatch, First touch…" style="margin-bottom:20px;">';
+      body += '<div class="ffpt-clab">Describe each level · players see these</div>';
+      body += SKILL_LEVELS.map(function (nm, i) {
+        var lv = i + 1, on = S.bTargetLevel === lv;
+        return '<div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:14px;"><div style="width:12px;height:12px;border-radius:50%;background:' + COLS[i] + ';margin-top:4px;flex:0 0 auto;"></div>' +
+          '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="font-size:14px;font-weight:800;color:' + (on ? '#0a3e44' : '#0f2327') + ';">' + nm + '</div>' +
+          '<button onclick="teamBenchTarget(' + lv + ')" style="border:1.5px solid ' + (on ? '#0a3e44' : '#ccd9da') + ';background:' + (on ? '#0a3e44' : 'transparent') + ';color:' + (on ? '#fff' : '#869599') + ';border-radius:8px;padding:6px 10px;font-size:9px;font-weight:800;letter-spacing:.4px;cursor:pointer;font-family:inherit;white-space:nowrap;">' + (on ? '✓ TARGET' : 'SET TARGET') + '</button></div>' +
+          '<textarea class="ffpt-in" id="bm-desc-' + i + '" rows="2" style="margin-top:6px;font-size:12.5px;font-weight:500;resize:vertical;' + (on ? 'border-color:#0a3e44;background:#f0f7f9;' : '') + '" placeholder="What ' + nm.toLowerCase() + ' looks like…">' + _tEsc(S.bDescs[i] || '') + '</textarea></div></div>';
+      }).join('');
+    }
+    return '<div class="ffpt"><div class="ffpt-cardg">' + head + '<div style="padding:16px;">' + toggle + body + '<button class="ffpt-cta" onclick="teamBenchSave()">Add benchmark</button></div></div></div>';
+  }
+  function _capBench() {
+    var S = window.FFP_TEAM;
+    var t = document.getElementById('bm-target'); if (t) S.bTargetVal = t.value;
+    var nm = document.getElementById('bm-name'); if (nm) S.bName = nm.value;
+    var sk = document.getElementById('bm-skname'); if (sk) S.bName = sk.value;
+    for (var i = 0; i < 5; i++) { var d = document.getElementById('bm-desc-' + i); if (d) S.bDescs[i] = d.value; }
+  }
+  window.teamBenchKind = function (k) { _capBench(); window.FFP_TEAM.bKind = k; _showBenchmarkPage(); };
+  window.teamBenchMeasure = function (m) { _capBench(); window.FFP_TEAM.bMeasure = m; window.FFP_TEAM.bUnit = null; _showBenchmarkPage(); };
+  window.teamBenchDir = function (d) { _capBench(); window.FFP_TEAM.bDir = d; _showBenchmarkPage(); };
+  window.teamBenchTarget = function (lv) { _capBench(); window.FFP_TEAM.bTargetLevel = lv; _showBenchmarkPage(); };
+  window.teamBenchTemplate = function (val) {
+    _capBench(); var S = window.FFP_TEAM;
+    if (val === 'custom') { S.bCustom = true; S.bTemplate = null; }
+    else if (!val) { S.bCustom = false; S.bTemplate = null; }
+    else { var t = (_benchTpl || []).find(function (x) { return x.id === val; }); if (t) { S.bCustom = false; S.bTemplate = t; S.bName = t.name; S.bMeasure = t.measure_type; S.bDir = t.direction; S.bUnit = t.unit_hint; } }
+    _showBenchmarkPage();
+  };
+  function _clearBench() { var S = window.FFP_TEAM; S.bTemplate = null; S.bCustom = false; S.bName = null; S.bTargetVal = null; S.bDescs = null; S.bMeasure = null; S.bDir = null; S.bTargetLevel = null; S.bUnit = null; }
+  window.teamBenchBack = function () { _clearBench(); _load(window.FFP_TEAM.team); };
+  function _parseTarget(v, meas) { if (v == null || v === '') return null; v = String(v).trim(); if (meas === 'time' && /^\d+:\d{1,2}$/.test(v)) { var p = v.split(':'); return Number(p[0]) * 60 + Number(p[1]); } var n = Number(v); return isNaN(n) ? null : n; }
+  window.teamBenchSave = async function () {
+    _capBench(); var S = window.FFP_TEAM;
+    if (S.bKind === 'skill') {
+      var sname = S.bName || ''; if (!sname.trim()) { _tToast('Name the skill', 'error'); return; }
+      var levels = SKILL_LEVELS.map(function (nm, i) { return { level_no: i + 1, name: nm, description: (S.bDescs[i] || null) }; });
+      try { await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels }); _tToast('Skill added', ''); _clearBench(); _load(S.team); }
+      catch (e) { console.error(e); _tToast('Could not add skill', 'error'); }
+      return;
+    }
+    var mname = S.bTemplate ? S.bTemplate.name : (S.bName || '');
+    if (!mname.trim()) { _tToast('Pick or name a test', 'error'); return; }
+    var unit = S.bMeasure === 'time' ? 's' : (S.bMeasure === 'weight' ? 'kg' : (S.bUnit || 'level'));
+    var target = _parseTarget(S.bTargetVal, S.bMeasure);
+    try {
+      await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: mname.trim(), p_unit: unit, p_target_value: target, p_direction: S.bDir || 'lower' });
+      if (S.bCustom) { try { await _tSb().rpc('benchmark_template_save', { p_pro: S.pid, p_name: mname.trim(), p_measure_type: S.bMeasure, p_direction: S.bDir, p_unit_hint: unit }); } catch (e) {} }
+      _tToast('Mark added', ''); _clearBench(); _load(S.team);
+    } catch (e) { console.error(e); _tToast('Could not add mark', 'error'); }
+  };
+  window.teamMarkCreateOpen = function () { _clearBench(); _showBenchmarkPage('measured'); };
+  window.teamSkillCreateOpen = function () { _clearBench(); _showBenchmarkPage('skill'); };
 
   window.teamRecordOpen = function (benchId, kind) {
     var S = window.FFP_TEAM; if (!S.sel) { _tToast('Open a player first', 'error'); return; }

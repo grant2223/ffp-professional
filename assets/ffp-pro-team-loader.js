@@ -791,8 +791,8 @@
     if (S.bKind === 'skill') {
       var sname = S.bName || ''; if (!sname.trim()) { _tToast('Name the skill', 'error'); return; }
       var levels = SKILL_LEVELS.map(function (nm, i) { return { level_no: i + 1, name: nm, description: (S.bDescs[i] || null) }; });
-      try { await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels }); _tToast('Skill added', ''); _clearBench(); _afterBenchSave('skill'); }
-      catch (e) { console.error(e); _tToast('Could not add benchmark', 'error'); }
+      try { var rs = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels }); if (rs && rs.error) throw rs.error; _tToast('Skill added', ''); _clearBench(); _afterBenchSave('skill'); }
+      catch (e) { console.error('[FFP Team] skill save', e); _tToast('Could not add skill' + (e && e.message ? ': ' + e.message : ''), 'error'); }
       return;
     }
     var mname = S.bTemplate ? S.bTemplate.name : (S.bName || '');
@@ -800,10 +800,11 @@
     var unit = S.bMeasure === 'time' ? 's' : (S.bMeasure === 'weight' ? 'kg' : (S.bUnit || 'level'));
     var target = _parseTarget(S.bTargetVal, S.bMeasure);
     try {
-      await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: mname.trim(), p_unit: unit, p_target_value: target, p_direction: S.bDir || 'lower' });
+      var rm = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: mname.trim(), p_unit: unit, p_target_value: target, p_direction: S.bDir || 'lower' });
+      if (rm && rm.error) throw rm.error;
       if (S.bCustom) { try { await _tSb().rpc('benchmark_template_save', { p_pro: S.pid, p_name: mname.trim(), p_measure_type: S.bMeasure, p_direction: S.bDir, p_unit_hint: unit }); } catch (e) {} }
       _tToast('Benchmark added', ''); _clearBench(); _afterBenchSave('measured');
-    } catch (e) { console.error(e); _tToast('Could not add benchmark', 'error'); }
+    } catch (e) { console.error('[FFP Team] benchmark save', e); _tToast('Could not add benchmark' + (e && e.message ? ': ' + e.message : ''), 'error'); }
   };
   window.teamMarkCreateOpen = function () { _clearBench(); _showBenchmarkPage('measured'); };
   window.teamSkillCreateOpen = function () { _clearBench(); _showBenchmarkPage('skill'); };

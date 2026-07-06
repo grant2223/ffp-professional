@@ -360,9 +360,11 @@
     players.forEach(function (p) { if (p.level_no != null && byL[p.level_no]) byL[p.level_no].push(p); });
     return '<div style="display:grid;grid-template-columns:repeat(' + levels.length + ',1fr);gap:6px;text-align:center;">' +
       levels.map(function (l) {
-        var isT = sk.target_level === l.level_no;
-        var faces = byL[l.level_no].map(function (p, i) { return '<span style="margin-left:' + (i ? -9 : 0) + 'px;">' + _av(p.name, p.photo, 30) + '</span>'; }).join('') || '<span style="font-size:11px;color:#c2cdcf;">—</span>';
-        return '<div><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + (isT ? '#0a3e44' : '#869599') + ';margin-bottom:8px;">' + _tEsc(l.name.slice(0, 7)) + (isT ? '★' : '') + '</div><div style="display:flex;justify-content:center;">' + faces + '</div></div>';
+        var isT = sk.target_level === l.level_no, cnt = byL[l.level_no].length;
+        var faces = byL[l.level_no].slice(0, 4).map(function (p, i) { return '<span style="margin-left:' + (i ? -9 : 0) + 'px;">' + _av(p.name, p.photo, 26) + '</span>'; }).join('');
+        return '<div><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:' + (isT ? '#0a3e44' : '#869599') + ';margin-bottom:6px;">' + _tEsc(l.name.slice(0, 7)) + (isT ? '★' : '') + '</div>' +
+          '<div style="font-size:19px;font-weight:900;line-height:1;margin-bottom:6px;color:' + (isT ? '#0a3e44' : (cnt ? '#0f2327' : '#c2cdcf')) + ';">' + cnt + '</div>' +
+          '<div style="display:flex;justify-content:center;min-height:26px;">' + (faces || '') + '</div></div>';
       }).join('') + '</div>';
   }
   window.teamOvMark = function (i) { window.FFP_TEAM.ovMark = i; _paint(); };
@@ -406,10 +408,13 @@
     var wk = d.week || {};
     html += '<div class="ffpt-sec"><div style="display:flex;gap:9px;"><div class="ffpt-tile"><div class="tv">' + (d.streak || 0) + '</div><div class="tl">Day streak</div></div><div class="ffpt-tile"><div class="tv">' + (wk.sessions || 0) + '</div><div class="tl">This week</div></div><div class="ffpt-tile"><div class="tv" style="font-size:15px;">' + _relDay(d.last_logged) + '</div><div class="tl">Last logged</div></div></div></div>';
     var sk = d.skills || [];
-    if (sk.length) html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:14px;">Skills</div>' + sk.map(function (s) {
-      var maxL = s.max_level || 5, lvl = s.level_no || 0, col = lvl ? SPECTRUM[Math.min(lvl, SPECTRUM.length) - 1] : '#b6c1c3', segs = '';
-      for (var i = 1; i <= maxL; i++) segs += '<div style="background:' + (i <= lvl ? SPECTRUM[Math.min(i, SPECTRUM.length) - 1] : '#eef3f4') + ';"></div>';
-      return '<div style="margin-bottom:15px;cursor:pointer;" onclick="teamRecordOpen(\'' + s.id + '\',\'skill\')"><div style="display:flex;justify-content:space-between;margin-bottom:7px;"><span style="font-size:13px;font-weight:800;color:#0f2327;">' + _tEsc(s.name) + '</span><span style="font-size:11.5px;font-weight:800;color:' + col + ';">' + _tEsc(s.level_name || (lvl ? 'Level ' + lvl : 'Not assessed')) + '</span></div><div class="ffpt-spec">' + segs + '</div></div>';
+    if (sk.length) html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:3px;">Skills</div><div style="font-size:11.5px;color:#869599;margin-bottom:14px;">Tap the level this athlete is at (★ = target).</div>' + sk.map(function (s) {
+      var lvl = s.level_no || 0, col = lvl ? SPECTRUM[Math.min(lvl, SPECTRUM.length) - 1] : '#b6c1c3';
+      var chips = SKILL_LEVELS.map(function (nm, i) {
+        var lv = i + 1, on = lvl === lv, isT = s.target_level === lv, cc = SPECTRUM[Math.min(lv, SPECTRUM.length) - 1];
+        return '<button onclick="teamSkillSet(\'' + s.id + '\',' + lv + ')" style="flex:0 0 auto;border:1.5px solid ' + (on ? cc : '#e4ebec') + ';background:' + (on ? cc : '#fff') + ';color:' + (on ? '#fff' : '#5a6b6e') + ';border-radius:9px;padding:7px 11px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">' + nm + (isT ? ' ★' : '') + '</button>';
+      }).join('');
+      return '<div style="margin-bottom:16px;"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-size:14px;font-weight:800;color:#0f2327;">' + _tEsc(s.name) + '</span><span style="font-size:11.5px;font-weight:800;color:' + col + ';">' + _tEsc(s.level_name || (lvl ? 'Level ' + lvl : 'Not assessed')) + '</span></div><div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;">' + chips + '</div></div>';
     }).join('') + '</div>';
     var rec = d.recent || [];
     html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:12px;">Recent activity</div><div style="display:flex;gap:9px;margin-bottom:14px;"><div class="ffpt-tile"><div class="tv">' + (wk.sessions || 0) + '</div><div class="tl">Sessions · 7d</div></div><div class="ffpt-tile"><div class="tv">' + (wk.distance_km || 0) + '<span style="font-size:11px;color:#869599;">km</span></div><div class="tl">Distance</div></div><div class="ffpt-tile"><div class="tv">' + (Math.round((wk.minutes || 0) / 60 * 10) / 10) + '<span style="font-size:11px;color:#869599;">h</span></div><div class="tl">Time</div></div></div>';
@@ -812,6 +817,17 @@
       try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {}
       _paint();
     } catch (e) { console.error(e); _tToast('Could not save', 'error'); }
+  };
+  // Tap-to-confirm a skill level straight from the athlete detail (no modal).
+  window.teamSkillSet = async function (skillId, levelNo) {
+    var S = window.FFP_TEAM; if (!S.sel) { _tToast('Open an athlete first', 'error'); return; }
+    try {
+      await _tSb().rpc('pro_benchmark_record', { p_pro: S.pid, p_benchmark: skillId, p_member: S.sel, p_level_no: levelNo, p_note: null });
+      _tToast('Level set', '');
+      try { var rd = await _tSb().rpc('pro_player_detail', { p_pro: S.pid, p_team: S.team, p_member: S.sel }); S.detail = (rd && rd.data) || {}; } catch (e) {}
+      try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {}
+      _paint();
+    } catch (e) { console.error(e); _tToast('Could not set level', 'error'); }
   };
   window.teamSwitchOpen = function () { var S = window.FFP_TEAM; var body = (S.teams || []).map(function (t) { return '<button style="display:flex;width:100%;align-items:center;gap:10px;padding:12px;border:1px solid #e4ebec;border-radius:12px;background:' + (t.id === S.team ? '#eef3f4' : '#fff') + ';margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left;" onclick="teamSwitch(\'' + t.id + '\')">' + _ic('groups', 20, '#0a3e44') + '<div><div style="font-weight:800;">' + _tEsc(t.name) + '</div><div style="font-size:12px;color:#5a6b6e;">' + (t.member_count || 0) + ' athletes</div></div></button>'; }).join('') + '<button class="ffpt-min" style="width:100%;margin-top:6px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="teamShowCreate();ffpCloseModal()">+ New team</button>'; openModalShell('sm', 'Your teams', body, '<button class="ffpt-min" style="width:auto;padding:11px 18px;background:#eef3f4;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>'); };
   window.teamSwitch = function (id) { window.FFP_TEAM.team = id; _closeModal(); _load(id); };

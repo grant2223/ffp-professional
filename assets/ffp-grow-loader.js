@@ -20,7 +20,7 @@ var _growRoadView = null; // null = auto, 'intro', 'ring'
 
 var GROW_STEPS = [
   { code:'strengths',    phase:'Foundation',              plain:'Understand your strengths & weaknesses', flow:'strengths' },
-  { code:'ideal_client', phase:'Setting up the basics',   plain:'Understand your ideal client' },
+  { code:'ideal_client', phase:'Setting up the basics',   plain:'Understand your ideal client', flow:'ideal_client' },
   { code:'offer',        phase:'Setting up the basics',   plain:'Create your initial offer' },
   { code:'delivery_plan',phase:'Setting up the basics',   plain:"How you'll deliver it" },
   { code:'operations',   phase:'Operational',             plain:'Set up daily operations' },
@@ -148,7 +148,7 @@ function growStepStart(){
   var active = _growActiveIdx();
   var vi = (_growStepIdx == null ? (active < 0 ? 0 : active) : _growStepIdx);
   var f = GROW_STEPS[vi]; if (!f) return;
-  if (f.flow === 'strengths'){ if (window.growStep1Open) growStep1Open(); else _growToast('Loading…', 'error'); return; }
+  if (f.flow){ if (window.growFlowOpen) growFlowOpen(f.flow); else _growToast('Loading…', 'error'); return; }
   _growToast('This step is coming soon — we\'re building it next', 'info');
 }
 function growUpskill(){
@@ -235,7 +235,10 @@ async function renderGrow(){
   try { var r = await window.supabase.rpc('pro_grow_state', { p_pro: pid }); st = (r && r.data) || {}; } catch (e) { console.error('[FFP Grow] state', e); }
   _growPulse = pulse; _growState = st;
   _stepDone = {};
-  try { var rs = await window.supabase.rpc('pro_grow_step_get', { p_pro: pid, p_code: 'strengths' }); var sd = rs && rs.data; if (sd && sd.status === 'done') _stepDone['strengths'] = true; } catch (e) {}
+  for (var gi = 0; gi < GROW_STEPS.length; gi++){
+    var gs = GROW_STEPS[gi]; if (!gs.flow) continue;
+    try { var rsg = await window.supabase.rpc('pro_grow_step_get', { p_pro: pid, p_code: gs.code }); var sd = rsg && rsg.data; if (sd && sd.status === 'done') _stepDone[gs.code] = true; } catch (e) {}
+  }
   _growStepIdx = null; _growRoadView = null;
   _growPaint();
 }

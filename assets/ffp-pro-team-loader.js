@@ -753,7 +753,7 @@
     if (!S.bDescs) S.bDescs = ['', '', '', '', ''];
     if (!S.bMeasure) S.bMeasure = 'time';
     if (!S.bDir) S.bDir = 'lower';
-    if (_benchTpl == null) { try { var r = await _tSb().rpc('benchmark_templates_list', { p_pro: S.pid }); _benchTpl = (r && r.data) || []; } catch (e) { _benchTpl = []; } }
+    if (_benchTpl == null) { try { var r = await _tSb().rpc('benchmark_templates_list', { p_pro: S.pid }); _benchTpl = (r && r.data) || []; _benchTpl.sort(function (a, b) { return String(a.name || '').toLowerCase().localeCompare(String(b.name || '').toLowerCase()); }); } catch (e) { _benchTpl = []; } }
     host.innerHTML = _benchHtml();
     try { if (window.FFPSelect) FFPSelect.enhance(document.getElementById('bm-tpl-wrap')); } catch (e) {}
   }

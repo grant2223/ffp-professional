@@ -492,8 +492,8 @@
       '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
         '<div style="display:flex;align-items:center;gap:9px;"><span onclick="teamSettingsBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">Team settings</div></div>' +
         '<div onclick="teamSetPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + 'Change header</div></div></div>' +
-      '<div style="padding:0 16px;"><div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:16px;">' +
-        '<div onclick="teamSetPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(10,26,36,.28),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;' + logoBg + '">' + (lg ? '' : _tEsc(_initials(team.name) || 'T')) + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
+      '<div style="padding:0 16px;"><div style="display:flex;align-items:flex-end;gap:13px;margin-top:-14px;position:relative;margin-bottom:16px;">' +
+        '<div onclick="teamSetPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(10,26,36,.28),0 0 0 4px #ffffff;cursor:pointer;overflow:hidden;' + logoBg + '">' + (lg ? '' : _tEsc(_initials(team.name) || 'T')) + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #ffffff;">' + _ic('photo_camera', 14) + '</div></div>' +
         '<div style="padding-bottom:6px;flex:1;min-width:0;"><div style="font-size:16px;font-weight:900;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(team.name || 'Team') + '</div><div style="font-size:11px;color:#869599;">Tap the logo to change</div></div></div></div>';
 
     var tabs = '<div class="ffpt-tabrow">' + SET_TABS.map(function (t) { return '<button class="ffpt-tab' + (S.setTab === t[0] ? ' on' : '') + '" onclick="teamSetTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</div>';
@@ -568,7 +568,12 @@
   }
   window.teamJoinDecide = async function (reqId, approve) {
     var S = window.FFP_TEAM;
-    try { await _tSb().rpc('pro_team_join_decide', { p_pro: S.pid, p_request: reqId, p_approve: approve }); var el = document.getElementById('tgr-' + reqId); if (el && el.parentNode) el.parentNode.removeChild(el); _tToast(approve ? 'Added to the team' : 'Declined', ''); if (approve) { try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {} } }
+    try {
+      await _tSb().rpc('pro_team_join_decide', { p_pro: S.pid, p_request: reqId, p_approve: approve });
+      _tToast(approve ? 'Added to the team' : 'Declined', '');
+      if (approve) { try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {} }
+      S.setTab = 'players'; _showTeamSettings();   // repaint so an approved player appears in the Roster immediately (+ the request drops off)
+    }
     catch (e) { console.error(e); _tToast('Could not update', 'error'); }
   };
   window.teamRename = async function () { var S = window.FFP_TEAM, name = (document.getElementById('tg-name') || {}).value || ''; if (!name.trim()) { _tToast('Name can\'t be empty', 'error'); return; } try { await _tSb().rpc('pro_team_update', { p_pro: S.pid, p_team: S.team, p_name: name.trim() }); _closeModal(); _tToast('Saved', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not save', 'error'); } };
@@ -635,7 +640,7 @@
   };
   window.teamApCopy = function () { var url = window._proInviteUrl || window.FFP_TEAM._invite; if (!url) { _tToast('Link not ready yet', 'error'); return; } var ok = false; try { navigator.clipboard.writeText(url); ok = true; } catch (e) {} if (!ok) { try { var ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); } catch (e2) {} } _tToast(ok ? 'Invite link copied' : ('Link: ' + url), ok ? '' : 'error'); };
   window.teamApEmail = function () { var url = window._proInviteUrl || window.FFP_TEAM._invite || ''; var team = _teamMeta(); try { window.location.href = 'mailto:?subject=' + encodeURIComponent('Join ' + (team.name || 'my team') + ' on FFP Passport') + '&body=' + encodeURIComponent('Join our team on FFP Passport — sign up here: ' + url); } catch (e) {} };
-  window.teamApDone = function () { var S = window.FFP_TEAM; S.setTab = 'players'; _showTeamSettings(); };
+  window.teamApDone = async function () { var S = window.FFP_TEAM; S.setTab = 'players'; try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {} _showTeamSettings(); };
   window.teamAddMemberOpen = function () { window.FFP_TEAM.setTab = 'players'; _showAddPlayerPage(); };
 
   // ── New benchmark — full-bleed page (Measured templates / Skill locked levels) ──

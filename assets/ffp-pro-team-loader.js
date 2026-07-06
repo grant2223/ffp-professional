@@ -621,8 +621,34 @@
   }
   function _benchRow(id, kind, name, sub) {
     var ico = kind === 'skill' ? 'my_location' : 'timer', bg = kind === 'skill' ? 'background:#eaf1fb;color:#2ba8e0;' : 'background:#e5f6f1;color:#0a3e44;';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #e4ebec;"><div style="width:36px;height:36px;border-radius:10px;' + bg + 'display:flex;align-items:center;justify-content:center;flex:0 0 auto;">' + _ic(ico, 20) + '</div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(name) + '</div><div style="font-size:11px;color:#869599;">' + _tEsc(sub) + '</div></div><span onclick="teamBenchDelete(\'' + id + '\',\'' + _tEsc((name || '').replace(/\'/g, '')) + '\')" style="color:#c0392b;cursor:pointer;flex:0 0 auto;">' + _ic('delete_outline', 20) + '</span></div>';
+    var nm = _tEsc((name || '').replace(/\'/g, ''));
+    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #e4ebec;cursor:pointer;" onclick="teamBenchEdit(\'' + id + '\',\'' + kind + '\')"><div style="width:36px;height:36px;border-radius:10px;' + bg + 'display:flex;align-items:center;justify-content:center;flex:0 0 auto;">' + _ic(ico, 20) + '</div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(name) + '</div><div style="font-size:11px;color:#869599;">' + _tEsc(sub) + '</div></div>' + _ic('edit', 17, '#869599') + '<span onclick="event.stopPropagation();teamBenchDelete(\'' + id + '\',\'' + nm + '\')" style="color:#c0392b;cursor:pointer;flex:0 0 auto;padding-left:4px;">' + _ic('delete_outline', 20) + '</span></div>';
   }
+  window.teamBenchEdit = async function (id, kind) {
+    var S = window.FFP_TEAM;
+    _clearBench();
+    S.setTab = (kind === 'skill') ? 'skills' : 'benchmarks';
+    var b = null;
+    try { var r = await _tSb().rpc('pro_benchmark_get', { p_pro: S.pid, p_benchmark: id }); if (r && r.error) throw r.error; b = (r && r.data) || null; }
+    catch (e) { console.error('[FFP Team] bench get', e); _tToast('Could not open' + (e && e.message ? ': ' + e.message : ''), 'error'); return; }
+    if (!b) { _tToast('Benchmark not found', 'error'); return; }
+    S.bEditId = b.id; S.bKind = b.kind; S.bName = b.name;
+    if (b.kind === 'skill') {
+      S.bTargetLevel = b.target_level || 3;
+      S.bDescs = ['', '', '', '', ''];
+      (b.levels || []).forEach(function (l) { if (l.level_no >= 1 && l.level_no <= 5) S.bDescs[l.level_no - 1] = l.description || ''; });
+    } else {
+      S.bCustom = true; S.bTemplate = null;
+      var u = b.unit;
+      S.bMeasure = (u === 's' || u === 'time') ? 'time' : (u === 'kg' ? 'weight' : 'level');
+      S.bUnit = (S.bMeasure === 'level') ? u : null;
+      S.bDir = b.direction || 'lower';
+      if (b.target_value == null) S.bTargetVal = '';
+      else if (S.bMeasure === 'time') { var s = Math.round(b.target_value), m = Math.floor(s / 60), ss = s % 60; S.bTargetVal = m + ':' + (ss < 10 ? '0' : '') + ss; }
+      else S.bTargetVal = String(b.target_value);
+    }
+    _showBenchmarkPage(b.kind);
+  };
   window.teamAddBenchmark = function () { window.FFP_TEAM.setTab = 'benchmarks'; if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('measured'); };
   window.teamAddSkill = function () { window.FFP_TEAM.setTab = 'skills'; if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('skill'); };
   window.teamBenchDelete = function (id, name) {
@@ -734,16 +760,22 @@
   function _measHint(meas) { var u = window.FFP_TEAM.bUnit; return meas === 'time' ? 'min:sec (e.g. 15:00)' : (meas === 'weight' ? (u || 'kg') : (u || 'number')); }
   function _benchHtml() {
     var S = window.FFP_TEAM, team = _teamMeta();
+    var editing = !!S.bEditId;
+    var title = editing ? ('Edit ' + (S.bKind === 'skill' ? 'skill' : 'benchmark')) : 'New benchmark';
     var head = '<div class="ffpt-hero" style="padding:16px 18px 16px;"><div class="ffpt-glow" style="right:-30px;"></div>' +
-      '<div style="position:relative;display:flex;align-items:center;gap:11px;"><span onclick="teamBenchBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span><div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#fff;">New benchmark</div><div style="font-size:11px;color:rgba(255,255,255,.55);">' + _tEsc(team.name || 'Team') + '</div></div></div></div>';
-    var toggle = '<div style="display:flex;gap:9px;margin-bottom:20px;">' +
+      '<div style="position:relative;display:flex;align-items:center;gap:11px;"><span onclick="teamBenchBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span><div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#fff;">' + title + '</div><div style="font-size:11px;color:rgba(255,255,255,.55);">' + _tEsc(team.name || 'Team') + '</div></div></div></div>';
+    var toggle = editing ? '' : ('<div style="display:flex;gap:9px;margin-bottom:20px;">' +
       '<button class="ffpt-typ' + (S.bKind === 'measured' ? ' on' : '') + '" onclick="teamBenchKind(\'measured\')">' + _ic('timer', 22) + '<div style="font-size:12.5px;font-weight:800;margin-top:5px;">Measured test</div></button>' +
-      '<button class="ffpt-typ' + (S.bKind === 'skill' ? ' on' : '') + '" onclick="teamBenchKind(\'skill\')">' + _ic('my_location', 22) + '<div style="font-size:12.5px;font-weight:800;margin-top:5px;">Skill</div></button></div>';
+      '<button class="ffpt-typ' + (S.bKind === 'skill' ? ' on' : '') + '" onclick="teamBenchKind(\'skill\')">' + _ic('my_location', 22) + '<div style="font-size:12.5px;font-weight:800;margin-top:5px;">Skill</div></button></div>');
     var body;
     if (S.bKind === 'measured') {
-      var opts = '<option value="">Select a test…</option>' + (_benchTpl || []).map(function (t) { return '<option value="' + t.id + '"' + (S.bTemplate && S.bTemplate.id === t.id ? ' selected' : '') + '>' + _tEsc(t.name) + (t.category ? ' · ' + _tEsc(t.category) : '') + '</option>'; }).join('') + '<option value="custom"' + (S.bCustom ? ' selected' : '') + '>＋ Custom test</option>';
-      body = '<div class="ffpt-clab">Test or assessment</div><div id="bm-tpl-wrap" style="margin-bottom:7px;"><select class="ffpt-in" id="bm-tpl" onchange="teamBenchTemplate(this.value)">' + opts + '</select></div><div style="font-size:11.5px;color:#869599;margin-bottom:20px;">Pick a standard test — or create your own.</div>';
-      if (S.bCustom) body += '<div class="ffpt-clab">Test name</div><input class="ffpt-in" id="bm-name" value="' + _tEsc(S.bName || '') + '" placeholder="e.g. 3km run" style="margin-bottom:20px;">';
+      if (editing) {
+        body = '<div class="ffpt-clab">Test name</div><input class="ffpt-in" id="bm-name" value="' + _tEsc(S.bName || '') + '" placeholder="e.g. 3km run" style="margin-bottom:20px;">';
+      } else {
+        var opts = '<option value="">Select a test…</option>' + (_benchTpl || []).map(function (t) { return '<option value="' + t.id + '"' + (S.bTemplate && S.bTemplate.id === t.id ? ' selected' : '') + '>' + _tEsc(t.name) + (t.category ? ' · ' + _tEsc(t.category) : '') + '</option>'; }).join('') + '<option value="custom"' + (S.bCustom ? ' selected' : '') + '>＋ Custom test</option>';
+        body = '<div class="ffpt-clab">Test or assessment</div><div id="bm-tpl-wrap" style="margin-bottom:7px;"><select class="ffpt-in" id="bm-tpl" onchange="teamBenchTemplate(this.value)">' + opts + '</select></div><div style="font-size:11.5px;color:#869599;margin-bottom:20px;">Pick a standard test — or create your own.</div>';
+        if (S.bCustom) body += '<div class="ffpt-clab">Test name</div><input class="ffpt-in" id="bm-name" value="' + _tEsc(S.bName || '') + '" placeholder="e.g. 3km run" style="margin-bottom:20px;">';
+      }
       body += '<div class="ffpt-clab">What you measure</div><div style="display:flex;gap:8px;margin-bottom:20px;">' +
         ['time', 'weight', 'level'].map(function (m) { var ic = { time: 'schedule', weight: 'fitness_center', level: 'stairs' }[m]; return '<button class="ffpt-typ' + (S.bMeasure === m ? ' on' : '') + '" onclick="teamBenchMeasure(\'' + m + '\')">' + _ic(ic, 19) + '<div style="font-size:11.5px;font-weight:800;margin-top:4px;text-transform:capitalize;">' + m + '</div></button>'; }).join('') + '</div>';
       body += '<div class="ffpt-clab">Target</div><input class="ffpt-in" id="bm-target" value="' + _tEsc(S.bTargetVal || '') + '" placeholder="' + _measHint(S.bMeasure) + '" style="margin-bottom:20px;">';
@@ -762,7 +794,7 @@
           '<textarea class="ffpt-in" id="bm-desc-' + i + '" rows="2" style="margin-top:6px;font-size:12.5px;font-weight:500;resize:vertical;' + (on ? 'border-color:#0a3e44;background:#f0f7f9;' : '') + '" placeholder="What ' + nm.toLowerCase() + ' looks like…">' + _tEsc(S.bDescs[i] || '') + '</textarea></div></div>';
       }).join('');
     }
-    return '<div class="ffpt"><div class="ffpt-cardg">' + head + '<div style="padding:16px;">' + toggle + body + '<button class="ffpt-cta" onclick="teamBenchSave()">Add benchmark</button></div></div></div>';
+    return '<div class="ffpt"><div class="ffpt-cardg">' + head + '<div style="padding:16px;">' + toggle + body + '<button class="ffpt-cta" onclick="teamBenchSave()">' + (editing ? 'Save changes' : 'Add benchmark') + '</button></div></div></div>';
   }
   function _capBench() {
     var S = window.FFP_TEAM;
@@ -782,7 +814,7 @@
     else { var t = (_benchTpl || []).find(function (x) { return x.id === val; }); if (t) { S.bCustom = false; S.bTemplate = t; S.bName = t.name; S.bMeasure = t.measure_type; S.bDir = t.direction; S.bUnit = t.unit_hint; } }
     _showBenchmarkPage();
   };
-  function _clearBench() { var S = window.FFP_TEAM; S.bTemplate = null; S.bCustom = false; S.bName = null; S.bTargetVal = null; S.bDescs = null; S.bMeasure = null; S.bDir = null; S.bTargetLevel = null; S.bUnit = null; }
+  function _clearBench() { var S = window.FFP_TEAM; S.bTemplate = null; S.bCustom = false; S.bName = null; S.bTargetVal = null; S.bDescs = null; S.bMeasure = null; S.bDir = null; S.bTargetLevel = null; S.bUnit = null; S.bEditId = null; }
   window.teamBenchBack = function () { var S = window.FFP_TEAM; S.setTab = (S.bKind === 'skill') ? 'skills' : 'benchmarks'; _clearBench(); _showTeamSettings(); };
   function _parseTarget(v, meas) { if (v == null || v === '') return null; v = String(v).trim(); if (meas === 'time' && /^\d+:\d{1,2}$/.test(v)) { var p = v.split(':'); return Number(p[0]) * 60 + Number(p[1]); } var n = Number(v); return isNaN(n) ? null : n; }
   async function _afterBenchSave(kind) { var S = window.FFP_TEAM; try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {} try { var lr = await _tSb().rpc('pro_teams_list', { p_pro: S.pid }); S.teams = (lr && lr.data) || S.teams; } catch (e) {} S.setTab = (kind === 'skill') ? 'skills' : 'benchmarks'; _showTeamSettings(); }
@@ -791,7 +823,7 @@
     if (S.bKind === 'skill') {
       var sname = S.bName || ''; if (!sname.trim()) { _tToast('Name the skill', 'error'); return; }
       var levels = SKILL_LEVELS.map(function (nm, i) { return { level_no: i + 1, name: nm, description: (S.bDescs[i] || null) }; });
-      try { var rs = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels }); if (rs && rs.error) throw rs.error; _tToast('Skill added', ''); _clearBench(); _afterBenchSave('skill'); }
+      try { var rs = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels, p_id: S.bEditId || null }); if (rs && rs.error) throw rs.error; _tToast(S.bEditId ? 'Skill updated' : 'Skill added', ''); _clearBench(); _afterBenchSave('skill'); }
       catch (e) { console.error('[FFP Team] skill save', e); _tToast('Could not add skill' + (e && e.message ? ': ' + e.message : ''), 'error'); }
       return;
     }
@@ -800,10 +832,10 @@
     var unit = S.bMeasure === 'time' ? 's' : (S.bMeasure === 'weight' ? 'kg' : (S.bUnit || 'level'));
     var target = _parseTarget(S.bTargetVal, S.bMeasure);
     try {
-      var rm = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: mname.trim(), p_unit: unit, p_target_value: target, p_direction: S.bDir || 'lower' });
+      var rm = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'measured', p_name: mname.trim(), p_unit: unit, p_target_value: target, p_direction: S.bDir || 'lower', p_id: S.bEditId || null });
       if (rm && rm.error) throw rm.error;
-      if (S.bCustom) { try { await _tSb().rpc('benchmark_template_save', { p_pro: S.pid, p_name: mname.trim(), p_measure_type: S.bMeasure, p_direction: S.bDir, p_unit_hint: unit }); } catch (e) {} }
-      _tToast('Benchmark added', ''); _clearBench(); _afterBenchSave('measured');
+      if (S.bCustom && !S.bEditId) { try { await _tSb().rpc('benchmark_template_save', { p_pro: S.pid, p_name: mname.trim(), p_measure_type: S.bMeasure, p_direction: S.bDir, p_unit_hint: unit }); } catch (e) {} }
+      _tToast(S.bEditId ? 'Benchmark updated' : 'Benchmark added', ''); _clearBench(); _afterBenchSave('measured');
     } catch (e) { console.error('[FFP Team] benchmark save', e); _tToast('Could not add benchmark' + (e && e.message ? ': ' + e.message : ''), 'error'); }
   };
   window.teamMarkCreateOpen = function () { _clearBench(); _showBenchmarkPage('measured'); };

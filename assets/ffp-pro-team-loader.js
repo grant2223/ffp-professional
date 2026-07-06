@@ -553,7 +553,7 @@
     _teamLoadInvite();
     var existing = {}; (S.players || []).forEach(function (p) { existing[p.member_id] = 1; });
     var cands = []; try { var r = await _tSb().rpc('pro_team_candidate_members', { p_pro: S.pid }); cands = (r && r.data) || []; } catch (e) { console.error(e); }
-    S._apCands = cands.map(function (c) { return { id: c.id, name: c.name, email: c.email, photo: c.photo, added: !!existing[c.id] }; });
+    S._apCands = cands.map(function (c) { return { id: c.id, name: c.name, email: c.email, photo: c.photo, has_passport: !!c.has_passport, added: !!(c.id && existing[c.id]) }; });
     _renderApList('');
   }
   async function _teamLoadInvite() {
@@ -570,12 +570,14 @@
     var host = document.getElementById('ap-list'); if (!host) return;
     var cands = window.FFP_TEAM._apCands || []; q = (q || '').toLowerCase();
     var list = cands.filter(function (c) { return !q || (c.name || '').toLowerCase().indexOf(q) >= 0 || (c.email || '').toLowerCase().indexOf(q) >= 0; });
-    if (!list.length) { host.innerHTML = '<div style="color:#5a6b6e;font-size:13px;padding:10px 2px;">' + (cands.length ? 'No match.' : 'No Passport clients yet — share your link above to bring people in.') + '</div>'; return; }
+    if (!list.length) { host.innerHTML = '<div style="color:#5a6b6e;font-size:13px;padding:10px 2px;">' + (cands.length ? 'No match.' : 'No clients yet — add clients in the Clients tab, or share your link above.') + '</div>'; return; }
     host.innerHTML = list.map(function (c) {
+      var action;
+      if (c.added) action = '<div style="display:flex;align-items:center;gap:5px;background:#e5f6ee;color:#1d7a4d;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;">' + _ic('check', 14) + 'Added</div>';
+      else if (c.has_passport) action = '<button style="border:1.5px solid #0a3e44;color:#0a3e44;background:#fff;border-radius:9px;padding:7px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamApAdd(\'' + c.id + '\',\'' + _tEsc((c.name || '').replace(/\'/g, '')) + '\')">Add</button>';
+      else action = '<button style="border:1px solid #e4ebec;color:#c8871a;background:#fff6df;border-radius:9px;padding:7px 12px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamApCopy()">Invite</button>';
       return '<div style="display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:1px solid #e4ebec;">' + _av(c.name, c.photo, 38) +
-        '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.name) + '</div><div style="font-size:11px;color:#869599;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.email || '') + '</div></div>' +
-        (c.added ? '<div style="display:flex;align-items:center;gap:5px;background:#e5f6ee;color:#1d7a4d;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;">' + _ic('check', 14) + 'Added</div>' :
-          '<button style="border:1.5px solid #0a3e44;color:#0a3e44;background:#fff;border-radius:9px;padding:7px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamApAdd(\'' + c.id + '\',\'' + _tEsc((c.name || '').replace(/\'/g, '')) + '\')">Add</button>') + '</div>';
+        '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.name) + '</div><div style="font-size:11px;color:#869599;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (c.has_passport ? _tEsc(c.email || '') : 'No Passport yet · invite to add') + '</div></div>' + action + '</div>';
     }).join('');
   }
   window.teamApFilter = function (v) { _renderApList(v); };

@@ -107,8 +107,8 @@
       '.ffpt-spec{display:flex;gap:3px;}.ffpt-spec div{flex:1;height:9px;border-radius:3px;}',
       '.ffpt-act{flex:0 0 auto;width:146px;background:#fff;border:1px solid #e4ebec;border-radius:14px;overflow:hidden;box-shadow:0 6px 16px rgba(10,62,68,.07);cursor:pointer;}',
       '.ffpt-day{flex:0 0 auto;width:42px;text-align:center;background:#f4f7f8;border-radius:10px;padding:8px 0;cursor:pointer;}',
-      '.ffpt-day .dd{font-size:10px;font-weight:800;color:#869599;}.ffpt-day .dk{font-size:10px;font-weight:800;color:#0f2327;margin-top:3px;}',
-      '.ffpt-day.on{background:#0a3e44;}.ffpt-day.on .dd,.ffpt-day.on .dk{color:#fff;}',
+      '.ffpt-day .dd{font-size:9.5px;font-weight:800;color:#869599;text-transform:uppercase;letter-spacing:.3px;}.ffpt-day .dnum{font-size:13px;font-weight:900;color:#0f2327;margin-top:1px;line-height:1;}.ffpt-day .dk{font-size:9px;font-weight:800;color:#0a3e44;margin-top:3px;}',
+      '.ffpt-day.on{background:#0a3e44;}.ffpt-day.on .dd,.ffpt-day.on .dk,.ffpt-day.on .dnum{color:#fff;}',
       '.ffpt-meal{display:flex;align-items:center;gap:11px;padding:9px 0;}',
       '.ffpt-mi{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}',
       '.ffpt-kc{font-size:11px;font-weight:800;color:#0a3e44;background:#f4f7f8;border-radius:7px;padding:4px 8px;}',
@@ -147,7 +147,7 @@
     var cards = (S.teams || []).map(function (t) {
       var cover = t.cover_url ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(t.cover_url) + '\');') : ('background:linear-gradient(135deg,#1d6a8f,#0a3e44);');
       var logoBg = t.logo_url ? ('background-size:cover;background-position:center;background-image:url(\'' + _tEsc(t.logo_url) + '\');') : '';
-      var meta = [t.sport, (t.member_count || 0) + ' player' + (t.member_count === 1 ? '' : 's'), (t.mark_count || 0) + ' benchmark' + (t.mark_count === 1 ? '' : 's')].filter(Boolean).join('  ·  ');
+      var meta = [t.sport, (t.member_count || 0) + ' athlete' + (t.member_count === 1 ? '' : 's'), (t.mark_count || 0) + ' benchmark' + (t.mark_count === 1 ? '' : 's')].filter(Boolean).join('  ·  ');
       return '<div class="ffpt-tl" onclick="teamOpen(\'' + t.id + '\')">' +
         '<div class="ffpt-tlcover" style="' + cover + '"><div style="position:relative;z-index:2;display:flex;align-items:center;gap:11px;"><div class="ffpt-tlcrest" style="' + logoBg + '">' + (t.logo_url ? '' : _tEsc(_initials(t.name) || 'T')) + '</div><div style="font-size:16px;font-weight:800;color:#fff;">' + _tEsc(t.name) + '</div></div></div>' +
         '<div class="ffpt-tlfoot"><span style="font-size:12.5px;font-weight:700;color:#5a6b6e;">' + _tEsc(meta) + '</span><div style="flex:1;"></div>' + _ic('chevron_right', 20, '#869599') + '</div></div>';
@@ -179,12 +179,12 @@
         '<div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;">' +
           '<div style="display:flex;align-items:center;gap:9px;">' + (canBack ? '<span onclick="teamBackFromCreate()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.85)') + '</span>' : '') + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;text-transform:uppercase;">New team</div></div>' +
           '<div onclick="teamPickCover()" style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 12px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">' + _ic('photo_camera', 15) + (S.cCover ? 'Change header' : 'Add header photo') + '</div></div>' +
-        '<div style="position:relative;padding:10px 16px 0;"><div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.4px;text-shadow:0 2px 8px rgba(0,0,0,.4);">Create your team</div><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.78);margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.4);">Everything your players log to their Passport shows up here.</div></div>' +
+        '<div style="position:relative;padding:10px 16px 0;"><div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.4px;text-shadow:0 2px 8px rgba(0,0,0,.4);">Create your team</div><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.78);margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.4);">Everything your athletes log to their Passport shows up here.</div></div>' +
       '</div>' +
       '<div style="padding:0 16px 18px;">' +
         '<div style="display:flex;align-items:flex-end;gap:13px;margin-top:-30px;position:relative;margin-bottom:18px;">' +
           '<div onclick="teamPickLogo()" style="position:relative;width:66px;height:66px;flex:0 0 auto;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;color:#0a3e44;font-weight:800;font-size:22px;box-shadow:0 8px 22px rgba(10,26,36,.28),0 0 0 4px #eef3f4;cursor:pointer;overflow:hidden;">' + logoInner + '<div style="position:absolute;bottom:-5px;right:-5px;width:26px;height:26px;border-radius:50%;background:#FFCC00;color:#0a3e44;display:flex;align-items:center;justify-content:center;border:2.5px solid #eef3f4;">' + _ic('photo_camera', 14) + '</div></div>' +
-          '<div style="padding-bottom:6px;"><div style="font-size:12px;font-weight:800;color:#0f2327;">Add a team logo</div><div style="font-size:11px;color:#869599;">Optional · shows on the players\' cards</div></div></div>' +
+          '<div style="padding-bottom:6px;"><div style="font-size:12px;font-weight:800;color:#0f2327;">Add a team logo</div><div style="font-size:11px;color:#869599;">Optional · shows on the athletes\' cards</div></div></div>' +
         '<div class="ffpt-clab">Team name</div><input class="ffpt-in" id="tc-name" placeholder="Riverside U18s" value="' + _tEsc(S.cName || '') + '" style="margin-bottom:20px;">' +
         '<div class="ffpt-clab">Type</div><div style="display:flex;gap:8px;margin-bottom:20px;" id="tc-types">' +
         TYPES.map(function (t) { return '<button class="ffpt-typ' + (S.cType === t[0] ? ' on' : '') + '" onclick="teamCType(\'' + t[0] + '\')">' + _ic(t[2], 21) + '<div style="font-size:10.5px;font-weight:700;margin-top:5px;">' + t[1] + '</div></button>'; }).join('') + '</div>' +
@@ -229,7 +229,7 @@
     var S = window.FFP_TEAM;
     return '<div class="ffpt-tabrow">' +
       '<button class="ffpt-tab' + (S.tab === 'overview' ? ' on' : '') + '" onclick="teamTab(\'overview\')">Overview</button>' +
-      '<button class="ffpt-tab' + (S.tab === 'players' ? ' on' : '') + '" onclick="teamTab(\'players\')">Players</button></div>';
+      '<button class="ffpt-tab' + (S.tab === 'players' ? ' on' : '') + '" onclick="teamTab(\'players\')">Athletes</button></div>';
   }
   function _teamIdRow(sub) {
     var team = _teamMeta(), c = _count();
@@ -239,14 +239,14 @@
       '<div style="flex:1;display:flex;align-items:center;gap:9px;cursor:pointer;min-width:0;" onclick="teamSettingsOpen()">' +
       '<div class="ffpt-logo" style="' + logoBg + '">' + (team.logo_url ? '' : _tEsc(_initials(team.name) || 'T')) + '</div>' +
       '<div style="flex:1;font-size:15px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(team.name || 'Team') + '</div>' +
-      '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);flex:0 0 auto;">' + (sub || (c + ' player' + (c === 1 ? '' : 's'))) + '</div></div></div>';
+      '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);flex:0 0 auto;">' + (sub || (c + ' athlete' + (c === 1 ? '' : 's'))) + '</div></div></div>';
   }
 
   function _paint() {
     var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
     if (S.tab === 'overview') host.innerHTML = '<div class="ffpt"><div class="ffpt-card">' + _overviewHero() + _tabs() + _overviewSections() + '</div></div>';
     else {
-      var detail = (S.detail && S.detail.member && S.detail.member.id === S.sel) ? _detailSections() : '<div class="ffpt-sec" style="color:#869599;font-weight:700;">Loading player…</div>';
+      var detail = !(S.players || []).length ? '<div class="ffpt-sec" style="text-align:center;color:#5a6b6e;font-weight:700;padding:26px 16px;">No athletes yet — tap <b style="color:#0a3e44;">+ Add</b> to add your first athlete.</div>' : ((S.detail && S.detail.member && S.detail.member.id === S.sel) ? _detailSections() : '<div class="ffpt-sec" style="color:#869599;font-weight:700;">Loading athlete…</div>');
       host.innerHTML = '<div class="ffpt"><div class="ffpt-card">' +
         '<div class="ffpt-hero" style="padding:14px 16px;">' + _teamIdRow() + '</div>' + _tabs() + _playersStrip() + '<div id="ffpt-detail">' + detail + '</div></div></div>';
     }
@@ -376,8 +376,9 @@
   function _arrCol(t) { return t === 'up' ? '#37b06a' : (t === 'down' ? '#e24b4a' : '#b6c1c3'); }
   function _playersStrip() {
     var S = window.FFP_TEAM, players = S.players || [];
-    if (!players.length) return '<div class="ffpt-sec" style="text-align:center;color:#5a6b6e;">No players yet.<br><button class="ffpt-cta" style="width:auto;margin-top:12px;padding:11px 20px;" onclick="teamAddMemberOpen()">Add a player</button></div>';
-    return '<div style="padding:6px 16px 12px;border-bottom:1px solid #f1f4f5;"><div class="ffpt-scroll" style="gap:13px;padding:9px 4px 14px;align-items:flex-start;">' +
+    // First item is always the "+" Add-athlete button.
+    var addBtn = '<div style="text-align:center;flex:0 0 auto;cursor:pointer;" onclick="teamAddMemberOpen()"><div style="width:44px;height:44px;border-radius:50%;border:2px dashed #bcd2d4;display:flex;align-items:center;justify-content:center;background:#f4f7f8;">' + _ic('add', 24, '#0a3e44') + '</div><div style="font-size:9.5px;font-weight:800;color:#0a3e44;margin-top:5px;">Add</div></div>';
+    return '<div style="padding:6px 16px 12px;border-bottom:1px solid #f1f4f5;"><div class="ffpt-scroll" style="gap:13px;padding:9px 4px 14px;align-items:flex-start;">' + addBtn +
       players.map(function (p) {
         var on = S.sel === p.member_id, ring = _arrCol(p.trajectory), down = p.trajectory === 'down';
         var badge = '<span class="ffpt-ab" style="background:' + ring + ';">' + _arrow(p.trajectory) + '</span>';
@@ -386,10 +387,10 @@
       }).join('') + '</div></div>';
   }
   async function teamSelectPlayer(mid) {
-    var S = window.FFP_TEAM; S.sel = mid; S.heroMark = 0; S.detail = null; S.nutri = null; S.nutriDay = null; _paint();
+    var S = window.FFP_TEAM; S.sel = mid; S.heroMark = 0; S.detail = null; S.nutri = null; S.nutriBase = null; S.nutriDay = null; _paint();
     try { var rd = await _tSb().rpc('pro_player_detail', { p_pro: S.pid, p_team: S.team, p_member: mid }); S.detail = (rd && rd.data) || {}; } catch (e) { console.error('[FFP Team] detail', e); S.detail = {}; }
     if (S.sel !== mid) return; _paint();
-    try { var rn = await _tSb().rpc('pro_player_nutrition', { p_pro: S.pid, p_member: mid }); if (S.sel === mid) { S.nutri = (rn && rn.data) || {}; _paint(); } } catch (e) { console.error('[FFP Team] nutrition', e); }
+    try { var rn = await _tSb().rpc('pro_player_nutrition', { p_pro: S.pid, p_member: mid }); if (S.sel === mid) { S.nutri = (rn && rn.data) || {}; S.nutriBase = S.nutri; S.nutriDay = S.nutri.day; _paint(); } } catch (e) { console.error('[FFP Team] nutrition', e); }
   }
   function _detailSections() {
     var S = window.FFP_TEAM, d = S.detail || {}, html = '', marks = d.marks || [];
@@ -400,7 +401,7 @@
       html += '<div class="ffpt-hero" style="padding:16px;"><div class="ffpt-glow" style="left:-20px;right:auto;background:radial-gradient(circle,rgba(55,224,198,.2),transparent 62%);"></div>' +
         '<div style="position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;"><div style="display:flex;align-items:baseline;gap:9px;"><div style="font-size:34px;font-weight:800;color:#fff;line-height:1;">' + _fmtVal(m.current, m.unit) + '</div>' + dl + '</div>' +
         '<div style="font-size:10.5px;color:rgba(255,255,255,.55);text-align:right;line-height:1.4;">' + away + '</div></div>' + _dotSVG(m) +
-        '<div style="position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">' + marks.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.heroMark ? ' ony' : '') + '" onclick="teamHeroMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') + '<button class="ffpt-pill" style="background:rgba(255,255,255,.08);" onclick="teamRecordOpen(\'' + m.id + '\',\'measured\')">+ log</button></div></div>';
+        '<div style="position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">' + marks.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.heroMark ? ' ony' : '') + '" onclick="teamHeroMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') + '</div></div>';
     } else html += '<div class="ffpt-hero" style="padding:18px 16px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;">No benchmarks yet — add them in Team settings.</div>';
     var wk = d.week || {};
     html += '<div class="ffpt-sec"><div style="display:flex;gap:9px;"><div class="ffpt-tile"><div class="tv">' + (d.streak || 0) + '</div><div class="tl">Day streak</div></div><div class="ffpt-tile"><div class="tv">' + (wk.sessions || 0) + '</div><div class="tl">This week</div></div><div class="ffpt-tile"><div class="tv" style="font-size:15px;">' + _relDay(d.last_logged) + '</div><div class="tl">Last logged</div></div></div></div>';
@@ -447,14 +448,21 @@
     return '<svg viewBox="0 0 300 60" style="position:relative;width:100%;height:auto;display:block;margin-bottom:13px;" xmlns="http://www.w3.org/2000/svg">' + tgt + '<polyline points="' + line + '" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>' + dots + '</svg>';
   }
   function _nutriHtml() {
-    var S = window.FFP_TEAM, nu = S.nutri;
-    var head = '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:13px;"><div class="st">Nutrition</div>' + (nu ? '<div style="font-size:11px;font-weight:700;color:#869599;">7-day avg <b style="color:#0f2327;">' + (nu.avg_kcal || 0) + '</b> kcal · ' + (nu.days_logged || 0) + '/7</div>' : '') + '</div>';
-    if (!nu) return head + '<div style="color:#869599;font-size:12.5px;font-weight:700;">Loading nutrition…</div>';
-    var sel = S.nutriDay || nu.day, dn = function (ds) { try { return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(ds + 'T00:00:00').getDay()]; } catch (e) { return ''; } };
+    var S = window.FFP_TEAM, nu = S.nutri, base = S.nutriBase || nu;
+    var head = '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:13px;"><div class="st">Nutrition</div>' + (base ? '<div style="font-size:11px;font-weight:700;color:#869599;">7-day avg <b style="color:#0f2327;">' + (base.avg_kcal || 0) + '</b> kcal · ' + (base.days_logged || 0) + '/7</div>' : '') + '</div>';
+    if (!base) return head + '<div style="color:#869599;font-size:12.5px;font-weight:700;">Loading nutrition…</div>';
+    var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function _dp(ds) { try { return new Date(ds + 'T00:00:00'); } catch (e) { return null; } }
+    var dn = function (ds) { var d = _dp(ds); return d ? WD[d.getDay()] : ''; };
+    var dnum = function (ds) { var d = _dp(ds); return d ? d.getDate() : ''; };
+    var dfull = function (ds) { var d = _dp(ds); return d ? (WD[d.getDay()] + ' ' + d.getDate() + ' ' + MO[d.getMonth()]) : ''; };
     var kf = function (k) { return k >= 1000 ? ((Math.round(k / 100) / 10) + 'k') : k; };
-    var days = '<div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">' + (nu.last7 || []).slice(-7).map(function (d) { return '<div class="ffpt-day' + (d.date === sel ? ' on' : '') + '" onclick="teamNutriDay(\'' + d.date + '\')"><div class="dd">' + dn(d.date) + '</div><div class="dk">' + (d.logged ? kf(d.kcal) : '—') + '</div></div>'; }).join('') + '</div>';
+    var sel = S.nutriDay || base.day;
+    // FIXED window: the last 7 days ENDING TODAY (from the base/today load). Selecting a day loads that day's panel but NEVER reorders/shifts the chips.
+    var week = (base.last7 || []).slice(-7);
+    var days = '<div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">' + week.map(function (d) { return '<div class="ffpt-day' + (d.date === sel ? ' on' : '') + '" onclick="teamNutriDay(\'' + d.date + '\')"><div class="dd">' + dn(d.date) + '</div><div class="dnum">' + dnum(d.date) + '</div><div class="dk">' + (d.logged ? kf(d.kcal) : '—') + '</div></div>'; }).join('') + '</div>';
     var panel;
-    if (sel === nu.day) {
+    if (nu && sel === nu.day) {
       var meals = nu.meals || {}, mac = nu.macros || {}, pC = mac.protein || 0, cC = mac.carbs || 0, fC = mac.fat || 0, tot = pC + cC + fC || 1;
       var mIcon = { breakfast: ['free_breakfast', '#fdeede', '#c8871a'], lunch: ['lunch_dining', '#e5f6ee', '#1d7a4d'], dinner: ['dinner_dining', '#e5f1f2', '#0a3e44'], snacks: ['bakery_dining', '#eaf4fb', '#2ba8e0'] };
       var mh = ['breakfast', 'lunch', 'dinner', 'snacks'].map(function (kk) {
@@ -463,8 +471,10 @@
         return '<div class="ffpt-meal"><div class="ffpt-mi" style="background:' + ic[1] + ';color:' + ic[2] + ';">' + _ic(ic[0], 18) + '</div><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:800;color:#0f2327;">' + kk.charAt(0).toUpperCase() + kk.slice(1) + '</div><div style="font-size:11px;color:#5a6b6e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(names) + '</div></div><div class="ffpt-kc">' + kc + '</div></div>';
       }).join('') || '<div style="color:#869599;font-size:12.5px;font-weight:700;padding:6px 0;">Nothing logged this day.</div>';
       var w = nu.water || {}, wp = w.goal ? Math.min(100, Math.round((w.ml || 0) * 100 / w.goal)) : 0;
-      panel = '<div style="background:#f9fbfb;border:1px solid #eef3f4;border-radius:14px;padding:13px;"><div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;"><div style="font-size:13px;font-weight:800;color:#0f2327;">' + dn(sel) + '</div><div style="font-size:11.5px;font-weight:800;color:#0a3e44;">' + (nu.day_total || 0) + ' kcal</div></div>' +
-        '<div style="display:flex;height:7px;border-radius:4px;overflow:hidden;margin-bottom:13px;"><div style="width:' + (pC * 100 / tot) + '%;background:#37b06a;"></div><div style="width:' + (cC * 100 / tot) + '%;background:#2ba8e0;"></div><div style="width:' + (fC * 100 / tot) + '%;background:#FFCC00;"></div></div>' + mh +
+      var pat = function (a, b) { return 'repeating-linear-gradient(45deg,' + a + ',' + a + ' 6px,' + b + ' 6px,' + b + ' 12px)'; };
+      panel = '<div style="background:#f9fbfb;border:1px solid #eef3f4;border-radius:14px;padding:13px;"><div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;"><div style="font-size:13px;font-weight:800;color:#0f2327;">' + dfull(sel) + '</div><div style="font-size:11.5px;font-weight:800;color:#0a3e44;">' + (nu.day_total || 0) + ' kcal</div></div>' +
+        '<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin-bottom:8px;border:1px solid #e4ebec;"><div style="width:' + (pC * 100 / tot) + '%;background:' + pat('#37b06a', '#2f9a5c') + ';"></div><div style="width:' + (cC * 100 / tot) + '%;background:' + pat('#2ba8e0', '#2492c4') + ';"></div><div style="width:' + (fC * 100 / tot) + '%;background:' + pat('#FFCC00', '#e6b800') + ';"></div></div>' +
+        '<div style="display:flex;gap:12px;margin-bottom:13px;font-size:10px;font-weight:800;color:#5a6b6e;"><span><span style="color:#37b06a;">■</span> P ' + Math.round(pC) + 'g</span><span><span style="color:#2ba8e0;">■</span> C ' + Math.round(cC) + 'g</span><span><span style="color:#e6b800;">■</span> F ' + Math.round(fC) + 'g</span></div>' + mh +
         '<div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #eef3f4;">' + _ic('local_drink', 17, '#2ba8e0') + '<div style="flex:1;"><div style="height:8px;border-radius:4px;background:#eef3f4;overflow:hidden;"><div style="width:' + wp + '%;height:100%;background:#2ba8e0;"></div></div></div><div style="font-size:11px;font-weight:800;color:#0a3e44;">' + ((w.ml || 0) / 1000).toFixed(1) + ' / ' + ((w.goal || 3000) / 1000).toFixed(1) + ' L</div></div></div>';
     } else panel = '<div style="background:#f9fbfb;border:1px solid #eef3f4;border-radius:14px;padding:13px;color:#869599;font-weight:700;font-size:12.5px;">Loading day…</div>';
     return head + days + panel;
@@ -504,7 +514,7 @@
 
   window.teamSettingsOpen = function () { window.FFP_TEAM.setTab = 'details'; _showTeamSettings(); };
   window.teamSettingsBack = function () { var S = window.FFP_TEAM; S.tab = 'overview'; if (S.overview || S.players) _paint(); else _load(S.team); };
-  var SET_TABS = [['players', 'Players'], ['benchmarks', 'Benchmarks'], ['details', 'Details']];
+  var SET_TABS = [['players', 'Athletes'], ['benchmarks', 'Benchmarks'], ['details', 'Details']];
   function _yAdd(label, fn) { return '<button onclick="' + fn + '" style="background:#FFCC00;color:#0a1a24;border:none;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;">' + _ic('add', 15, '#0a1a24') + label + '</button>'; }
   function _showTeamSettings() {
     var S = window.FFP_TEAM, host = document.getElementById('team-body'), team = _teamMeta(); if (!host) return;
@@ -538,9 +548,9 @@
     } else if (S.setTab === 'benchmarks') {
       body = _benchmarksSectionHtml();
     } else {
-      var roster = (S.players || []).map(function (p) { return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #e4ebec;">' + _av(p.name, p.photo, 34) + '<span style="flex:1;font-weight:700;color:#0f2327;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(p.name) + '</span><span style="color:#e24b4a;font-weight:800;font-size:13px;cursor:pointer;" onclick="teamRemoveMember(\'' + p.member_id + '\',\'' + _tEsc((p.name || '').replace(/\'/g, '')) + '\')">Remove</span></div>'; }).join('') || '<div style="color:#869599;font-size:13px;padding:8px 0;">No players yet — add from your clients or share your invite link.</div>';
+      var roster = (S.players || []).map(function (p) { return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #e4ebec;">' + _av(p.name, p.photo, 34) + '<span style="flex:1;font-weight:700;color:#0f2327;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(p.name) + '</span><span style="color:#e24b4a;font-weight:800;font-size:13px;cursor:pointer;" onclick="teamRemoveMember(\'' + p.member_id + '\',\'' + _tEsc((p.name || '').replace(/\'/g, '')) + '\')">Remove</span></div>'; }).join('') || '<div style="color:#869599;font-size:13px;padding:8px 0;">No athletes yet — add from your clients or share your invite link.</div>';
       body = '<div id="tg-reqs"></div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 4px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Roster · ' + (S.players || []).length + '</div>' + _yAdd('Add players', 'teamAddMemberOpen()') + '</div>' + roster;
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 4px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Roster · ' + (S.players || []).length + '</div>' + _yAdd('Add athletes', 'teamAddMemberOpen()') + '</div>' + roster;
     }
 
     host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' + header + tabs + '<div style="padding:16px;">' + body + '</div></div></div>';
@@ -613,7 +623,7 @@
     var team = _teamMeta();
     host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg">' +
       '<div class="ffpt-hero" style="padding:16px 18px 18px;"><div class="ffpt-glow" style="right:-30px;background:radial-gradient(circle,rgba(255,204,0,.22),transparent 62%);"></div>' +
-        '<div style="position:relative;display:flex;align-items:center;gap:11px;"><span onclick="teamApDone()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span><div class="ffpt-logo">' + _tEsc(_initials(team.name) || 'T') + '</div><div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#fff;">Add players</div><div style="font-size:11px;color:rgba(255,255,255,.55);">' + _tEsc(team.name || 'Team') + '</div></div></div></div>' +
+        '<div style="position:relative;display:flex;align-items:center;gap:11px;"><span onclick="teamApDone()" style="cursor:pointer;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span><div class="ffpt-logo">' + _tEsc(_initials(team.name) || 'T') + '</div><div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#fff;">Add athletes</div><div style="font-size:11px;color:rgba(255,255,255,.55);">' + _tEsc(team.name || 'Team') + '</div></div></div></div>' +
       '<div style="padding:16px;">' +
         '<div style="background:linear-gradient(135deg,#0a3e44,#2ba8e0);border-radius:15px;padding:15px;margin-bottom:20px;color:#fff;box-shadow:0 10px 26px rgba(43,168,224,.3);">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:11px;">' + _ic('link', 17, '#FFCC00') + '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">Share your invite link</div></div>' +
@@ -707,7 +717,7 @@
     } else {
       var COLS = ['#e24b4a', '#f0932b', '#37b06a', '#2ba8e0', '#8b5cf6'];
       body = '<div class="ffpt-clab">Skill name</div><input class="ffpt-in" id="bm-skname" value="' + _tEsc(S.bName || '') + '" placeholder="Snatch, First touch…" style="margin-bottom:20px;">';
-      body += '<div class="ffpt-clab">Describe each level · players see these</div>';
+      body += '<div class="ffpt-clab">Describe each level · athletes see these</div>';
       body += SKILL_LEVELS.map(function (nm, i) {
         var lv = i + 1, on = S.bTargetLevel === lv;
         return '<div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:14px;"><div style="width:12px;height:12px;border-radius:50%;background:' + COLS[i] + ';margin-top:4px;flex:0 0 auto;"></div>' +
@@ -763,8 +773,8 @@
   window.teamSkillCreateOpen = function () { _clearBench(); _showBenchmarkPage('skill'); };
 
   window.teamRecordOpen = function (benchId, kind) {
-    var S = window.FFP_TEAM; if (!S.sel) { _tToast('Open a player first', 'error'); return; }
-    var pname = (S.detail && S.detail.member && S.detail.member.name) || 'player', body;
+    var S = window.FFP_TEAM; if (!S.sel) { _tToast('Open an athlete first', 'error'); return; }
+    var pname = (S.detail && S.detail.member && S.detail.member.name) || 'athlete', body;
     if (kind === 'skill') { var sk = (S.detail.skills || []).find(function (x) { return x.id === benchId; }) || {}, maxL = sk.max_level || 5, opts = ''; for (var i = 1; i <= maxL; i++) opts += '<option value="' + i + '"' + (sk.level_no === i ? ' selected' : '') + '>Level ' + i + '</option>'; body = '<div style="font-size:13px;color:#5a6b6e;margin-bottom:6px;">' + _tEsc(sk.name || 'Skill') + ' — ' + _tEsc(pname) + '</div><label class="ffpt-mlab">Level</label><select class="ffpt-min" id="rec-level">' + opts + '</select><label class="ffpt-mlab">Note (optional)</label><input class="ffpt-min" id="rec-note" placeholder="What you saw">'; openModalShell('sm', 'Assess skill', body, _foot('Save', 'teamRecordSave(\'' + benchId + '\',\'skill\')')); }
     else { var mk = (S.detail.marks || []).find(function (x) { return x.id === benchId; }) || {}; body = '<div style="font-size:13px;color:#5a6b6e;margin-bottom:6px;">' + _tEsc(mk.name || 'Mark') + ' — ' + _tEsc(pname) + '</div><label class="ffpt-mlab">Result' + (mk.unit ? ' (' + _tEsc(mk.unit) + ')' : '') + '</label><input class="ffpt-min" id="rec-value" inputmode="decimal" placeholder="' + (mk.unit && /^s/i.test(mk.unit) ? 'seconds, e.g. 930' : 'value') + '"><label class="ffpt-mlab">Date</label><input class="ffpt-min" id="rec-date" type="date" value="' + _todayStr() + '"><label class="ffpt-mlab">Note (optional)</label><input class="ffpt-min" id="rec-note" placeholder="Conditions, effort…">'; openModalShell('sm', 'Log a result', body, _foot('Save', 'teamRecordSave(\'' + benchId + '\',\'measured\')')); }
   };
@@ -779,7 +789,7 @@
       _paint();
     } catch (e) { console.error(e); _tToast('Could not save', 'error'); }
   };
-  window.teamSwitchOpen = function () { var S = window.FFP_TEAM; var body = (S.teams || []).map(function (t) { return '<button style="display:flex;width:100%;align-items:center;gap:10px;padding:12px;border:1px solid #e4ebec;border-radius:12px;background:' + (t.id === S.team ? '#eef3f4' : '#fff') + ';margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left;" onclick="teamSwitch(\'' + t.id + '\')">' + _ic('groups', 20, '#0a3e44') + '<div><div style="font-weight:800;">' + _tEsc(t.name) + '</div><div style="font-size:12px;color:#5a6b6e;">' + (t.member_count || 0) + ' players</div></div></button>'; }).join('') + '<button class="ffpt-min" style="width:100%;margin-top:6px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="teamShowCreate();ffpCloseModal()">+ New team</button>'; openModalShell('sm', 'Your teams', body, '<button class="ffpt-min" style="width:auto;padding:11px 18px;background:#eef3f4;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>'); };
+  window.teamSwitchOpen = function () { var S = window.FFP_TEAM; var body = (S.teams || []).map(function (t) { return '<button style="display:flex;width:100%;align-items:center;gap:10px;padding:12px;border:1px solid #e4ebec;border-radius:12px;background:' + (t.id === S.team ? '#eef3f4' : '#fff') + ';margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left;" onclick="teamSwitch(\'' + t.id + '\')">' + _ic('groups', 20, '#0a3e44') + '<div><div style="font-weight:800;">' + _tEsc(t.name) + '</div><div style="font-size:12px;color:#5a6b6e;">' + (t.member_count || 0) + ' athletes</div></div></button>'; }).join('') + '<button class="ffpt-min" style="width:100%;margin-top:6px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="teamShowCreate();ffpCloseModal()">+ New team</button>'; openModalShell('sm', 'Your teams', body, '<button class="ffpt-min" style="width:auto;padding:11px 18px;background:#eef3f4;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>'); };
   window.teamSwitch = function (id) { window.FFP_TEAM.team = id; _closeModal(); _load(id); };
 
   window.renderTeam = renderTeam;

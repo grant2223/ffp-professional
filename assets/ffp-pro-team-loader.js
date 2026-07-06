@@ -591,8 +591,8 @@
   window.teamSetTab = function (t) { var S = window.FFP_TEAM; if (S.setTab === 'details') _capSet(); S.setTab = t; _showTeamSettings(); };
   function _capSet() { var S = window.FFP_TEAM, n = document.getElementById('ts-name'); if (n) S.sName = n.value; var sp = document.getElementById('ts-sport'); if (sp) S.sSport = sp.value; var d = document.getElementById('ts-desc'); if (d) S.sDesc = d.value; }
   window.teamSetType = function (t) { _capSet(); window.FFP_TEAM.sType = t; document.querySelectorAll('#ts-types .ffpt-typ').forEach(function (b, i) { b.classList.toggle('on', TYPES[i][0] === t); }); };
-  window.teamSetPickCover = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-cover-' + S.team, aspect: 16 / 9, outW: 1280, outH: 720, title: 'Header image', onDone: function (url) { S.sCover = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
-  window.teamSetPickLogo = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-logo-' + S.team, aspect: 1, outW: 512, outH: 512, title: 'Team logo', onDone: function (url) { S.sLogo = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
+  window.teamSetPickCover = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-cover-' + S.team + '-' + Date.now(), aspect: 16 / 9, outW: 1280, outH: 720, title: 'Header image', onDone: function (url) { S.sCover = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
+  window.teamSetPickLogo = function () { _capSet(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-logo-' + S.team + '-' + Date.now(), aspect: 1, outW: 512, outH: 512, title: 'Team logo', onDone: function (url) { S.sLogo = url; _showTeamSettings(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
   function _clearSet() { var S = window.FFP_TEAM; S.sName = S.sSport = S.sDesc = S.sLogo = S.sCover = null; S.sType = null; S.sKey = null; }
   window.teamSettingsSave = async function () {
     _capSet(); var S = window.FFP_TEAM, name = (S.sName || '');
@@ -822,7 +822,13 @@
     _capBench(); var S = window.FFP_TEAM;
     if (S.bKind === 'skill') {
       var sname = S.bName || ''; if (!sname.trim()) { _tToast('Name the skill', 'error'); return; }
-      var levels = SKILL_LEVELS.map(function (nm, i) { return { level_no: i + 1, name: nm, description: (S.bDescs[i] || null) }; });
+      // Read the description textareas DIRECTLY at save time (source of truth), falling back to captured state — so an edit always sends what's on screen.
+      var levels = SKILL_LEVELS.map(function (nm, i) {
+        var d = document.getElementById('bm-desc-' + i);
+        var desc = d ? d.value : ((S.bDescs && S.bDescs[i]) || '');
+        desc = (desc == null ? '' : String(desc)).trim();
+        return { level_no: i + 1, name: nm, description: desc || null };
+      });
       try { var rs = await _tSb().rpc('pro_benchmark_upsert', { p_pro: S.pid, p_team: S.team, p_kind: 'skill', p_name: sname.trim(), p_target_level: S.bTargetLevel || 3, p_levels: levels, p_id: S.bEditId || null }); if (rs && rs.error) throw rs.error; _tToast(S.bEditId ? 'Skill updated' : 'Skill added', ''); _clearBench(); _afterBenchSave('skill'); }
       catch (e) { console.error('[FFP Team] skill save', e); _tToast('Could not add skill' + (e && e.message ? ': ' + e.message : ''), 'error'); }
       return;

@@ -76,7 +76,7 @@
       '.ffpt-ms{font-family:"Material Icons";font-style:normal;line-height:1;vertical-align:middle;}',
       '.ffpt-card{background:#fff;border:none;border-radius:0;max-width:none;margin:0;box-shadow:none;overflow:hidden;min-height:calc(100dvh - 96px);}',
       '.ffpt-tl{border-radius:16px;overflow:hidden;background:#fff;border:1px solid #e4ebec;box-shadow:0 6px 18px rgba(10,62,68,.07);margin-bottom:13px;cursor:pointer;}',
-      '.ffpt-tlcover{height:88px;position:relative;display:flex;align-items:flex-end;padding:12px;}',
+      '.ffpt-tlcover{height:176px;position:relative;display:flex;align-items:flex-end;padding:14px;}',
       '.ffpt-tlcover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,18,26,0) 30%,rgba(6,18,26,.66) 100%);}',
       '.ffpt-tlcrest{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex:0 0 auto;background-size:cover;background-position:center;}',
       '.ffpt-tlfoot{display:flex;align-items:center;gap:8px;padding:11px 14px;}',
@@ -147,7 +147,7 @@
     var cards = (S.teams || []).map(function (t) {
       var cover = t.cover_url ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(t.cover_url) + '\');') : ('background:linear-gradient(135deg,#1d6a8f,#0a3e44);');
       var logoBg = t.logo_url ? ('background-size:cover;background-position:center;background-image:url(\'' + _tEsc(t.logo_url) + '\');') : '';
-      var meta = [t.sport, (t.member_count || 0) + ' player' + (t.member_count === 1 ? '' : 's'), (t.mark_count || 0) + ' mark' + (t.mark_count === 1 ? '' : 's')].filter(Boolean).join('  ·  ');
+      var meta = [t.sport, (t.member_count || 0) + ' player' + (t.member_count === 1 ? '' : 's'), (t.mark_count || 0) + ' benchmark' + (t.mark_count === 1 ? '' : 's')].filter(Boolean).join('  ·  ');
       return '<div class="ffpt-tl" onclick="teamOpen(\'' + t.id + '\')">' +
         '<div class="ffpt-tlcover" style="' + cover + '"><div style="position:relative;z-index:2;display:flex;align-items:center;gap:11px;"><div class="ffpt-tlcrest" style="' + logoBg + '">' + (t.logo_url ? '' : _tEsc(_initials(t.name) || 'T')) + '</div><div style="font-size:16px;font-weight:800;color:#fff;">' + _tEsc(t.name) + '</div></div></div>' +
         '<div class="ffpt-tlfoot"><span style="font-size:12.5px;font-weight:700;color:#5a6b6e;">' + _tEsc(meta) + '</span><div style="flex:1;"></div>' + _ic('chevron_right', 20, '#869599') + '</div></div>';
@@ -265,8 +265,7 @@
       '<div style="text-align:right;">' + (f && f.target != null ? '<div style="font-size:14px;font-weight:800;color:#37E0C6;">target ' + _fmtVal(f.target, f.unit) + '</div>' : '') + (hit ? '<div style="font-size:11px;color:rgba(255,255,255,.55);">' + hit + '</div>' : '') + '</div></div>' +
       (f ? _barSVG(f) : _barPlaceholder()) +
       '<div style="position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">' +
-      fits.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.ovMark ? ' ony' : '') + '" onclick="teamOvMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') +
-      '<button class="ffpt-pill" style="background:rgba(255,255,255,.10);border:1px dashed rgba(255,255,255,.3);color:#fff;" onclick="teamMarkCreateOpen()">+ Add a mark</button></div></div>';
+      fits.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.ovMark ? ' ony' : '') + '" onclick="teamOvMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') + '</div></div>';
     return h;
   }
   function _barPlaceholder() {
@@ -310,7 +309,7 @@
     // Skills
     var sk = ov.skills || [];
     html += '<div class="ffpt-band"></div><div class="ffpt-sec">';
-    if (!sk.length) html += '<div style="display:flex;align-items:center;justify-content:space-between;"><div class="st">Skills</div><span style="font-size:12px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamSkillCreateOpen()">+ Add ▾</span></div><div style="color:#869599;font-size:12.5px;font-weight:700;margin-top:10px;">No skills yet — add one to track each player\'s level.</div>';
+    if (!sk.length) html += '<div class="st">Skills</div><div style="color:#869599;font-size:12.5px;font-weight:700;margin-top:10px;">No skills yet — add benchmarks in Team settings.</div>';
     else {
       if (S.ovSkill >= sk.length) S.ovSkill = 0; var cur = sk[S.ovSkill];
       html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="st">Skills</div><span style="font-size:12px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamSkillCycle()">' + _tEsc(cur.name) + ' ▾</span></div>' + _skillCols(cur);
@@ -485,6 +484,8 @@
         '<div class="ffpt-clab">Sport</div><div id="ts-sport-wrap" style="margin-bottom:20px;"><select class="ffpt-in" id="ts-sport">' + _sportOptions(sportV) + '</select></div>' +
         '<div class="ffpt-clab">Description</div><textarea class="ffpt-in" id="ts-desc" rows="3" style="resize:vertical;">' + _tEsc(descV) + '</textarea>' +
         '<div class="ffpt-band" style="margin:22px -16px;"></div>' +
+        _benchmarksSectionHtml() +
+        '<div class="ffpt-band" style="margin:22px -16px;"></div>' +
         '<div id="tg-reqs"></div>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Roster · ' + (S.players || []).length + '</div><span style="font-size:12.5px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamAddMemberOpen()">+ Add players</span></div>' + roster +
         '<button class="ffpt-cta" style="margin-top:24px;" onclick="teamSettingsSave()">Save changes</button>' +
@@ -510,7 +511,23 @@
   window.teamDeleteConfirm = function () {
     var S = window.FFP_TEAM, team = _teamMeta();
     var go = async function () { try { await _tSb().rpc('pro_team_delete', { p_pro: S.pid, p_team: S.team }); _clearSet(); _tToast('Team deleted', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not delete', 'error'); } };
-    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Delete ' + (team.name || 'this team') + '?', body: 'This removes the team, its marks and skills, and every recorded result. This can\'t be undone.', action: 'Delete team', onOk: go }); else if (confirm('Delete this team?')) go();
+    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Delete ' + (team.name || 'this team') + '?', body: 'This removes the team, its benchmarks, and every recorded result. This can\'t be undone.', action: 'Delete team', onOk: go }); else if (confirm('Delete this team?')) go();
+  };
+  function _benchmarksSectionHtml() {
+    var ov = window.FFP_TEAM.overview || {}, fits = ov.fitness || [], sk = ov.skills || [], rows = '';
+    fits.forEach(function (f) { rows += _benchRow(f.id, 'measured', f.name, f.target != null ? ('Target ' + _fmtVal(f.target, f.unit)) : 'No target set'); });
+    sk.forEach(function (s) { var tl = s.target_level, ln = (s.levels || []).filter(function (l) { return l.level_no === tl; })[0]; rows += _benchRow(s.id, 'skill', s.name, tl ? ('Target · ' + (ln ? ln.name : ('Level ' + tl))) : 'No target set'); });
+    if (!rows) rows = '<div style="color:#869599;font-size:12.5px;font-weight:700;padding:10px 0;">No benchmarks yet — add the tests &amp; skills this squad is measured on.</div>';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px;"><div style="font-size:15px;font-weight:800;color:#0f2327;">Benchmarks</div><span style="font-size:12.5px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamAddBenchmark()">+ Add</span></div><div style="font-size:11.5px;color:#869599;margin-bottom:2px;">What this squad is measured on.</div>' + rows;
+  }
+  function _benchRow(id, kind, name, sub) {
+    var ico = kind === 'skill' ? 'my_location' : 'timer', bg = kind === 'skill' ? 'background:#eaf1fb;color:#2ba8e0;' : 'background:#e5f6f1;color:#0a3e44;';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #e4ebec;"><div style="width:36px;height:36px;border-radius:10px;' + bg + 'display:flex;align-items:center;justify-content:center;flex:0 0 auto;">' + _ic(ico, 20) + '</div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(name) + '</div><div style="font-size:11px;color:#869599;">' + _tEsc(sub) + '</div></div><span onclick="teamBenchDelete(\'' + id + '\',\'' + _tEsc((name || '').replace(/\'/g, '')) + '\')" style="color:#c0392b;cursor:pointer;flex:0 0 auto;">' + _ic('delete_outline', 20) + '</span></div>';
+  }
+  window.teamAddBenchmark = function () { if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('measured'); };
+  window.teamBenchDelete = function (id, name) {
+    var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_benchmark_delete', { p_pro: S.pid, p_benchmark: id }); _tToast('Benchmark removed', ''); try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {} _showTeamSettings(); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } };
+    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'benchmark') + '?', body: 'This deletes the benchmark and all recorded results for it.', action: 'Remove', onOk: go }); else go();
   };
   async function _teamLoadReqs() {
     var S = window.FFP_TEAM, host = document.getElementById('tg-reqs'); if (!host) return;

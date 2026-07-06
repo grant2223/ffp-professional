@@ -377,7 +377,7 @@
   function _playersStrip() {
     var S = window.FFP_TEAM, players = S.players || [];
     if (!players.length) return '<div class="ffpt-sec" style="text-align:center;color:#5a6b6e;">No players yet.<br><button class="ffpt-cta" style="width:auto;margin-top:12px;padding:11px 20px;" onclick="teamAddMemberOpen()">Add a player</button></div>';
-    return '<div style="padding:12px 16px 14px;border-bottom:1px solid #f1f4f5;"><div class="ffpt-scroll" style="gap:13px;">' +
+    return '<div style="padding:6px 16px 12px;border-bottom:1px solid #f1f4f5;"><div class="ffpt-scroll" style="gap:13px;padding:9px 4px 14px;align-items:flex-start;">' +
       players.map(function (p) {
         var on = S.sel === p.member_id, ring = _arrCol(p.trajectory), down = p.trajectory === 'down';
         var badge = '<span class="ffpt-ab" style="background:' + ring + ';">' + _arrow(p.trajectory) + '</span>';
@@ -417,7 +417,9 @@
       html += '<div style="display:flex;gap:11px;overflow-x:auto;scrollbar-width:none;">' + rec.slice(0, 8).map(function (a, i) {
         var stat = [a.distance_km ? (a.distance_km + 'km') : '', a.duration_min ? (a.duration_min + ' min') : ''].filter(Boolean).join(' · ') || _relDay(a.logged_at);
         var v = a.verified ? '<span style="position:absolute;top:7px;right:7px;color:#37E0C6;">' + _ic('verified', 14) + '</span>' : '';
-        return '<div class="ffpt-act" onclick="teamOpenActivity(\'' + a.id + '\')"><div style="height:52px;background:' + gr[i % 3] + ';position:relative;">' + v + '<span style="position:absolute;left:9px;bottom:7px;color:#fff;">' + _ic(_sportIcon(a.category, a.activity), 20) + '</span></div><div style="padding:9px 11px;"><div style="font-size:12.5px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(a.activity || 'Activity') + '</div><div style="font-size:10px;color:#869599;font-weight:600;margin:2px 0 4px;">' + _relDay(a.logged_at) + '</div><div style="font-size:11px;font-weight:800;color:#0a3e44;">' + _tEsc(stat) + '</div></div></div>';
+        var cov = a.photo_url ? ('height:64px;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(a.photo_url) + '\');position:relative;') : ('height:52px;background:' + gr[i % 3] + ';position:relative;');
+        var covIcon = a.photo_url ? '' : ('<span style="position:absolute;left:9px;bottom:7px;color:#fff;">' + _ic(_sportIcon(a.category, a.activity), 20) + '</span>');
+        return '<div class="ffpt-act" onclick="teamOpenActivity(\'' + a.id + '\')"><div style="' + cov + '">' + v + covIcon + '</div><div style="padding:9px 11px;"><div style="font-size:12.5px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(a.activity || 'Activity') + '</div><div style="font-size:10px;color:#869599;font-weight:600;margin:2px 0 4px;">' + _relDay(a.logged_at) + '</div><div style="font-size:11px;font-weight:800;color:#0a3e44;">' + _tEsc(stat) + '</div></div></div>';
       }).join('') + '</div>';
     } else html += '<div style="color:#869599;font-size:12.5px;font-weight:700;">No activity in the last 7 days.</div>';
     html += '</div>';
@@ -426,7 +428,15 @@
   }
   function _dotSVG(m) {
     var hist = (m.history || []).filter(function (h) { return h.value != null; });
-    if (!hist.length) return '<div style="position:relative;color:rgba(255,255,255,.5);font-size:12px;margin-bottom:13px;">No history yet.</div>';
+    if (!hist.length) {
+      // Empty graph — drawn so the benchmark section always reads as a chart, awaiting the first result.
+      var xs = [16, 86, 150, 214, 284], ys = [40, 30, 36, 26, 34];
+      var tgtE = (m.target != null) ? '<line x1="6" y1="30" x2="294" y2="30" stroke="rgba(55,224,198,.45)" stroke-width="1.2" stroke-dasharray="4 3"/><text x="294" y="24" text-anchor="end" font-size="8" font-weight="800" fill="rgba(55,224,198,.7)" font-family="Montserrat">target</text>' : '';
+      var pl = xs.map(function (x, i) { return x + ',' + ys[i]; }).join(' ');
+      var dts = xs.map(function (x, i) { return '<circle cx="' + x + '" cy="' + ys[i] + '" r="3.5" fill="rgba(255,255,255,.12)"/>'; }).join('');
+      return '<svg viewBox="0 0 300 60" style="position:relative;width:100%;height:auto;display:block;margin-bottom:7px;" xmlns="http://www.w3.org/2000/svg">' + tgtE + '<polyline points="' + pl + '" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1.5"/>' + dts + '</svg>' +
+        '<div style="position:relative;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;margin-bottom:12px;">Awaiting the first result — log one to start the graph.</div>';
+    }
     var vals = hist.map(function (h) { return Number(h.value); }), all = vals.concat(m.target != null ? [Number(m.target)] : []);
     var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), span = (mx - mn) || 1, lb = _lowerBetter(m.direction);
     function y(v) { var f = (Number(v) - mn) / span; return lb ? (8 + 44 * f) : (52 - 44 * f); }
@@ -442,7 +452,7 @@
     if (!nu) return head + '<div style="color:#869599;font-size:12.5px;font-weight:700;">Loading nutrition…</div>';
     var sel = S.nutriDay || nu.day, dn = function (ds) { try { return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(ds + 'T00:00:00').getDay()]; } catch (e) { return ''; } };
     var kf = function (k) { return k >= 1000 ? ((Math.round(k / 100) / 10) + 'k') : k; };
-    var days = '<div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">' + (nu.last7 || []).map(function (d) { return '<div class="ffpt-day' + (d.date === sel ? ' on' : '') + '" onclick="teamNutriDay(\'' + d.date + '\')"><div class="dd">' + dn(d.date) + '</div><div class="dk">' + (d.logged ? kf(d.kcal) : '—') + '</div></div>'; }).join('') + '</div>';
+    var days = '<div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">' + (nu.last7 || []).slice(-7).map(function (d) { return '<div class="ffpt-day' + (d.date === sel ? ' on' : '') + '" onclick="teamNutriDay(\'' + d.date + '\')"><div class="dd">' + dn(d.date) + '</div><div class="dk">' + (d.logged ? kf(d.kcal) : '—') + '</div></div>'; }).join('') + '</div>';
     var panel;
     if (sel === nu.day) {
       var meals = nu.meals || {}, mac = nu.macros || {}, pC = mac.protein || 0, cC = mac.carbs || 0, fC = mac.fat || 0, tot = pC + cC + fC || 1;
@@ -460,7 +470,25 @@
     return head + days + panel;
   }
   window.teamHeroMark = function (i) { window.FFP_TEAM.heroMark = i; _paint(); };
-  window.teamOpenActivity = function (id) { _tToast('Activity ' + id, ''); };
+  window.teamOpenActivity = function (id) {
+    var S = window.FFP_TEAM, d = S.detail || {}, a = (d.recent || []).find(function (x) { return x.id === id; });
+    if (!a) { _tToast('Activity not found', 'error'); return; }
+    var grad = 'linear-gradient(135deg,#0e5a63,#0a1a24)';
+    var cover = a.photo_url
+      ? '<div style="height:200px;border-radius:12px;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(a.photo_url) + '\');margin-bottom:14px;position:relative;">' + (a.verified ? '<span style="position:absolute;top:10px;right:10px;background:rgba(8,20,32,.6);color:#37E0C6;border-radius:100px;padding:4px 10px;font-size:11px;font-weight:800;">' + _ic('verified', 13) + ' Verified</span>' : '') + '</div>'
+      : '<div style="height:120px;border-radius:12px;background:' + grad + ';display:flex;align-items:center;justify-content:center;margin-bottom:14px;">' + _ic(_sportIcon(a.category, a.activity), 44, '#fff') + '</div>';
+    var tile = function (val, lab) { return '<div class="ffpt-tile"><div class="tv">' + val + '</div><div class="tl">' + lab + '</div></div>'; };
+    var tiles = '';
+    if (a.distance_km) tiles += tile(a.distance_km + '<span style="font-size:11px;color:#869599;">km</span>', 'Distance');
+    if (a.duration_min) tiles += tile(a.duration_min + '<span style="font-size:11px;color:#869599;">min</span>', 'Time');
+    tiles += tile('<span style="font-size:14px;">' + _relDay(a.logged_at) + '</span>', 'Logged');
+    var body = cover +
+      '<div style="font-size:18px;font-weight:900;color:#0f2327;">' + _tEsc(a.activity || 'Activity') + '</div>' +
+      (a.category ? '<div style="font-size:12px;color:#869599;margin-top:2px;">' + _tEsc(a.category) + '</div>' : '') +
+      '<div style="display:flex;gap:9px;margin-top:14px;">' + tiles + '</div>';
+    if (typeof openModalShell === 'function') openModalShell('sm', 'Activity', body, '<button class="ffpt-min" style="width:auto;padding:11px 20px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>');
+    else _tToast(a.activity || 'Activity', '');
+  };
   async function teamNutriDay(dateStr) {
     var S = window.FFP_TEAM; S.nutriDay = dateStr; _paint();
     try { var rn = await _tSb().rpc('pro_player_nutrition', { p_pro: S.pid, p_member: S.sel, p_day: dateStr }); S.nutri = (rn && rn.data) || {}; S.nutriDay = dateStr; _paint(); } catch (e) { console.error('[FFP Team] nutri day', e); }

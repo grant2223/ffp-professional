@@ -75,6 +75,12 @@
       '@media (max-width:859px){.ffpt{margin:-14px -14px 0;}}',
       '.ffpt-ms{font-family:"Material Icons";font-style:normal;line-height:1;vertical-align:middle;}',
       '.ffpt-card{background:#fff;border:none;border-radius:0;max-width:none;margin:0;box-shadow:none;overflow:hidden;min-height:calc(100dvh - 96px);}',
+      '.ffpt-tl{border-radius:16px;overflow:hidden;background:#fff;border:1px solid #e4ebec;box-shadow:0 6px 18px rgba(10,62,68,.07);margin-bottom:13px;cursor:pointer;}',
+      '.ffpt-tlcover{height:88px;position:relative;display:flex;align-items:flex-end;padding:12px;}',
+      '.ffpt-tlcover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,18,26,0) 30%,rgba(6,18,26,.66) 100%);}',
+      '.ffpt-tlcrest{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex:0 0 auto;background-size:cover;background-position:center;}',
+      '.ffpt-tlfoot{display:flex;align-items:center;gap:8px;padding:11px 14px;}',
+      '.ffpt-tlnew{border:1.5px dashed #ccd9da;border-radius:16px;padding:16px;text-align:center;color:#0a3e44;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}',
       '.ffpt-cardg{background:#eef3f4;border:none;border-radius:0;max-width:none;margin:0;box-shadow:none;overflow:hidden;min-height:calc(100dvh - 96px);}',
       '.ffpt-hero{position:relative;background:radial-gradient(120% 95% at 50% 0%,#0f3b4a 0%,#0a1a24 62%,#06121a 100%);padding:15px 16px 16px;overflow:hidden;}',
       '.ffpt-glow{position:absolute;top:-40px;right:-30px;width:230px;height:180px;background:radial-gradient(circle,rgba(43,168,224,.26),transparent 62%);pointer-events:none;}',
@@ -131,9 +137,27 @@
     try { var r = await _tSb().rpc('pro_teams_list', { p_pro: pid }); S.teams = (r && r.data) || []; }
     catch (e) { console.error('[FFP Team] list', e); S.teams = []; }
     if (!S.teams.length) { _showCreatePage(); return; }
-    if (!S.team || !S.teams.find(function (t) { return t.id === S.team; })) S.team = S.teams[0].id;
-    await _load(S.team);
+    _showTeamsLanding();
   }
+
+  // ════════ TEAMS LANDING (cards to click into) ════════
+  function _showTeamsLanding() {
+    var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
+    _styles(); S.tab = 'overview'; S.team = null; S.sel = null; S.detail = null;
+    var cards = (S.teams || []).map(function (t) {
+      var cover = t.cover_url ? ('background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(t.cover_url) + '\');') : ('background:linear-gradient(135deg,#1d6a8f,#0a3e44);');
+      var logoBg = t.logo_url ? ('background-size:cover;background-position:center;background-image:url(\'' + _tEsc(t.logo_url) + '\');') : '';
+      var meta = [t.sport, (t.member_count || 0) + ' player' + (t.member_count === 1 ? '' : 's'), (t.mark_count || 0) + ' mark' + (t.mark_count === 1 ? '' : 's')].filter(Boolean).join('  ·  ');
+      return '<div class="ffpt-tl" onclick="teamOpen(\'' + t.id + '\')">' +
+        '<div class="ffpt-tlcover" style="' + cover + '"><div style="position:relative;z-index:2;display:flex;align-items:center;gap:11px;"><div class="ffpt-tlcrest" style="' + logoBg + '">' + (t.logo_url ? '' : _tEsc(_initials(t.name) || 'T')) + '</div><div style="font-size:16px;font-weight:800;color:#fff;">' + _tEsc(t.name) + '</div></div></div>' +
+        '<div class="ffpt-tlfoot"><span style="font-size:12.5px;font-weight:700;color:#5a6b6e;">' + _tEsc(meta) + '</span><div style="flex:1;"></div>' + _ic('chevron_right', 20, '#869599') + '</div></div>';
+    }).join('');
+    host.innerHTML = '<div class="ffpt"><div style="max-width:560px;margin:0 auto;padding:16px 16px 0;box-sizing:border-box;">' +
+      '<div style="font-size:20px;font-weight:900;color:#0f2327;letter-spacing:-.3px;margin-bottom:16px;">Your teams</div>' + cards +
+      '<div class="ffpt-tlnew" onclick="teamShowCreate()">' + _ic('add', 19) + 'Create a team</div></div></div>';
+  }
+  window.teamOpen = function (id) { window.FFP_TEAM.team = id; _load(id); };
+  window.teamBackToLanding = function () { _showTeamsLanding(); };
 
   // ════════ CREATE PAGE (locked create_team_v4) ════════
   var TYPES = [['sports', 'Sports team', 'sports_soccer'], ['community', 'Community', 'groups'], ['friends', 'Friends group', 'group']];
@@ -175,7 +199,7 @@
   window.teamPickLogo = function () { _capCreate(); var S = window.FFP_TEAM; if (!window.FFPUpload) { _tToast('Photo upload unavailable', 'error'); return; } FFPUpload.pick({ bucket: 'team-images', key: 'team-logo-' + S.pid + '-' + S.cKey, aspect: 1, outW: 512, outH: 512, title: 'Team logo', onDone: function (url) { S.cLogo = url; _showCreatePage(); }, onError: function () { _tToast('Upload failed', 'error'); } }); };
   window.teamCType = function (t) { _capCreate(); window.FFP_TEAM.cType = t; document.querySelectorAll('#tc-types .ffpt-typ').forEach(function (b, i) { b.classList.toggle('on', TYPES[i][0] === t); }); };
   function _clearCreate() { var S = window.FFP_TEAM; S.cName = S.cSport = S.cDesc = S.cCover = S.cLogo = null; S.cKey = null; }
-  window.teamBackFromCreate = function () { var S = window.FFP_TEAM; _clearCreate(); if (S.teams && S.teams.length) { if (!S.team) S.team = S.teams[0].id; _load(S.team); } };
+  window.teamBackFromCreate = function () { _clearCreate(); if (window.FFP_TEAM.teams && window.FFP_TEAM.teams.length) _showTeamsLanding(); };
   window.teamCreateSave = async function () {
     var S = window.FFP_TEAM, name = (document.getElementById('tc-name') || {}).value || '';
     if (!name.trim()) { _tToast('Give the team a name', 'error'); return; }
@@ -209,10 +233,13 @@
   }
   function _teamIdRow(sub) {
     var team = _teamMeta(), c = _count();
-    return '<div style="position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;" onclick="teamSettingsOpen()">' +
-      '<div class="ffpt-logo">' + _tEsc(_initials(team.name) || 'T') + '</div>' +
-      '<div style="flex:1;font-size:15px;font-weight:800;color:#fff;">' + _tEsc(team.name || 'Team') + '</div>' +
-      '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);">' + (sub || (c + ' player' + (c === 1 ? '' : 's'))) + '</div></div>';
+    var logoBg = team.logo_url ? ('background-size:cover;background-position:center;background-image:url(\'' + _tEsc(team.logo_url) + '\');') : '';
+    return '<div style="position:relative;display:flex;align-items:center;gap:9px;">' +
+      '<span onclick="event.stopPropagation();teamBackToLanding()" style="cursor:pointer;flex:0 0 auto;">' + _ic('arrow_back', 20, 'rgba(255,255,255,.8)') + '</span>' +
+      '<div style="flex:1;display:flex;align-items:center;gap:9px;cursor:pointer;min-width:0;" onclick="teamSettingsOpen()">' +
+      '<div class="ffpt-logo" style="' + logoBg + '">' + (team.logo_url ? '' : _tEsc(_initials(team.name) || 'T')) + '</div>' +
+      '<div style="flex:1;font-size:15px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(team.name || 'Team') + '</div>' +
+      '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);flex:0 0 auto;">' + (sub || (c + ' player' + (c === 1 ? '' : 's'))) + '</div></div></div>';
   }
 
   function _paint() {
@@ -232,19 +259,18 @@
     var fits = ov.fitness || []; if (S.ovMark >= fits.length) S.ovMark = 0;
     var f = fits[S.ovMark], c = _count();
     var h = '<div class="ffpt-hero"><div class="ffpt-glow"></div>' + _teamIdRow() + '<div style="height:12px;"></div>';
-    if (!f) {
-      h += '<div style="position:relative;color:rgba(255,255,255,.7);font-size:13px;margin-bottom:10px;">No fitness marks yet.</div>' +
-        '<div style="position:relative;"><button class="ffpt-pill on" onclick="teamMarkCreateOpen()">+ Add a mark</button></div></div>';
-      return h;
-    }
-    var hit = (f.hit != null) ? (f.hit + ' of ' + c + ' hit') : '';
+    var hit = (f && f.hit != null) ? (f.hit + ' of ' + c + ' hit') : '';
     h += '<div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:11px;">' +
-      '<div><div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;">TEAM AVG</div><div style="font-size:34px;font-weight:800;color:#fff;line-height:1;margin-top:3px;">' + _fmtVal(f.avg, f.unit) + '</div></div>' +
-      '<div style="text-align:right;">' + (f.target != null ? '<div style="font-size:14px;font-weight:800;color:#37E0C6;">target ' + _fmtVal(f.target, f.unit) + '</div>' : '') + (hit ? '<div style="font-size:11px;color:rgba(255,255,255,.55);">' + hit + '</div>' : '') + '</div></div>' +
-      _barSVG(f) +
+      '<div><div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:#7fe3ea;">TEAM AVG</div><div style="font-size:34px;font-weight:800;color:#fff;line-height:1;margin-top:3px;">' + (f ? _fmtVal(f.avg, f.unit) : '—') + '</div></div>' +
+      '<div style="text-align:right;">' + (f && f.target != null ? '<div style="font-size:14px;font-weight:800;color:#37E0C6;">target ' + _fmtVal(f.target, f.unit) + '</div>' : '') + (hit ? '<div style="font-size:11px;color:rgba(255,255,255,.55);">' + hit + '</div>' : '') + '</div></div>' +
+      (f ? _barSVG(f) : _barPlaceholder()) +
       '<div style="position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">' +
-      fits.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.ovMark ? ' ony' : '') + '" onclick="teamOvMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') + '</div></div>';
+      fits.map(function (x, i) { return '<button class="ffpt-pill' + (i === S.ovMark ? ' ony' : '') + '" onclick="teamOvMark(' + i + ')">' + _tEsc(x.name) + '</button>'; }).join('') +
+      '<button class="ffpt-pill" style="background:rgba(255,255,255,.10);border:1px dashed rgba(255,255,255,.3);color:#fff;" onclick="teamMarkCreateOpen()">+ Add a mark</button></div></div>';
     return h;
+  }
+  function _barPlaceholder() {
+    return '<div style="position:relative;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;border:1px dashed rgba(255,255,255,.14);border-radius:12px;"><div style="text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;line-height:1.6;">' + _ic('bar_chart', 26, 'rgba(255,255,255,.35)') + '<br>Record a result to see<br>the squad graph</div></div>';
   }
   function _barSVG(f) {
     var bars = f.bars || [], lb = _lowerBetter(f.direction);
@@ -284,7 +310,7 @@
     // Skills
     var sk = ov.skills || [];
     html += '<div class="ffpt-band"></div><div class="ffpt-sec">';
-    if (!sk.length) html += '<div style="display:flex;align-items:center;justify-content:space-between;"><div class="st">Skills</div><span style="font-size:12px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamSkillCreateOpen()">+ Add ▾</span></div>';
+    if (!sk.length) html += '<div style="display:flex;align-items:center;justify-content:space-between;"><div class="st">Skills</div><span style="font-size:12px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamSkillCreateOpen()">+ Add ▾</span></div><div style="color:#869599;font-size:12.5px;font-weight:700;margin-top:10px;">No skills yet — add one to track each player\'s level.</div>';
     else {
       if (S.ovSkill >= sk.length) S.ovSkill = 0; var cur = sk[S.ovSkill];
       html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="st">Skills</div><span style="font-size:12px;font-weight:800;color:#0a3e44;cursor:pointer;" onclick="teamSkillCycle()">' + _tEsc(cur.name) + ' ▾</span></div>' + _skillCols(cur);
@@ -292,23 +318,26 @@
     html += '</div>';
     // What they're training
     var tr = ov.training || [];
+    html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:14px;">What they\'re training</div>';
     if (tr.length) {
       var mx = Math.max.apply(null, tr.map(function (x) { return x.sessions; }).concat([1]));
-      html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="margin-bottom:14px;">What they\'re training</div>' +
-        tr.slice(0, 6).map(function (x, i) {
-          var w = Math.max(18, Math.round(x.sessions * 100 / mx));
-          var pat = i === 0 ? 'repeating-linear-gradient(45deg,#0a3e44,#0a3e44 6px,#17616b 6px,#17616b 12px)' : 'repeating-linear-gradient(45deg,#2ba8e0,#2ba8e0 6px,#57c0e8 6px,#57c0e8 12px)';
-          return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:80px;font-size:12px;font-weight:700;color:#5a6b6e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(x.category) + '</span><div class="ffpt-tbar"><div style="width:' + w + '%;height:100%;background:' + pat + ';"></div><span style="position:absolute;left:10px;top:0;bottom:0;display:flex;align-items:center;font-size:11.5px;font-weight:800;color:#fff;">' + x.sessions + ' session' + (x.sessions === 1 ? '' : 's') + '</span></div><span style="width:34px;text-align:right;font-size:12px;font-weight:800;color:#0f2327;">' + x.pct + '%</span></div>';
-        }).join('') + '</div>';
-    }
+      html += tr.slice(0, 6).map(function (x, i) {
+        var w = Math.max(18, Math.round(x.sessions * 100 / mx));
+        var pat = i === 0 ? 'repeating-linear-gradient(45deg,#0a3e44,#0a3e44 6px,#17616b 6px,#17616b 12px)' : 'repeating-linear-gradient(45deg,#2ba8e0,#2ba8e0 6px,#57c0e8 6px,#57c0e8 12px)';
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:80px;font-size:12px;font-weight:700;color:#5a6b6e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(x.category) + '</span><div class="ffpt-tbar"><div style="width:' + w + '%;height:100%;background:' + pat + ';"></div><span style="position:absolute;left:10px;top:0;bottom:0;display:flex;align-items:center;font-size:11.5px;font-weight:800;color:#fff;">' + x.sessions + ' session' + (x.sessions === 1 ? '' : 's') + '</span></div><span style="width:34px;text-align:right;font-size:12px;font-weight:800;color:#0f2327;">' + x.pct + '%</span></div>';
+      }).join('');
+    } else html += '<div style="color:#869599;font-size:12.5px;font-weight:700;">No sessions logged yet — this fills in as they train.</div>';
+    html += '</div>';
     // Who needs you
     var flags = ov.flags || [];
-    if (flags.length) html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="color:#a32d2d;margin-bottom:12px;">Who needs you</div>' +
-      flags.map(function (fl) {
-        return '<div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">' + _av(fl.name, fl.photo, 42, '#f0b6b6', '#fbeaea', '#a32d2d') +
-          '<div style="flex:1;font-size:13px;color:#0f2327;font-weight:700;">' + _tEsc(fl.name) + ' · <b style="color:#d64545;">' + _tEsc(fl.reason) + '</b></div>' +
-          '<button style="background:#0a3e44;color:#fff;border:none;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;" onclick="teamFlag(\'' + fl.member_id + '\')">' + _tEsc(fl.action || 'Open') + '</button></div>';
-      }).join('') + '</div>';
+    html += '<div class="ffpt-band"></div><div class="ffpt-sec"><div class="st" style="color:' + (flags.length ? '#a32d2d' : '#0f2327') + ';margin-bottom:12px;">Who needs you</div>';
+    if (flags.length) html += flags.map(function (fl) {
+      return '<div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">' + _av(fl.name, fl.photo, 42, '#f0b6b6', '#fbeaea', '#a32d2d') +
+        '<div style="flex:1;font-size:13px;color:#0f2327;font-weight:700;">' + _tEsc(fl.name) + ' · <b style="color:#d64545;">' + _tEsc(fl.reason) + '</b></div>' +
+        '<button style="background:#0a3e44;color:#fff;border:none;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;" onclick="teamFlag(\'' + fl.member_id + '\')">' + _tEsc(fl.action || 'Open') + '</button></div>';
+    }).join('');
+    else html += '<div style="display:flex;align-items:center;gap:8px;color:#1d7a4d;font-size:12.5px;font-weight:700;">' + _ic('check_circle', 18, '#37b06a') + 'Everyone\'s on track.</div>';
+    html += '</div>';
     return html;
   }
   function _skillCols(sk) {

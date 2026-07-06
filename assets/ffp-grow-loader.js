@@ -23,10 +23,10 @@ var GROW_STEPS = [
   { code:'ideal_client', phase:'Setting up the basics',   plain:'Understand your ideal client', flow:'ideal_client' },
   { code:'offer',        phase:'Setting up the basics',   plain:'Create your initial offer', flow:'offer' },
   { code:'delivery_plan',phase:'Setting up the basics',   plain:"How you'll deliver it", flow:'delivery_plan' },
-  { code:'operations',   phase:'Operational',             plain:'Set up daily operations', flow:'operations' },
-  { code:'funnel',       phase:'Operational',             plain:'Build your sales funnel', flow:'funnel' },
-  { code:'sessions',     phase:'Operational',             plain:'Deliver world-class sessions', flow:'sessions' },
-  { code:'retention',    phase:'Operational',             plain:'Look after your clients', flow:'retention' }
+  { code:'operations',   phase:'Operational',             plain:'Set up daily operations', flow:'operations', kind:'do' },
+  { code:'funnel',       phase:'Operational',             plain:'Build your sales funnel', flow:'funnel', kind:'do' },
+  { code:'sessions',     phase:'Operational',             plain:'Deliver world-class sessions', flow:'sessions', kind:'do' },
+  { code:'retention',    phase:'Operational',             plain:'Look after your clients', flow:'retention', kind:'do' }
 ];
 var GROW_BONUS = { plain:'Keep yourself current & upskill' };
 function _growPhaseNum(name){ return name === 'Foundation' ? 1 : (name === 'Setting up the basics' ? 2 : 3); }
@@ -148,6 +148,7 @@ function growStepStart(){
   var active = _growActiveIdx();
   var vi = (_growStepIdx == null ? (active < 0 ? 0 : active) : _growStepIdx);
   var f = GROW_STEPS[vi]; if (!f) return;
+  if (f.kind === 'do'){ if (window.growChecklistOpen) growChecklistOpen(f.flow); else _growToast('Loading…', 'error'); return; }
   if (f.flow){ if (window.growFlowOpen) growFlowOpen(f.flow); else _growToast('Loading…', 'error'); return; }
   _growToast('This step is coming soon — we\'re building it next', 'info');
 }

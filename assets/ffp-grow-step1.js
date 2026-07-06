@@ -34,10 +34,17 @@
     return html;
   }
   function outcomeIdealClient(o) {
-    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:10px;">Your ideal client</div>'
-      + _headline('Your one line', o.one_liner || o.profile || '');
-    if (o.profile && o.one_liner) html += '<div style="font-size:13.5px;color:var(--ffp-text,#0f2327);font-weight:600;line-height:1.5;margin-bottom:14px;">' + esc(o.profile) + '</div>';
-    html += _row('Their biggest problem', o.problem) + _row('What winning looks like', o.outcome) + _row('Where to find them', o.where) + _row('Why you', o.edge);
+    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:10px;">Your client avatar</div>'
+      + _headline(o.name || 'Your ideal client', o.summary || o.one_liner || '');
+    html += _row('Age', o.age) + _row('Gender', o.gender) + _row('Where they live', o.location) + _row('Work', o.work) + _row('What they’re like', o.traits) + _row('Their pain point', o.pain_point);
+    if (o.one_liner && o.summary) html += '<div style="display:flex;gap:10px;background:#e5f6ee;border:1px solid #c3e9d5;border-radius:14px;padding:13px 15px;margin:14px 0 0;"><span class="ms" style="color:#1d7a4d;">person</span><div style="font-size:13px;color:#0f2327;font-weight:600;line-height:1.45;">' + esc(o.one_liner) + '</div></div>';
+    if (o.note) html += '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-style:italic;margin-top:12px;">' + esc(o.note) + '</div>';
+    return html;
+  }
+
+  function outcomeGeneric(o) {
+    var html = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2ba8e0;margin-bottom:10px;">Your result</div>' + _headline(o.title || 'Your plan', o.summary || '');
+    if (o.points && o.points.length) html += o.points.map(function (p) { return _row(p.label, p.value); }).join('');
     if (o.note) html += '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);font-style:italic;margin-top:14px;">' + esc(o.note) + '</div>';
     return html;
   }
@@ -59,12 +66,46 @@
     ideal_client: {
       code: 'ideal_client', title: 'Step 2 · Your ideal client', outcome: outcomeIdealClient,
       qs: [
-        { label: 'Who', q: 'Who exactly do you want to work with?' },
-        { label: 'Their struggle', q: 'What’s their biggest struggle?' },
-        { label: 'Tried before', q: 'What have they already tried?' },
-        { label: 'Winning', q: 'What does winning look like for them?' },
-        { label: 'Where', q: 'Where do you find these people?' },
-        { label: 'Why you', q: 'Why are you the right coach for them?' }
+        { label: 'Who', q: 'Who would want a coach with your skill set?' },
+        { label: 'Age', q: 'How old are they?' },
+        { label: 'Gender', q: 'Are they mostly men or women?' },
+        { label: 'Where', q: 'Where do they live?' },
+        { label: 'Work', q: 'What do they do for work?' },
+        { label: 'Characteristics', q: 'What are they like as a person?' },
+        { label: 'Their life', q: 'What’s going on in their life right now?' },
+        { label: 'Pain point', q: 'What’s been stopping them — the pain point you lean into?' }
+      ]
+    },
+    offer: {
+      code: 'offer', title: 'Step 3 · Your offer', outcome: outcomeGeneric,
+      qs: [
+        { label: 'The result', q: 'What result does this offer get them?' },
+        { label: 'Your method', q: 'How will you get them there?' },
+        { label: 'Where & kit', q: 'Where will you train them, and what equipment do you need?' },
+        { label: 'Format', q: 'How long is each session, how often, and over how many weeks?' },
+        { label: 'Assessment', q: 'Is there an assessment?' },
+        { label: 'Nutrition', q: 'Are you including nutrition?' },
+        { label: 'Included', q: 'What else is included?' },
+        { label: 'Price', q: 'What’s the price?' }
+      ]
+    },
+    delivery_plan: {
+      code: 'delivery_plan', title: 'Step 4 · Your delivery', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Your style', q: 'How will you coach them — your style?' },
+        { label: 'Showing up', q: 'How will you show up — energy, punctuality, standards?' },
+        { label: 'Presentation', q: 'How will you present yourself — dress, professionalism?' },
+        { label: 'The experience', q: 'What does being coached by you feel like?' }
+      ]
+    },
+    upskill: {
+      code: 'upskill', title: 'Bonus · Stay current', outcome: outcomeGeneric,
+      qs: [
+        { label: 'Get better', q: 'What do you want to get better at?' },
+        { label: 'Learn next', q: 'What will you learn or study next?' },
+        { label: 'Learn from', q: 'Who do you learn from?' },
+        { label: 'Stay current', q: 'How will you stay current in your field?' },
+        { label: 'Make time', q: 'How will you make time for it?' }
       ]
     }
   };
@@ -179,6 +220,81 @@
     close();
     try { if (typeof renderGrow === 'function') renderGrow(); } catch (e) {}
   }
+
+  // ── Operational steps (5–8): guided ACTION checklists that set up the Pro dashboard ──
+  var CHECKLISTS = {
+    operations: { title: 'Step 5 · Daily operations', blurb: 'Get the day-to-day of your business set up.', items: [
+      { code: 'services', label: 'Set up your services', hint: 'Add what you offer so clients can book it.', panel: 'services' },
+      { code: 'availability', label: 'Set your availability', hint: 'Set the hours you’re open for bookings.', panel: 'scheduling' },
+      { code: 'packages', label: 'Create your packages', hint: 'Turn your offer into a bookable package.', panel: 'packages' },
+      { code: 'payments', label: 'Set up how you get paid', hint: 'Connect Stripe and your payment methods.', panel: 'payments' },
+      { code: 'clients', label: 'Add your current clients', hint: 'Get your existing clients into the system.', panel: 'clients' }
+    ]},
+    funnel: { title: 'Step 6 · Your sales funnel', blurb: 'Set up how new clients find and book you.', items: [
+      { code: 'profile', label: 'Polish your profile', hint: 'Make a stranger want to book you.', panel: 'profile' },
+      { code: 'invite', label: 'Invite clients to the Passport', hint: 'Send your invite link — credited to you.', panel: 'clients' },
+      { code: 'referrals', label: 'Set up a referral ask', hint: 'Have a simple way to ask happy clients.', panel: null },
+      { code: 'social', label: 'Plan your content', hint: 'Decide what you’ll post, and where.', panel: null },
+      { code: 'network', label: 'List 5 people to reach out to', hint: 'Warm contacts, gyms, potential partners.', panel: null }
+    ]},
+    sessions: { title: 'Step 7 · World-class sessions', blurb: 'Set up how you run and communicate around sessions.', items: [
+      { code: 'schedule', label: 'Get sessions on the calendar', hint: 'Schedule your clients’ sessions.', panel: 'scheduling' },
+      { code: 'checkin', label: 'Set up check-ins', hint: 'Use QR check-in so clients tap in.', panel: 'checkin' },
+      { code: 'comms', label: 'Set your communication', hint: 'How you message between sessions.', panel: 'comms' },
+      { code: 'structure', label: 'Define your session structure', hint: 'A repeatable start-to-finish.', panel: null }
+    ]},
+    retention: { title: 'Step 8 · Look after your clients', blurb: 'Set up how you keep clients and win referrals.', items: [
+      { code: 'checkins', label: 'Set a check-in schedule', hint: 'Regular touch-points with each client.', panel: 'comms' },
+      { code: 'reviews', label: 'Collect reviews', hint: 'Ask happy clients for a review.', panel: 'clients' },
+      { code: 'renew', label: 'Plan re-signs and renewals', hint: 'How clients continue past their block.', panel: 'packages' },
+      { code: 'winback', label: 'Have a win-back plan', hint: 'Reach out when someone goes quiet.', panel: null }
+    ]}
+  };
+  var _clKey = null, _clDone = {};
+  function clEnsure() {
+    if (document.getElementById('gc-ov')) return;
+    var ov = document.createElement('div'); ov.id = 'gc-ov';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:4000;background:var(--ffp-bg,#f4f7f8);display:none;flex-direction:column;';
+    ov.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;padding-top:calc(16px + env(safe-area-inset-top));border-bottom:1px solid var(--ffp-border,#e4ebec);flex:0 0 auto;">'
+        + '<div id="gc-title" style="font-size:15px;font-weight:900;color:var(--ffp-text,#0f2327);"></div>'
+        + '<button onclick="window.__gc.close()" style="background:none;border:none;color:var(--ffp-text-muted,#5a6b6e);cursor:pointer;"><span class="ms" style="font-size:24px;">close</span></button></div>'
+      + '<div id="gc-body" style="flex:1 1 auto;overflow-y:auto;padding:18px;width:100%;max-width:620px;margin:0 auto;box-sizing:border-box;"></div>'
+      + '<div id="gc-foot" style="padding:14px 18px;padding-bottom:calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--ffp-border,#e4ebec);flex:0 0 auto;width:100%;max-width:620px;margin:0 auto;box-sizing:border-box;"></div>';
+    document.body.appendChild(ov);
+  }
+  function clAllDone() { var c = CHECKLISTS[_clKey]; return c.items.every(function (it) { return !!_clDone[it.code]; }); }
+  function clRender() {
+    var c = CHECKLISTS[_clKey]; if (!c) return;
+    var tt = document.getElementById('gc-title'); if (tt) tt.textContent = c.title;
+    var rows = c.items.map(function (it) {
+      var done = !!_clDone[it.code];
+      return '<div style="display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid ' + (done ? '#0a3e44' : 'var(--ffp-border,#e4ebec)') + ';border-radius:14px;padding:14px;margin-bottom:10px;">'
+        + '<button onclick="window.__gc.toggle(\'' + it.code + '\')" style="width:26px;height:26px;flex:0 0 auto;margin-top:1px;border-radius:50%;border:2px solid ' + (done ? '#0a3e44' : '#ccd9da') + ';background:' + (done ? '#0a3e44' : 'transparent') + ';color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">' + (done ? '<span class="ms" style="font-size:17px;">check</span>' : '') + '</button>'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:800;color:var(--ffp-text,#0f2327);' + (done ? 'opacity:.55;' : '') + '">' + esc(it.label) + '</div>'
+        + '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);margin-top:2px;line-height:1.4;">' + esc(it.hint) + '</div>'
+        + (it.panel ? '<button onclick="window.__gc.go(\'' + it.panel + '\')" style="margin-top:9px;background:rgba(10,62,68,.08);color:#0a3e44;border:none;border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;">Set it up →</button>' : '') + '</div></div>';
+    }).join('');
+    document.getElementById('gc-body').innerHTML = '<div class="psub" style="margin:0 0 14px;">' + esc(c.blurb) + ' Tick each as you go — tap “Set it up” to jump straight to it.</div>' + rows;
+    var all = clAllDone();
+    document.getElementById('gc-foot').innerHTML = '<button onclick="window.__gc.complete()" ' + (all ? '' : 'disabled') + ' style="width:100%;background:' + (all ? 'linear-gradient(135deg,#0a3e44,#2ba8e0)' : '#eef3f4') + ';color:' + (all ? '#fff' : '#a3afb2') + ';border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:' + (all ? 'pointer' : 'default') + ';">' + (all ? 'Mark step done ✓' : 'Tick every item to finish') + '</button>';
+  }
+  async function clLoad() {
+    var p = pid(); if (!p) return;
+    try { var r = await window.supabase.rpc('pro_grow_step_get', { p_pro: p, p_code: _clKey }); var d = r && r.data; if (d && d.answers && d.answers.checklist) { _clDone = d.answers.checklist; clRender(); } } catch (e) {}
+  }
+  async function clSave() { var p = pid(); if (!p) return; try { await window.supabase.rpc('pro_grow_step_save', { p_pro: p, p_code: _clKey, p_answers: { checklist: _clDone } }); } catch (e) {} }
+  function clOpen(key) { if (!CHECKLISTS[key]) { toast('Coming soon', 'info'); return; } _clKey = key; _clDone = {}; clEnsure(); document.getElementById('gc-ov').style.display = 'flex'; clRender(); clLoad(); }
+  function clClose() { var o = document.getElementById('gc-ov'); if (o) o.style.display = 'none'; }
+  function clToggle(code) { _clDone[code] = !_clDone[code]; clRender(); clSave(); }
+  function clGo(panel) { clClose(); if (typeof showPanel === 'function') showPanel(panel); }
+  async function clComplete() {
+    if (!clAllDone()) return; var p = pid(); if (!p) { clClose(); return; }
+    try { await window.supabase.rpc('pro_grow_step_complete', { p_pro: p, p_code: _clKey, p_outcome: { checklist: _clDone, done: true } }); toast('Step complete 🎉', 'success'); } catch (e) { toast('Saved', 'success'); }
+    clClose(); try { if (typeof renderGrow === 'function') renderGrow(); } catch (e) {}
+  }
+  window.growChecklistOpen = clOpen;
+  window.__gc = { close: clClose, toggle: clToggle, go: clGo, complete: clComplete };
 
   window.growFlowOpen = open;
   window.growStep1Open = function () { open('strengths'); };

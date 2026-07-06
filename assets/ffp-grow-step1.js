@@ -224,33 +224,34 @@
   // ── Operational steps (5–8): guided ACTION checklists that set up the Pro dashboard ──
   var CHECKLISTS = {
     operations: { title: 'Step 5 · Daily operations', blurb: 'Get the day-to-day of your business set up.', items: [
-      { code: 'services', label: 'Set up your services', hint: 'Add what you offer so clients can book it.', panel: 'services' },
-      { code: 'availability', label: 'Set your availability', hint: 'Set the hours you’re open for bookings.', panel: 'scheduling' },
-      { code: 'packages', label: 'Create your packages', hint: 'Turn your offer into a bookable package.', panel: 'packages' },
-      { code: 'payments', label: 'Set up how you get paid', hint: 'Connect Stripe and your payment methods.', panel: 'payments' },
-      { code: 'clients', label: 'Add your current clients', hint: 'Get your existing clients into the system.', panel: 'clients' }
+      { code: 'services', label: 'Set up your services', hint: 'Add what you offer so clients can book it.', panel: 'services', detect: 'services' },
+      { code: 'availability', label: 'Set your availability', hint: 'Set the hours you’re open for bookings.', panel: 'scheduling', detect: 'availability' },
+      { code: 'packages', label: 'Create your packages', hint: 'Turn your offer into a bookable package.', panel: 'packages', detect: 'packages' },
+      { code: 'payments', label: 'Set up how you get paid', hint: 'Connect Stripe and your payment methods.', panel: 'payments', detect: 'payments' },
+      { code: 'clients', label: 'Add your current clients', hint: 'Get your existing clients into the system.', panel: 'clients', detect: 'clients' }
     ]},
     funnel: { title: 'Step 6 · Your sales funnel', blurb: 'Set up how new clients find and book you.', items: [
-      { code: 'profile', label: 'Polish your profile', hint: 'Make a stranger want to book you.', panel: 'profile' },
+      { code: 'profile', label: 'Polish your profile', hint: 'Make a stranger want to book you.', panel: 'profile', detect: 'profile' },
       { code: 'invite', label: 'Invite clients to the Passport', hint: 'Send your invite link — credited to you.', panel: 'clients' },
       { code: 'referrals', label: 'Set up a referral ask', hint: 'Have a simple way to ask happy clients.', panel: null },
       { code: 'social', label: 'Plan your content', hint: 'Decide what you’ll post, and where.', panel: null },
       { code: 'network', label: 'List 5 people to reach out to', hint: 'Warm contacts, gyms, potential partners.', panel: null }
     ]},
     sessions: { title: 'Step 7 · World-class sessions', blurb: 'Set up how you run and communicate around sessions.', items: [
-      { code: 'schedule', label: 'Get sessions on the calendar', hint: 'Schedule your clients’ sessions.', panel: 'scheduling' },
-      { code: 'checkin', label: 'Set up check-ins', hint: 'Use QR check-in so clients tap in.', panel: 'checkin' },
+      { code: 'schedule', label: 'Get sessions on the calendar', hint: 'Schedule your clients’ sessions.', panel: 'scheduling', detect: 'availability' },
+      { code: 'checkin', label: 'Set up check-ins', hint: 'Use QR check-in so clients tap in.', panel: 'checkin', detect: 'checkin' },
       { code: 'comms', label: 'Set your communication', hint: 'How you message between sessions.', panel: 'comms' },
       { code: 'structure', label: 'Define your session structure', hint: 'A repeatable start-to-finish.', panel: null }
     ]},
     retention: { title: 'Step 8 · Look after your clients', blurb: 'Set up how you keep clients and win referrals.', items: [
-      { code: 'checkins', label: 'Set a check-in schedule', hint: 'Regular touch-points with each client.', panel: 'comms' },
+      { code: 'checkins', label: 'Set a check-in schedule', hint: 'Regular touch-points with each client.', panel: 'checkin', detect: 'checkin' },
       { code: 'reviews', label: 'Collect reviews', hint: 'Ask happy clients for a review.', panel: 'clients' },
       { code: 'renew', label: 'Plan re-signs and renewals', hint: 'How clients continue past their block.', panel: 'packages' },
       { code: 'winback', label: 'Have a win-back plan', hint: 'Reach out when someone goes quiet.', panel: null }
     ]}
   };
-  var _clKey = null, _clDone = {};
+  var _clKey = null, _clDone = {}, _clAuto = {};
+  function _clItemDone(it) { return (it.detect && !!_clAuto[it.detect]) || !!_clDone[it.code]; }
   function clEnsure() {
     if (document.getElementById('gc-ov')) return;
     var ov = document.createElement('div'); ov.id = 'gc-ov';
@@ -263,17 +264,21 @@
       + '<div id="gc-foot" style="padding:14px 18px;padding-bottom:calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--ffp-border,#e4ebec);flex:0 0 auto;width:100%;max-width:620px;margin:0 auto;box-sizing:border-box;"></div>';
     document.body.appendChild(ov);
   }
-  function clAllDone() { var c = CHECKLISTS[_clKey]; return c.items.every(function (it) { return !!_clDone[it.code]; }); }
+  function clAllDone() { var c = CHECKLISTS[_clKey]; return c.items.every(_clItemDone); }
   function clRender() {
     var c = CHECKLISTS[_clKey]; if (!c) return;
     var tt = document.getElementById('gc-title'); if (tt) tt.textContent = c.title;
     var rows = c.items.map(function (it) {
-      var done = !!_clDone[it.code];
-      return '<div style="display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid ' + (done ? '#0a3e44' : 'var(--ffp-border,#e4ebec)') + ';border-radius:14px;padding:14px;margin-bottom:10px;">'
-        + '<button onclick="window.__gc.toggle(\'' + it.code + '\')" style="width:26px;height:26px;flex:0 0 auto;margin-top:1px;border-radius:50%;border:2px solid ' + (done ? '#0a3e44' : '#ccd9da') + ';background:' + (done ? '#0a3e44' : 'transparent') + ';color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">' + (done ? '<span class="ms" style="font-size:17px;">check</span>' : '') + '</button>'
-        + '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:800;color:var(--ffp-text,#0f2327);' + (done ? 'opacity:.55;' : '') + '">' + esc(it.label) + '</div>'
+      var auto = !!(it.detect && _clAuto[it.detect]);
+      var done = auto || !!_clDone[it.code];
+      var box = auto
+        ? '<div style="width:26px;height:26px;flex:0 0 auto;margin-top:1px;border-radius:50%;border:2px solid #1d7a4d;background:#1d7a4d;color:#fff;display:flex;align-items:center;justify-content:center;"><span class="ms" style="font-size:17px;">check</span></div>'
+        : '<button onclick="window.__gc.toggle(\'' + it.code + '\')" style="width:26px;height:26px;flex:0 0 auto;margin-top:1px;border-radius:50%;border:2px solid ' + (done ? '#0a3e44' : '#ccd9da') + ';background:' + (done ? '#0a3e44' : 'transparent') + ';color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">' + (done ? '<span class="ms" style="font-size:17px;">check</span>' : '') + '</button>';
+      return '<div style="display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid ' + (done ? (auto ? '#c3e9d5' : '#0a3e44') : 'var(--ffp-border,#e4ebec)') + ';border-radius:14px;padding:14px;margin-bottom:10px;">'
+        + box
+        + '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:800;color:var(--ffp-text,#0f2327);' + (done ? 'opacity:.6;' : '') + '">' + esc(it.label) + (auto ? ' <span style="font-size:10px;font-weight:800;color:#1d7a4d;text-transform:uppercase;letter-spacing:.4px;">· done</span>' : '') + '</div>'
         + '<div style="font-size:12.5px;color:var(--ffp-text-muted,#5a6b6e);margin-top:2px;line-height:1.4;">' + esc(it.hint) + '</div>'
-        + (it.panel ? '<button onclick="window.__gc.go(\'' + it.panel + '\')" style="margin-top:9px;background:rgba(10,62,68,.08);color:#0a3e44;border:none;border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;">Set it up →</button>' : '') + '</div></div>';
+        + (it.panel && !done ? '<button onclick="window.__gc.go(\'' + it.panel + '\')" style="margin-top:9px;background:rgba(10,62,68,.08);color:#0a3e44;border:none;border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;">Set it up →</button>' : '') + '</div></div>';
     }).join('');
     document.getElementById('gc-body').innerHTML = '<div class="psub" style="margin:0 0 14px;">' + esc(c.blurb) + ' Tick each as you go — tap “Set it up” to jump straight to it.</div>' + rows;
     var all = clAllDone();
@@ -284,7 +289,7 @@
     try { var r = await window.supabase.rpc('pro_grow_step_get', { p_pro: p, p_code: _clKey }); var d = r && r.data; if (d && d.answers && d.answers.checklist) { _clDone = d.answers.checklist; clRender(); } } catch (e) {}
   }
   async function clSave() { var p = pid(); if (!p) return; try { await window.supabase.rpc('pro_grow_step_save', { p_pro: p, p_code: _clKey, p_answers: { checklist: _clDone } }); } catch (e) {} }
-  function clOpen(key) { if (!CHECKLISTS[key]) { toast('Coming soon', 'info'); return; } _clKey = key; _clDone = {}; clEnsure(); document.getElementById('gc-ov').style.display = 'flex'; clRender(); clLoad(); }
+  async function clOpen(key) { if (!CHECKLISTS[key]) { toast('Coming soon', 'info'); return; } _clKey = key; _clDone = {}; _clAuto = {}; clEnsure(); document.getElementById('gc-ov').style.display = 'flex'; clRender(); clLoad(); var p = pid(); if (p) { try { var r = await window.supabase.rpc('pro_grow_setup_state', { p_pro: p }); if (r && r.data) { _clAuto = r.data; clRender(); } } catch (e) {} } }
   function clClose() { var o = document.getElementById('gc-ov'); if (o) o.style.display = 'none'; }
   function clToggle(code) { _clDone[code] = !_clDone[code]; clRender(); clSave(); }
   function clGo(panel) { clClose(); if (typeof showPanel === 'function') showPanel(panel); }

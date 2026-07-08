@@ -229,7 +229,8 @@
     var S = window.FFP_TEAM;
     return '<div class="ffpt-tabrow">' +
       '<button class="ffpt-tab' + (S.tab === 'overview' ? ' on' : '') + '" onclick="teamTab(\'overview\')">Overview</button>' +
-      '<button class="ffpt-tab' + (S.tab === 'players' ? ' on' : '') + '" onclick="teamTab(\'players\')">Athletes</button></div>';
+      '<button class="ffpt-tab' + (S.tab === 'players' ? ' on' : '') + '" onclick="teamTab(\'players\')">Athletes</button>' +
+      '<button class="ffpt-tab' + (S.tab === 'training' ? ' on' : '') + '" onclick="teamTab(\'training\')">Training</button></div>';
   }
   function _teamIdRow(sub) {
     var team = _teamMeta(), c = _count();
@@ -245,6 +246,12 @@
   function _paint() {
     var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
     if (S.tab === 'overview') host.innerHTML = '<div class="ffpt"><div class="ffpt-card">' + _overviewHero() + _tabs() + _overviewSections() + '</div></div>';
+    else if (S.tab === 'training') {
+      host.innerHTML = '<div class="ffpt"><div class="ffpt-card">' +
+        '<div class="ffpt-hero" style="padding:14px 16px;">' + _teamIdRow() + '</div>' + _tabs() +
+        '<div id="ffpt-training"><div class="ffpt-sec" style="color:#869599;font-weight:700;padding:20px 16px;">Loading sessions…</div></div></div></div>';
+      renderTraining();
+    }
     else {
       var detail = !(S.players || []).length ? '<div class="ffpt-sec" style="text-align:center;color:#5a6b6e;font-weight:700;padding:26px 16px;">No athletes yet — tap <b style="color:#0a3e44;">+ Add</b> to add your first athlete.</div>' : ((S.detail && S.detail.member && S.detail.member.id === S.sel) ? _detailSections() : '<div class="ffpt-sec" style="color:#869599;font-weight:700;">Loading athlete…</div>');
       host.innerHTML = '<div class="ffpt"><div class="ffpt-card">' +
@@ -432,7 +439,7 @@
       }).join('') + '</div>';
     } else html += '<div style="color:#869599;font-size:12.5px;font-weight:700;">No activity in the last 7 days.</div>';
     html += '</div>';
-    html += '<div class="ffpt-band"></div><div class="ffpt-sec">' + _nutriHtml() + '</div>';
+    html += '<div class="ffpt-band"></div><div class="ffpt-sec" id="ffpt-nutri">' + _nutriHtml() + '</div>';
     return html;
   }
   function _dotSVG(m) {
@@ -532,9 +539,11 @@
     if (typeof openModalShell === 'function') openModalShell('sm', 'Activity', _renderActivityCard(a), _actCloseFoot());
     else _tToast(a.activity || 'Activity', '');
   };
+  // Update ONLY the nutrition section (not the whole screen) so tapping a day doesn't jump the scroll.
+  function _paintNutri() { var el = document.getElementById('ffpt-nutri'); if (el) el.innerHTML = _nutriHtml(); }
   async function teamNutriDay(dateStr) {
-    var S = window.FFP_TEAM; S.nutriDay = dateStr; _paint();
-    try { var rn = await _tSb().rpc('pro_player_nutrition', { p_pro: S.pid, p_member: S.sel, p_day: dateStr }); S.nutri = (rn && rn.data) || {}; S.nutriDay = dateStr; _paint(); } catch (e) { console.error('[FFP Team] nutri day', e); }
+    var S = window.FFP_TEAM; S.nutriDay = dateStr; _paintNutri();
+    try { var rn = await _tSb().rpc('pro_player_nutrition', { p_pro: S.pid, p_member: S.sel, p_day: dateStr }); S.nutri = (rn && rn.data) || {}; S.nutriDay = dateStr; _paintNutri(); } catch (e) { console.error('[FFP Team] nutri day', e); }
   }
   window.teamSelectPlayer = teamSelectPlayer;
   window.teamNutriDay = teamNutriDay;
@@ -881,6 +890,89 @@
   };
   window.teamSwitchOpen = function () { var S = window.FFP_TEAM; var body = (S.teams || []).map(function (t) { return '<button style="display:flex;width:100%;align-items:center;gap:10px;padding:12px;border:1px solid #e4ebec;border-radius:12px;background:' + (t.id === S.team ? '#eef3f4' : '#fff') + ';margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left;" onclick="teamSwitch(\'' + t.id + '\')">' + _ic('groups', 20, '#0a3e44') + '<div><div style="font-weight:800;">' + _tEsc(t.name) + '</div><div style="font-size:12px;color:#5a6b6e;">' + (t.member_count || 0) + ' athletes</div></div></button>'; }).join('') + '<button class="ffpt-min" style="width:100%;margin-top:6px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="teamShowCreate();ffpCloseModal()">+ New team</button>'; openModalShell('sm', 'Your teams', body, '<button class="ffpt-min" style="width:auto;padding:11px 18px;background:#eef3f4;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>'); };
   window.teamSwitch = function (id) { window.FFP_TEAM.team = id; _closeModal(); _load(id); };
+
+  // ════════ TRAINING — sessions + attendance ════════
+  function _fmtSessWhen(iso) { if (!iso) return 'Date TBC'; try { var d = new Date(iso); return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function _sChip(kind, txt) {
+    var c = kind === 'go' ? 'background:#e1f2e9;color:#0f6e56;' : (kind === 'no' ? 'background:#fbeaea;color:#a32d2d;' : 'background:#eef1f3;color:#5b6b76;');
+    return '<span style="' + c + 'font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;margin-right:6px;display:inline-block;">' + txt + '</span>';
+  }
+  async function renderTraining() {
+    var S = window.FFP_TEAM, host = document.getElementById('ffpt-training'); if (!host) return;
+    try { var r = await _tSb().rpc('pro_team_sessions_list', { p_pro: S.pid, p_team: S.team }); S.sessions = (r && r.data) || []; }
+    catch (e) { console.error('[FFP Team] sessions', e); S.sessions = []; }
+    var add = '<div style="padding:12px 16px 4px;"><button class="ffpt-cta" onclick="teamNewSession()">' + _ic('add', 18) + ' New session</button></div>';
+    var list;
+    if (!(S.sessions || []).length) list = '<div class="ffpt-sec" style="text-align:center;color:#5a6b6e;font-weight:700;padding:22px 16px;">No sessions yet — tap <b style="color:#0a3e44;">New session</b> to set your first training.</div>';
+    else list = (S.sessions || []).map(_sessionCard).join('');
+    host.innerHTML = add + '<div style="padding:6px 12px 16px;">' + list + '</div>';
+  }
+  function _sessionCard(s) {
+    var pend = Math.max(0, (s.roster || 0) - (s.going || 0) - (s.not_going || 0));
+    var chips = _sChip('go', (s.going || 0) + ' going') + ((s.not_going || 0) ? _sChip('no', s.not_going + " can't") : '') + _sChip('pend', pend + ' no reply');
+    return '<div onclick="teamSessionAttendance(\'' + s.id + '\')" style="border:1px solid #e4ebec;border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><span style="font-size:14.5px;font-weight:800;color:#0f2327;">' + _tEsc(s.title || 'Training') + '</span><span style="font-size:12px;font-weight:700;color:#1d6a8f;flex:0 0 auto;">' + _fmtSessWhen(s.starts_at) + '</span></div>' +
+      '<div style="font-size:12px;color:#5a6b6e;margin-top:4px;">' + _ic('place', 14, '#869599') + ' ' + _tEsc([s.location, s.city].filter(Boolean).join(', ') || 'Location TBC') + (s.duration_min ? (' · ' + s.duration_min + ' min') : '') + '</div>' +
+      '<div style="margin-top:10px;">' + chips + '</div></div>';
+  }
+  window.teamNewSession = function () { window.FFP_TEAM.sess = { date: _todayStr(), time: '06:00', dur: 60, repeat: 4 }; _showSessionPage(); };
+  function _showSessionPage() {
+    var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return; var ss = S.sess || {};
+    var durOpts = [30, 45, 60, 75, 90, 120].map(function (d) { return '<option value="' + d + '"' + (ss.dur === d ? ' selected' : '') + '>' + d + ' min</option>'; }).join('');
+    var repOpts = [[1, 'Just this session'], [2, 'Weekly · 2 weeks'], [4, 'Weekly · 4 weeks'], [8, 'Weekly · 8 weeks'], [12, 'Weekly · 12 weeks']].map(function (o) { return '<option value="' + o[0] + '"' + (ss.repeat === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg"><div style="padding:16px;">' +
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:16px;"><span onclick="teamSessionBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, '#0a3e44') + '</span><div style="font-size:18px;font-weight:900;color:#0f2327;">New training session</div></div>' +
+      '<div class="ffpt-clab">Title</div><input class="ffpt-in" id="ts-title" placeholder="Interval session" value="' + _tEsc(ss.title || '') + '" style="margin-bottom:16px;">' +
+      '<div class="ffpt-clab">Location</div><input class="ffpt-in" id="ts-loc" placeholder="Zabeel Park" value="' + _tEsc(ss.location || '') + '" style="margin-bottom:16px;">' +
+      '<div class="ffpt-clab">City</div><input class="ffpt-in" id="ts-city" placeholder="Dubai" value="' + _tEsc(ss.city || '') + '" style="margin-bottom:16px;">' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;"><div class="ffpt-clab">Date</div><input class="ffpt-in" id="ts-date" type="date" value="' + _tEsc(ss.date || _todayStr()) + '"></div><div style="flex:1;"><div class="ffpt-clab">Time</div><input class="ffpt-in" id="ts-time" type="time" value="' + _tEsc(ss.time || '06:00') + '"></div></div>' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;"><div class="ffpt-clab">Duration</div><select class="ffpt-in" id="ts-dur">' + durOpts + '</select></div><div style="flex:1;"><div class="ffpt-clab">Repeat</div><select class="ffpt-in" id="ts-rep">' + repOpts + '</select></div></div>' +
+      '<div class="ffpt-clab">Notes (optional)</div><textarea class="ffpt-in" id="ts-notes" rows="3" style="resize:vertical;margin-bottom:20px;" placeholder="Bring spikes; meet at the gate">' + _tEsc(ss.notes || '') + '</textarea>' +
+      '<button class="ffpt-cta" onclick="teamSaveSession()">Add session</button>' +
+      '<div style="font-size:11px;color:#869599;text-align:center;margin-top:10px;">Athletes get a notification and can reply from their Passport.</div>' +
+      '</div></div></div>';
+  }
+  window.teamSessionBack = function () { window.FFP_TEAM.tab = 'training'; _paint(); };
+  window.teamSaveSession = async function () {
+    var S = window.FFP_TEAM;
+    var g = function (id) { return ((document.getElementById(id) || {}).value || '').trim(); };
+    var title = g('ts-title'), loc = g('ts-loc'), city = g('ts-city'), date = g('ts-date'), time = g('ts-time'), notes = g('ts-notes');
+    var dur = Number((document.getElementById('ts-dur') || {}).value) || 60, rep = Number((document.getElementById('ts-rep') || {}).value) || 1;
+    if (!title) { _tToast('Give the session a title', 'error'); return; }
+    if (!date || !time) { _tToast('Pick a date and time', 'error'); return; }
+    var startsIso; try { startsIso = new Date(date + 'T' + time + ':00').toISOString(); } catch (e) { _tToast('Bad date or time', 'error'); return; }
+    try {
+      var r = await _tSb().rpc('pro_team_session_save', { p_pro: S.pid, p_id: null, p: { team_id: S.team, title: title, location: loc || null, city: city || null, starts_at: startsIso, duration_min: dur, notes: notes || null, repeat_weeks: rep } });
+      if (r && r.error) throw r.error;
+      var sid = (r && r.data) || null;
+      try { fetch((window.FFP_BACKEND || 'https://ffp-passport-backend.vercel.app') + '/api/team/session/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: sid, team_id: S.team, pro_id: S.pid }) }); } catch (e) {}
+      _tToast(rep > 1 ? ('Added ' + rep + ' weekly sessions') : 'Session added', '');
+      window.FFP_TEAM.tab = 'training'; _paint();
+    } catch (e) { console.error('[FFP Team] session save', e); _tToast('Could not add session' + (e && e.message ? ': ' + e.message : ''), 'error'); }
+  };
+  window.teamSessionAttendance = async function (id) {
+    var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return;
+    var sess = (S.sessions || []).find(function (x) { return x.id === id; }) || {};
+    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg"><div style="padding:16px;color:#869599;font-weight:700;">Loading attendance…</div></div></div>';
+    var rows = [];
+    try { var r = await _tSb().rpc('pro_team_session_attendance', { p_pro: S.pid, p_session: id }); rows = (r && r.data) || []; } catch (e) { console.error(e); }
+    var body = rows.map(function (p) {
+      var chip = p.status === 'going' ? _sChip('go', 'Going') : (p.status === 'not_going' ? _sChip('no', "Can't") : _sChip('pend', 'No reply'));
+      var av = p.photo ? ('<div style="width:34px;height:34px;border-radius:50%;flex:0 0 auto;background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(p.photo) + '\');"></div>') : ('<div style="width:34px;height:34px;border-radius:50%;flex:0 0 auto;background:#0a3e44;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">' + _tEsc((p.name || 'M').charAt(0).toUpperCase()) + '</div>');
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #eef3f4;">' + av + '<div style="flex:1;font-size:13.5px;color:#0f2327;font-weight:600;">' + _tEsc(p.name || 'Athlete') + '</div>' + chip + '</div>';
+    }).join('') || '<div style="color:#5a6b6e;padding:16px 0;">No athletes on this team yet.</div>';
+    host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg"><div style="padding:16px;">' +
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;"><span onclick="teamSessionBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, '#0a3e44') + '</span><div style="font-size:17px;font-weight:900;color:#0f2327;">' + _tEsc(sess.title || 'Session') + '</div></div>' +
+      '<div style="font-size:12.5px;color:#5a6b6e;margin-bottom:14px;">' + _fmtSessWhen(sess.starts_at) + ' · ' + _tEsc([sess.location, sess.city].filter(Boolean).join(', ') || '') + '</div>' +
+      body +
+      '<button class="ffpt-min" style="width:100%;margin-top:16px;background:#fbeaea;color:#a32d2d;font-weight:800;cursor:pointer;border:none;padding:11px;border-radius:12px;" onclick="teamDeleteSession(\'' + id + '\')">Delete this session</button>' +
+      '</div></div></div>';
+  };
+  window.teamDeleteSession = async function (id) {
+    var S = window.FFP_TEAM;
+    try { await _tSb().rpc('pro_team_session_delete', { p_pro: S.pid, p_id: id }); _tToast('Session deleted', ''); window.FFP_TEAM.tab = 'training'; _paint(); }
+    catch (e) { _tToast('Could not delete', 'error'); }
+  };
 
   window.renderTeam = renderTeam;
   try { if (document.getElementById('team-body')) renderTeam(); } catch (e) {}

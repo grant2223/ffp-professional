@@ -123,7 +123,7 @@
       '.ffpt-tbar{flex:1;height:24px;border-radius:6px;background:#eef3f4;overflow:hidden;position:relative;}',
       // create page
       '.ffpt-clab{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#869599;margin-bottom:9px;}',
-      '.ffpt-in{width:100%;background:#fff;border:1px solid #e4ebec;border-radius:12px;padding:14px 15px;font-size:15px;font-weight:600;font-family:inherit;color:#0f2327;box-sizing:border-box;}',
+      '.ffpt-in{width:100%;min-width:0;max-width:100%;background:#fff;border:1px solid #e4ebec;border-radius:12px;padding:14px 15px;font-size:15px;font-weight:600;font-family:inherit;color:#0f2327;box-sizing:border-box;-webkit-appearance:none;appearance:none;}',
       '.ffpt-in::placeholder{color:#a8b4b6;font-weight:500;}',
       '.ffpt-sn{width:24px;height:24px;border-radius:50%;background:rgba(55,224,198,.16);color:#37E0C6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex:0 0 auto;}',
       '.ffpt-typ{flex:1;border-radius:12px;padding:13px 4px;text-align:center;cursor:pointer;border:1px solid #e4ebec;background:#fff;color:#5a6b6e;font-family:inherit;}',
@@ -963,8 +963,8 @@
         '<div style="flex:1;min-width:0;"><div class="ffpt-clab">Country</div><select class="ffpt-in" id="ts-country" onchange="teamSessCountry()">' + _countryOpts(defCountry) + '</select></div>' +
         '<div style="flex:1;min-width:0;"><div class="ffpt-clab">City</div><select class="ffpt-in" id="ts-city">' + _cityOpts(defCountry, ss.city || '') + '</select></div>' +
       '</div>' +
-      '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;"><div class="ffpt-clab">Date</div><input class="ffpt-in" id="ts-date" type="date" value="' + _tEsc(ss.date || _todayStr()) + '"></div><div style="flex:1;"><div class="ffpt-clab">Time</div><input class="ffpt-in" id="ts-time" type="time" value="' + _tEsc(ss.time || '06:00') + '"></div></div>' +
-      '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;"><div class="ffpt-clab">Duration</div><select class="ffpt-in" id="ts-dur">' + durOpts + '</select></div><div style="flex:1;"><div class="ffpt-clab">Repeat</div><select class="ffpt-in" id="ts-rep">' + repOpts + '</select></div></div>' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;min-width:0;"><div class="ffpt-clab">Date</div><input class="ffpt-in" id="ts-date" type="date" value="' + _tEsc(ss.date || _todayStr()) + '"></div><div style="flex:1;min-width:0;"><div class="ffpt-clab">Time</div><input class="ffpt-in" id="ts-time" type="time" value="' + _tEsc(ss.time || '06:00') + '"></div></div>' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;min-width:0;"><div class="ffpt-clab">Duration</div><select class="ffpt-in" id="ts-dur">' + durOpts + '</select></div><div style="flex:1;min-width:0;"><div class="ffpt-clab">Repeat</div><select class="ffpt-in" id="ts-rep">' + repOpts + '</select></div></div>' +
       '<div class="ffpt-clab">Notes (optional)</div><textarea class="ffpt-in" id="ts-notes" rows="3" style="resize:vertical;margin-bottom:20px;" placeholder="Bring spikes; meet at the gate">' + _tEsc(ss.notes || '') + '</textarea>' +
       '<button class="ffpt-cta" onclick="teamSaveSession()">Add session</button>' +
       '<div style="font-size:11px;color:#869599;text-align:center;margin-top:10px;">Athletes get a notification and can reply from their Passport.</div>' +

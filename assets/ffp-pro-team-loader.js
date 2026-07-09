@@ -220,6 +220,16 @@
     catch (e) { console.error('[FFP Team] players', e); S.players = []; }
     S.tab = S.tab || 'overview';
     S.ovMark = 0; S.ovSkill = 0; S.workView = 'today'; S.sel = null; S.detail = null; S.nutri = null; S.heroMark = 0; S.nutriDay = null;
+    S.clubComp = null;
+    try {
+      var rc = await _tSb().rpc('club_competitions_live');
+      var cq = ((rc && rc.data) || [])[0] || null;
+      if (cq) {
+        var rl = await _tSb().rpc('club_leaderboard', { p_quest: cq.id, p_metric: cq.club_metric || 'avg', p_min_members: cq.club_min_members || 10 });
+        var rows = (rl && rl.data) || [];
+        S.clubComp = { quest: cq, rows: rows, mine: rows.filter(function (x) { return x.team_id === teamId; })[0] || null };
+      }
+    } catch (e) { S.clubComp = null; }
     _paint();
   }
 
@@ -311,8 +321,24 @@
     var avg = (avgH != null) ? '<line x1="6" y1="' + (base - avgH) + '" x2="272" y2="' + (base - avgH) + '" stroke="rgba(255,255,255,.45)" stroke-width="1.3" stroke-dasharray="4 3"/><text x="297" y="' + (base - avgH + 3) + '" text-anchor="end" font-size="8" font-weight="800" fill="rgba(255,255,255,.6)" font-family="Montserrat">avg</text>' : '';
     return '<svg viewBox="0 0 300 88" style="position:relative;width:100%;height:auto;display:block;margin-bottom:12px;" xmlns="http://www.w3.org/2000/svg">' + avg + rects + labs + '</svg>';
   }
+  function _clubCompSection() {
+    var S = window.FFP_TEAM, cc = S.clubComp; if (!cc || !cc.rows || !cc.rows.length) return '';
+    var mine = cc.mine, m = (cc.quest.club_metric || 'avg');
+    var scoreOf = function (r) { return m === 'total' ? Math.round(r.total_points || 0) : (Math.round((r.avg_per_member || 0) * 10) / 10); };
+    var scoreLbl = m === 'total' ? 'points' : 'avg / member';
+    var top = cc.rows.slice(0, 3).map(function (r) {
+      var you = mine && r.team_id === mine.team_id;
+      return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #eef3f4;">' +
+        '<span style="width:18px;text-align:center;font-weight:800;color:' + (you ? '#0a3e44' : '#869599') + ';">' + (r.qualified === false ? '—' : r.rank) + '</span>' +
+        '<div style="flex:1;font-size:13.5px;font-weight:' + (you ? '800' : '600') + ';color:' + (you ? '#0a3e44' : '#0f2327') + ';">' + _tEsc(r.name) + (you ? ' · your club' : '') + '</div>' +
+        '<div style="font-size:14px;font-weight:800;color:#0f2327;">' + (r.qualified === false ? '—' : scoreOf(r)) + '</div></div>';
+    }).join('');
+    var youLine = mine ? ('<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;"><div style="font-size:34px;font-weight:900;color:#e0a400;line-height:.9;">' + (mine.qualified === false ? '—' : mine.rank) + '</div><div style="padding-bottom:3px;font-size:12px;color:#5a6b6e;">your club · ' + (mine.qualified === false ? ('needs ' + (cc.quest.club_min_members || 10) + ' members to qualify') : (scoreOf(mine) + ' ' + scoreLbl)) + '</div></div>') : '';
+    return '<div class="ffpt-sec"><div class="st" style="margin-bottom:4px;">Club challenge</div><div style="font-size:12px;color:#5a6b6e;margin-bottom:12px;">' + _tEsc(cc.quest.title) + ' · ranked by ' + (m === 'total' ? 'total points' : (m === 'division' ? 'division' : 'avg per member')) + '</div>' + youLine + top + '</div>';
+  }
   function _overviewSections() {
     var S = window.FFP_TEAM, ov = S.overview || {}, html = '';
+    html += _clubCompSection();
     // Doing the work
     html += '<div class="ffpt-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;"><div class="st">Doing the work</div>' +
       '<div class="ffpt-seg"><button class="' + (S.workView === 'today' ? 'on' : '') + '" onclick="teamWork(\'today\')">Today</button><button class="' + (S.workView === 'yesterday' ? 'on' : '') + '" onclick="teamWork(\'yesterday\')">Yesterday</button><button class="' + (S.workView === 'week' ? 'on' : '') + '" onclick="teamWork(\'week\')">7d</button></div></div>';

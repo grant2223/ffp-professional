@@ -48,12 +48,14 @@ async function proCopyInviteLink(btn){
       var r=await fetch('https://ffp-passport-backend.vercel.app/api/pro/invite?email='+encodeURIComponent(email));
       var j=await r.json();
       if(!r.ok||!j||!j.url){ showToast('Could not get your invite link','error'); if(btn)btn.disabled=false; return; }
-      url=j.url; window._proInviteUrl=url;
+      // passport_required = the coach has no active Passport of their own → link still lets the client join, but earns NO referral.
+      url=j.url; window._proInviteUrl=url; window._proInviteNoRef=!!j.passport_required;
     }
     var ok=false;
     try{ await navigator.clipboard.writeText(url); ok=true; }catch(e){}
     if(!ok){ try{ var ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); ok=document.execCommand('copy'); document.body.removeChild(ta); }catch(e2){} }
-    showToast(ok?'Invite link copied — share it with your client':('Link: '+url), ok?'success':'error');
+    var noRef=window._proInviteNoRef;
+    showToast(ok?(noRef?'Link copied — your client can join, but activate your own FFP Passport to earn referral rewards':'Invite link copied — share it with your client'):('Link: '+url), ok?'success':'error');
   }catch(e){ showToast('Could not copy invite link','error'); }
   if(btn) btn.disabled=false;
 }

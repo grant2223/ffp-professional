@@ -28,6 +28,14 @@
   function _initials(name) { var p = (name || '').trim().split(/\s+/); return (((p[0] || '')[0] || '') + ((p[1] || '')[0] || '')).toUpperCase(); }
   function _todayStr() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function _ic(n, s, c) { return '<span class="ffpt-ms" style="font-size:' + (s || 16) + 'px;' + (c ? 'color:' + c + ';' : '') + '">' + n + '</span>'; }
+  // Standards (taxonomy) for the training form — no free-typing city / session type.
+  var _SESS_TYPES = ['Conditioning', 'Strength & power', 'Speed & agility', 'Skills & technique', 'Team run', 'Match / game', 'Recovery', 'Gym session', 'Assessment / testing'];
+  function _taxCities() { return (window.FFP_TAX && FFP_TAX.cities) || {}; }
+  function _titleOpts(sel) { return '<option value="">Select a session type…</option>' + _SESS_TYPES.map(function (t) { return '<option' + (t === sel ? ' selected' : '') + '>' + _tEsc(t) + '</option>'; }).join(''); }
+  function _countryOpts(sel) { var c = _taxCities(); return '<option value="">Country</option>' + Object.keys(c).sort().map(function (k) { return '<option' + (k === sel ? ' selected' : '') + '>' + _tEsc(k) + '</option>'; }).join(''); }
+  function _cityOpts(country, sel) { var c = _taxCities(); var list = (c[country] || []).slice(); if (sel && list.indexOf(sel) === -1) list.unshift(sel); return '<option value="">City</option>' + list.map(function (x) { return '<option' + (x === sel ? ' selected' : '') + '>' + _tEsc(x) + '</option>'; }).join(''); }
+  function _countryOfCity(city) { if (!city) return ''; var c = _taxCities(); for (var k in c) { if (c[k] && c[k].indexOf(city) > -1) return k; } return ''; }
+  window.teamSessCountry = function () { var co = ((document.getElementById('ts-country') || {}).value) || ''; var cy = document.getElementById('ts-city'); if (cy) cy.innerHTML = _cityOpts(co, ''); };
 
   function _fmtVal(v, unit) {
     if (v == null || v === '') return '—';
@@ -73,7 +81,7 @@
       // FULL BLEED: break out of .main-scroll padding (18/26 desktop, 14/14 mobile) so Team pages are edge-to-edge.
       '.ffpt{font-family:Montserrat,-apple-system,system-ui,sans-serif;margin:-18px -26px 0;}',
       '@media (max-width:859px){.ffpt{margin:-14px -14px 0;}}',
-      '.ffpt-ms{font-family:"Material Icons";font-style:normal;line-height:1;vertical-align:middle;}',
+      '.ffpt-ms{font-family:"Material Icons";font-style:normal;line-height:1;vertical-align:middle;text-transform:none;letter-spacing:normal;white-space:nowrap;}',
       '.ffpt-card{background:#fff;border:none;border-radius:0;max-width:none;margin:0;box-shadow:none;overflow:hidden;min-height:calc(100dvh - 96px);}',
       '.ffpt-tl{border-radius:16px;overflow:hidden;background:#fff;border:1px solid #e4ebec;box-shadow:0 6px 18px rgba(10,62,68,.07);margin-bottom:13px;cursor:pointer;}',
       '.ffpt-tlcover{height:176px;position:relative;display:flex;align-items:flex-end;padding:14px;}',
@@ -330,11 +338,11 @@
       var you = mine && r.team_id === mine.team_id;
       return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #eef3f4;">' +
         '<span style="width:18px;text-align:center;font-weight:800;color:' + (you ? '#0a3e44' : '#869599') + ';">' + (r.qualified === false ? '—' : r.rank) + '</span>' +
-        '<div style="flex:1;font-size:13.5px;font-weight:' + (you ? '800' : '600') + ';color:' + (you ? '#0a3e44' : '#0f2327') + ';">' + _tEsc(r.name) + (you ? ' · your club' : '') + '</div>' +
+        '<div style="flex:1;font-size:13.5px;font-weight:' + (you ? '800' : '600') + ';color:' + (you ? '#0a3e44' : '#0f2327') + ';">' + _tEsc(r.name) + (you ? ' · your team' : '') + '</div>' +
         '<div style="font-size:14px;font-weight:800;color:#0f2327;">' + (r.qualified === false ? '—' : scoreOf(r)) + '</div></div>';
     }).join('');
-    var youLine = mine ? ('<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;"><div style="font-size:34px;font-weight:900;color:#e0a400;line-height:.9;">' + (mine.qualified === false ? '—' : mine.rank) + '</div><div style="padding-bottom:3px;font-size:12px;color:#5a6b6e;">your club · ' + (mine.qualified === false ? ('needs ' + (cc.quest.club_min_members || 10) + ' members to qualify') : (scoreOf(mine) + ' ' + scoreLbl)) + '</div></div>') : '';
-    return '<div class="ffpt-sec"><div class="st" style="margin-bottom:4px;">Club challenge</div><div style="font-size:12px;color:#5a6b6e;margin-bottom:12px;">' + _tEsc(cc.quest.title) + ' · ranked by ' + (m === 'total' ? 'total points' : (m === 'division' ? 'division' : 'avg per member')) + '</div>' + youLine + top + '</div>';
+    var youLine = mine ? ('<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;"><div style="font-size:34px;font-weight:900;color:#e0a400;line-height:.9;">' + (mine.qualified === false ? '—' : mine.rank) + '</div><div style="padding-bottom:3px;font-size:12px;color:#5a6b6e;">your team · ' + (mine.qualified === false ? ('needs ' + (cc.quest.club_min_members || 10) + ' members to qualify') : (scoreOf(mine) + ' ' + scoreLbl)) + '</div></div>') : '';
+    return '<div class="ffpt-sec"><div class="st" style="margin-bottom:4px;">Team Challenge</div><div style="font-size:12px;color:#5a6b6e;margin-bottom:12px;">' + _tEsc(cc.quest.title) + ' · ranked by ' + (m === 'total' ? 'total points' : (m === 'division' ? 'division' : 'avg per member')) + '</div>' + youLine + top + '</div>';
   }
   function _overviewSections() {
     var S = window.FFP_TEAM, ov = S.overview || {}, html = '';
@@ -946,11 +954,15 @@
     var S = window.FFP_TEAM, host = document.getElementById('team-body'); if (!host) return; var ss = S.sess || {};
     var durOpts = [30, 45, 60, 75, 90, 120].map(function (d) { return '<option value="' + d + '"' + (ss.dur === d ? ' selected' : '') + '>' + d + ' min</option>'; }).join('');
     var repOpts = [[1, 'Just this session'], [2, 'Weekly · 2 weeks'], [4, 'Weekly · 4 weeks'], [8, 'Weekly · 8 weeks'], [12, 'Weekly · 12 weeks']].map(function (o) { return '<option value="' + o[0] + '"' + (ss.repeat === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+    var defCountry = ss.country || _countryOfCity(ss.city) || (_taxCities()['United Arab Emirates'] ? 'United Arab Emirates' : '');
     host.innerHTML = '<div class="ffpt"><div class="ffpt-cardg"><div style="padding:16px;">' +
       '<div style="display:flex;align-items:center;gap:9px;margin-bottom:16px;"><span onclick="teamSessionBack()" style="cursor:pointer;">' + _ic('arrow_back', 20, '#0a3e44') + '</span><div style="font-size:18px;font-weight:900;color:#0f2327;">New training session</div></div>' +
-      '<div class="ffpt-clab">Title</div><input class="ffpt-in" id="ts-title" placeholder="Interval session" value="' + _tEsc(ss.title || '') + '" style="margin-bottom:16px;">' +
-      '<div class="ffpt-clab">Location</div><input class="ffpt-in" id="ts-loc" placeholder="Zabeel Park" value="' + _tEsc(ss.location || '') + '" style="margin-bottom:16px;">' +
-      '<div class="ffpt-clab">City</div><input class="ffpt-in" id="ts-city" placeholder="Dubai" value="' + _tEsc(ss.city || '') + '" style="margin-bottom:16px;">' +
+      '<div class="ffpt-clab">Session type</div><select class="ffpt-in" id="ts-title" style="margin-bottom:16px;">' + _titleOpts(ss.title || '') + '</select>' +
+      '<div class="ffpt-clab">Location (venue)</div><input class="ffpt-in" id="ts-loc" placeholder="e.g. Zabeel Park" value="' + _tEsc(ss.location || '') + '" style="margin-bottom:16px;">' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px;">' +
+        '<div style="flex:1;min-width:0;"><div class="ffpt-clab">Country</div><select class="ffpt-in" id="ts-country" onchange="teamSessCountry()">' + _countryOpts(defCountry) + '</select></div>' +
+        '<div style="flex:1;min-width:0;"><div class="ffpt-clab">City</div><select class="ffpt-in" id="ts-city">' + _cityOpts(defCountry, ss.city || '') + '</select></div>' +
+      '</div>' +
       '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;"><div class="ffpt-clab">Date</div><input class="ffpt-in" id="ts-date" type="date" value="' + _tEsc(ss.date || _todayStr()) + '"></div><div style="flex:1;"><div class="ffpt-clab">Time</div><input class="ffpt-in" id="ts-time" type="time" value="' + _tEsc(ss.time || '06:00') + '"></div></div>' +
       '<div style="display:flex;gap:10px;margin-bottom:16px;"><div style="flex:1;"><div class="ffpt-clab">Duration</div><select class="ffpt-in" id="ts-dur">' + durOpts + '</select></div><div style="flex:1;"><div class="ffpt-clab">Repeat</div><select class="ffpt-in" id="ts-rep">' + repOpts + '</select></div></div>' +
       '<div class="ffpt-clab">Notes (optional)</div><textarea class="ffpt-in" id="ts-notes" rows="3" style="resize:vertical;margin-bottom:20px;" placeholder="Bring spikes; meet at the gate">' + _tEsc(ss.notes || '') + '</textarea>' +

@@ -68,8 +68,8 @@
   .bene span{display:inline-flex;align-items:center;gap:7px;}
   .bene svg{flex:0 0 auto;}
 
-  /* form */
-  .panel{padding:36px 0 20px;}
+  /* form — NOTE: .panel padding must keep the 22px sides; it overrides .wrap's horizontal padding. */
+  .panel{padding:36px 22px 22px;}
   .step-h{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px;}
   .step-sub{font-size:13.5px;color:var(--muted);margin-bottom:24px;}
   .field{margin-bottom:20px;position:relative;}
@@ -132,7 +132,7 @@
     .kicker{margin-bottom:10px;}
     .hero p.lead{font-size:14.5px;}
     .bene{gap:6px 14px;font-size:12px;margin-top:18px;}
-    .panel{padding:26px 0 14px;}
+    .panel{padding:26px 20px 14px;}   /* keep 20px sides on mobile — fields must NOT touch the edge */
     .row2{grid-template-columns:1fr;gap:0;}
     input.code{letter-spacing:9px;font-size:23px;}
     .prof-list{max-height:40vh;}          /* fit above the on-screen keyboard */

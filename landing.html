@@ -88,6 +88,8 @@
   .shots::-webkit-scrollbar{display:none;}
   .shot{flex:0 0 auto;width:220px;scroll-snap-align:start;margin:0;}
   .shot img{width:220px;aspect-ratio:9/19;object-fit:cover;object-position:top;border-radius:26px;background:linear-gradient(160deg,#0e5560,#0a2029);border:1px solid var(--hair);}
+  /* .device = a full iPhone-frame mockup (not a flat screen): show the whole phone, no dressing. */
+  .shot.device img{object-fit:contain;background:transparent;border:none;border-radius:0;}
   .shot figcaption{margin-top:14px;}
   .shot figcaption b{font-size:14.5px;font-weight:800;display:block;}
   .shot figcaption b .pp{font-size:10px;font-weight:800;color:var(--teal);}
@@ -196,6 +198,7 @@
     <figure class="shot"><img loading="lazy" alt="Teams" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-overview.png"><figcaption><b>Teams</b><span>Squads and progress.</span></figcaption></figure>
     <figure class="shot"><img loading="lazy" alt="Track" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-athlete.png"><figcaption><b>Track <span class="pp">· Passport</span></b><span>Exercise, nutrition, activity.</span></figcaption></figure>
     <figure class="shot"><img loading="lazy" alt="Engage" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-passport-quest-team.png"><figcaption><b>Engage <span class="pp">· Passport</span></b><span>Compete against other teams.</span></figcaption></figure>
+    <figure class="shot device"><img loading="lazy" alt="Your profile in the Passport app" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-member-view.png" onerror="this.closest('.shot').style.display='none'"><figcaption><b>Your profile <span class="pp">· Passport</span></b><span>How clients find &amp; book you.</span></figcaption></figure>
   </div>
 </div></section>
 

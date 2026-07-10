@@ -120,7 +120,28 @@
   .foot{text-align:center;color:var(--dim);font-size:12px;font-weight:600;padding:20px 0 44px;}
   .foot a{color:var(--teal);font-weight:800;}
   .hidden{display:none !important;}
-  @media(max-width:520px){ .row2{grid-template-columns:1fr;} }
+
+  /* ── MOBILE (priority) ── */
+  @media(max-width:560px){
+    .wrap{padding:0 18px;}
+    .nav .wrap{height:56px;}
+    .nav .brand img{height:24px;}
+    .nav .signin{font-size:13px;}
+    .hero .wrap{padding:38px 18px 30px;}
+    .kicker{margin-bottom:10px;}
+    .hero p.lead{font-size:14.5px;}
+    .bene{gap:6px 14px;font-size:12px;margin-top:18px;}
+    .panel{padding:26px 0 14px;}
+    .row2{grid-template-columns:1fr;gap:0;}
+    input.code{letter-spacing:9px;font-size:23px;}
+    .prof-list{max-height:40vh;}          /* fit above the on-screen keyboard */
+    .btn{padding:17px;}                    /* comfortable tap target */
+  }
+  /* iOS safe-area (notch / home indicator) */
+  @supports(padding:max(0px)){
+    .nav .wrap{padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right));}
+    .foot{padding-bottom:max(44px,calc(24px + env(safe-area-inset-bottom)));}
+  }
 </style>
 </head>
 <body>
@@ -255,7 +276,7 @@
     profClose();
   };
   window.profToggle=function(ev){ if(ev)ev.stopPropagation(); var pop=$('prof-pop'); if(pop.hasAttribute('hidden')) profOpen(); else profClose(); };
-  function profOpen(){ var pop=$('prof-pop'); pop.removeAttribute('hidden'); $('prof-btn').classList.add('open'); window.profRender(''); var s=$('prof-search'); if(s){ s.value=''; setTimeout(function(){ try{s.focus();}catch(e){} },30); } }
+  function profOpen(){ var pop=$('prof-pop'); pop.removeAttribute('hidden'); $('prof-btn').classList.add('open'); window.profRender(''); try{ $('prof-field').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} var s=$('prof-search'); if(s){ s.value=''; setTimeout(function(){ try{s.focus();}catch(e){} },120); } }
   function profClose(){ $('prof-pop').setAttribute('hidden',''); $('prof-btn').classList.remove('open'); }
   document.addEventListener('click', function(e){ var f=$('prof-field'); if(f && !f.contains(e.target)) profClose(); });
 

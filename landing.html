@@ -83,13 +83,15 @@
   .sec-head p{font-size:17px;color:var(--mut);font-weight:500;margin-top:10px;}
   @media(max-width:640px){.sec-head h2{font-size:28px;}}
 
-  /* CAPABILITIES — 4 phone shots (proper 9/19 fit) */
-  .caps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:34px;}
-  .cap .ph{width:100%;aspect-ratio:9/19;object-fit:cover;object-position:top center;border-radius:24px;background:linear-gradient(160deg,#0e5560,#0a2029);border:1px solid var(--hair);}
-  .cap h3{font-size:17px;font-weight:900;margin:14px 0 3px;}
-  .cap h3 .pp{font-size:10px;font-weight:800;color:var(--teal);}
-  .cap p{font-size:12.5px;color:var(--mut);font-weight:600;line-height:1.4;}
-  @media(max-width:820px){.caps{grid-template-columns:1fr 1fr;gap:26px 16px;}}
+  /* CAPABILITIES — horizontal-scroll phone shots (9/19 fit) */
+  .shots{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:34px -24px 0;padding:0 24px 8px;}
+  .shots::-webkit-scrollbar{display:none;}
+  .shot{flex:0 0 auto;width:220px;scroll-snap-align:start;margin:0;}
+  .shot img{width:220px;aspect-ratio:9/19;object-fit:cover;object-position:top;border-radius:26px;background:linear-gradient(160deg,#0e5560,#0a2029);border:1px solid var(--hair);}
+  .shot figcaption{margin-top:14px;}
+  .shot figcaption b{font-size:14.5px;font-weight:800;display:block;}
+  .shot figcaption b .pp{font-size:10px;font-weight:800;color:var(--teal);}
+  .shot figcaption span{font-size:12.5px;color:var(--mut);display:block;margin-top:2px;}
 
   /* POCKET — landscape image + copy */
   .pocket{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;}
@@ -101,10 +103,13 @@
   .pocket li b{color:#fff;font-weight:800;}
   @media(max-width:860px){.pocket{grid-template-columns:1fr;gap:34px;}.pocket h2{font-size:30px;}}
 
-  /* EASY band */
-  .easy{text-align:center;background:var(--panel);}
-  .easy h2{font-size:40px;font-weight:900;letter-spacing:-1px;}
-  @media(max-width:640px){.easy h2{font-size:30px;}}
+  /* EASY band — photo background */
+  .easy{position:relative;text-align:center;overflow:hidden;padding:120px 0;}
+  .easy .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 38%;}
+  .easy .scrim{position:absolute;inset:0;background:linear-gradient(rgba(7,32,42,.66),rgba(7,32,42,.74));}
+  .easy .wrap{position:relative;z-index:2;}
+  .easy h2{font-size:44px;font-weight:900;letter-spacing:-1px;}
+  @media(max-width:640px){.easy{padding:90px 0;}.easy h2{font-size:30px;}}
 
   /* BENEFITS — pricing-style card WITH cta */
   .benefits-head{text-align:center;margin-bottom:32px;}
@@ -160,7 +165,6 @@
   <div class="hero-copy"><div class="wrap">
     <div class="eyebrow">For coaches &amp; trainers</div>
     <h1>Everything you need to support your community.</h1>
-    <p class="lead">One free place to coach, manage, track and engage your people — so you spend less time on admin and more time with them.</p>
     <div class="hero-cta">
       <a href="/signup" class="btn">Create your free account</a>
       <a href="#what" class="btn-ghost">See how it works &rarr;</a>
@@ -179,26 +183,18 @@
 <section id="what"><div class="wrap">
   <div class="sec-head">
     <div class="eyebrow">What you do</div>
-    <h2>Four things, one place.</h2>
-    <p>Real screens from the FFP Professional app.</p>
+    <h2>Coach, manage, track, engage.</h2>
+    <p>Real screens from the app — swipe through.</p>
   </div>
-  <div class="caps">
-    <figure class="cap">
-      <img class="ph" loading="lazy" alt="Coach" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-overview.png" onerror="this.style.opacity=.001">
-      <h3>Coach</h3><p>Programming and progress.</p>
-    </figure>
-    <figure class="cap">
-      <img class="ph" loading="lazy" alt="Manage" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-schedule.png" onerror="this.style.opacity=.001">
-      <h3>Manage</h3><p>Bookings, trainings, payments.</p>
-    </figure>
-    <figure class="cap">
-      <img class="ph" loading="lazy" alt="Track" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-athlete.png" onerror="this.style.opacity=.001">
-      <h3>Track <span class="pp">· Passport</span></h3><p>Exercise, nutrition, activity.</p>
-    </figure>
-    <figure class="cap">
-      <img class="ph" loading="lazy" alt="Engage" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-passport-quest-team.png" onerror="this.style.opacity=.001">
-      <h3>Engage <span class="pp">· Passport</span></h3><p>Compete against other teams.</p>
-    </figure>
+  <div class="shots">
+    <figure class="shot"><img loading="lazy" alt="Coach" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-overview.png"><figcaption><b>Coach</b><span>Programming and progress.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="Manage" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-schedule.png"><figcaption><b>Manage</b><span>Bookings, trainings, payments.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="Track" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-athlete.png"><figcaption><b>Track <span class="pp">· Passport</span></b><span>Exercise, nutrition, activity.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="Engage" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-passport-quest-team.png"><figcaption><b>Engage <span class="pp">· Passport</span></b><span>Compete against other teams.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="Trainings" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-team-trainings.png"><figcaption><b>Trainings</b><span>Sessions, venues, attendance.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="Check-in" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-checkin.png"><figcaption><b>Check-in</b><span>Scan your clients in.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="Your profile" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-pro-profile.png"><figcaption><b>Your profile</b><span>Your storefront on FFP.</span></figcaption></figure>
+    <figure class="shot"><img loading="lazy" alt="FFP Coach" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/pro-ffp-coach.png"><figcaption><b>FFP Coach</b><span>AI help, in your corner.</span></figcaption></figure>
   </div>
 </div></section>
 
@@ -222,9 +218,13 @@
 </div></section>
 
 <!-- EASY band -->
-<section class="easy divide"><div class="wrap">
-  <h2>Easy for you, fun for them.</h2>
-</div></section>
+<section class="easy divide">
+  <img class="bg" loading="lazy" alt="" src="/assets/padel-high-five.jpg">
+  <div class="scrim"></div>
+  <div class="wrap">
+    <h2>Easy for you, fun for them.</h2>
+  </div>
+</section>
 
 <!-- BENEFITS -->
 <section id="join" class="divide"><div class="wrap">

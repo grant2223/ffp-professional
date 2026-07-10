@@ -1,0 +1,339 @@
+<!--
+═══════════════════════════════════════════════════════════════════════
+  FFP PROFESSIONAL — pro-signup.html v3 (2026-07-10)
+  Standalone FREE coach/pro signup, served at ffpprofessional.com/signup (see _redirects).
+  (Renamed from signup.html so it's clearly the PRO signup, distinct from the partner one.)
+
+  SAME ORIGIN as /app (index.html) + /landing.html → the session persists in
+  localStorage and the dashboard reads it directly, no cross-origin hand-off.
+
+  Flow (world-class, reliable — dedicated FREE endpoint, no member paywall involved):
+    1. Details: given + surname + email + MAIN PROFESSION (FFP taxonomy picker,
+       professionalRolesFlat) + Country + City (FFP_TAX.cities cascade).
+    2. POST /api/pro/signup {email, full_name}  (backend v167 — FREE, paywall-free;
+       creates a free members row for a NEW email, or reuses the existing row for an
+       email that already has an account — SAME email = one account) → emails a 6-digit code.
+    3. 6-digit code → FFPApi.verifyCode(email, code) → /api/auth/signin (sets token/member/jwt + Supabase session).
+    4. professional_link(p_member, {..profession/category/country/city..}) → status=active pro
+       (the SAME RPC the /app onboarding calls — signup is the single complete front door, no re-entry).
+    5. redirect → /app → dashboard.  (Fallback: if professional_link errors, still redirect → onboarding catches it.)
+
+  MODEL: coaches use FFP Pro FREE. Referral earning is optional and requires a paid
+  Passport subscription on the SAME email (layered onto this same members row later).
+  Brand = landing.html teal + yellow CTA.
+═══════════════════════════════════════════════════════════════════════
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FFP Professional · Create your free account</title>
+<meta name="description" content="Create your free FFP Professional account. Get discovered by active members, fill your open slots, and keep 100% of your bookings. No Passport required, no setup fee, no commission.">
+<link rel="icon" href="/assets/icons/ffp-pro-32.png?v=3" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/icons/ffp-pro-180.png?v=3">
+<meta name="theme-color" content="#0e2f3d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Supabase SDK must load BEFORE ffp-api-integration.js (it builds the client + window.FFPAuth). -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/ffp-api-integration.js?v=12"></script>
+<script src="assets/ffp-constants.js"></script>
+<script src="assets/ffp-taxonomy.js?v=12"></script>
+<style>
+  :root{ --ink:#102230; --muted:#637c8d; --dim:#8295a3; --teal:#0a3e44; --teal2:#0e2f3d; --acc:#5ec8d8; --yellow:#FFCC00; --line:#e7ecf0; --bg:#edf0f2; --red:#e2483f; --green:#1aa06d; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  *::-webkit-scrollbar{display:none;width:0;height:0;}
+  html,body{background:#fff;color:var(--ink);font-family:'Montserrat',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;scrollbar-width:none;}
+  input,select,textarea{font-size:16px;}
+  a{text-decoration:none;color:inherit;}
+  .wrap{max-width:560px;margin:0 auto;padding:0 22px;}
+
+  /* top bar — matches landing.html nav */
+  .nav{position:sticky;top:0;z-index:40;background:rgba(14,47,61,.96);backdrop-filter:blur(8px);}
+  .nav .wrap{max-width:1080px;display:flex;align-items:center;justify-content:space-between;height:62px;}
+  .nav .brand img{height:28px;width:auto;display:block;}
+  .nav .signin{color:#cfe0e6;font-weight:700;font-size:14px;}
+  .nav .signin b{color:#fff;}
+
+  /* hero */
+  .hero{position:relative;background:var(--teal2);color:#fff;overflow:hidden;}
+  .hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1600&q=70') center/cover;opacity:.16;}
+  .hero .wrap{position:relative;padding:52px 22px 40px;text-align:center;}
+  .kicker{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--acc);margin-bottom:14px;}
+  .hero h1{font-size:clamp(27px,5.2vw,38px);font-weight:900;line-height:1.1;letter-spacing:-.5px;margin-bottom:14px;}
+  .hero p.lead{font-size:15.5px;color:#cfe0e6;line-height:1.6;max-width:460px;margin:0 auto;}
+  .bene{margin-top:22px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-size:13px;font-weight:700;color:#bfe0e6;}
+  .bene span{display:inline-flex;align-items:center;gap:7px;}
+  .bene svg{flex:0 0 auto;}
+
+  /* form */
+  .panel{padding:36px 0 20px;}
+  .step-h{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px;}
+  .step-sub{font-size:13.5px;color:var(--muted);margin-bottom:24px;}
+  .field{margin-bottom:16px;position:relative;}
+  .field label{display:block;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--dim);margin-bottom:7px;}
+  .field label .req{color:var(--teal);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  input.in,select.in{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:12px;color:var(--ink);font-family:inherit;font-size:16px;font-weight:600;padding:14px 15px;outline:none;transition:border-color .15s,box-shadow .15s;}
+  input.in::placeholder{color:#a9bac6;font-weight:600;}
+  input.in:focus,select.in:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,62,68,.10);}
+  select.in{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238295a3' stroke-width='2.6'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;}
+  input.code{letter-spacing:12px;text-align:center;font-size:26px;font-weight:800;padding:16px 15px;}
+
+  /* Profession — FFP taxonomy picker (button → searchable popover, world-class standard) */
+  .pick-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:12px;color:var(--ink);font-family:inherit;font-size:16px;font-weight:600;padding:14px 15px;cursor:pointer;text-align:left;outline:none;transition:border-color .15s,box-shadow .15s;}
+  .pick-btn.placeholder{color:#a9bac6;}
+  .pick-btn:focus,.pick-btn.open{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,62,68,.10);}
+  .pick-btn .car{color:var(--dim);flex:0 0 auto;}
+  .prof-pop{position:absolute;z-index:60;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 54px rgba(16,34,48,.20);padding:10px;}
+  .prof-pop[hidden]{display:none;}
+  .prof-search{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:10px;color:var(--ink);font-family:inherit;font-size:15px;font-weight:600;padding:11px 13px;outline:none;margin-bottom:8px;}
+  .prof-search:focus{border-color:var(--teal);}
+  .prof-list{max-height:264px;overflow:auto;display:flex;flex-direction:column;scrollbar-width:none;}
+  .prof-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px;border:none;background:none;border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;width:100%;}
+  .prof-row:hover,.prof-row.kbd{background:#f1f6f7;}
+  .prof-row .pr-name{font-size:14.5px;font-weight:700;color:var(--ink);}
+  .prof-row .pr-cat{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+  .prof-row.sel .pr-name{color:var(--teal);}
+  .prof-empty{padding:16px;color:var(--muted);font-size:13px;text-align:center;}
+
+  .btn{width:100%;margin-top:8px;background:var(--yellow);color:#082335;border:none;border-radius:13px;padding:16px;font-size:15px;font-weight:800;letter-spacing:.2px;cursor:pointer;font-family:inherit;box-shadow:0 8px 22px rgba(0,0,0,.14);transition:transform .06s,opacity .15s;}
+  .btn:active:not(:disabled){transform:translateY(1px);}
+  .btn:disabled{opacity:.55;cursor:default;box-shadow:none;}
+  .err{color:var(--red);font-size:12.5px;font-weight:700;margin-top:12px;min-height:15px;}
+  .alt{font-size:13px;color:var(--muted);text-align:center;margin-top:18px;font-weight:600;}
+  .alt a{color:var(--teal);font-weight:800;}
+  .sent-to{font-weight:800;color:var(--ink);}
+  .resend{font-size:12.5px;color:var(--muted);text-align:center;margin-top:14px;font-weight:600;}
+  .resend a{color:var(--teal);font-weight:800;cursor:pointer;text-decoration:underline;}
+  .backlink{font-size:12.5px;color:var(--dim);text-align:center;margin-top:12px;font-weight:700;cursor:pointer;}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
+  /* success */
+  .ok{text-align:center;padding:14px 0 24px;}
+  .ok-mark{width:70px;height:70px;border-radius:50%;background:rgba(26,160,109,.12);color:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+  .ok h2{font-size:22px;font-weight:900;margin-bottom:10px;}
+  .ok p{font-size:14px;color:var(--muted);max-width:420px;margin:0 auto;}
+
+  .foot{text-align:center;color:var(--dim);font-size:12px;font-weight:600;padding:20px 0 44px;}
+  .foot a{color:var(--teal);font-weight:800;}
+  .hidden{display:none !important;}
+  @media(max-width:520px){ .row2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<div class="nav"><div class="wrap">
+  <a class="brand" href="/" aria-label="FFP Professional"><img src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/ffp-logo-white.png" alt="FFP Professional"></a>
+  <a class="signin" href="/app">Already registered? <b>Sign in →</b></a>
+</div></div>
+
+<section class="hero"><div class="hero-bg"></div>
+  <div class="wrap">
+    <div class="kicker">FFP Professional</div>
+    <h1>Create your free professional account</h1>
+    <p class="lead">Get found by active members, fill your open slots, and take payment into your own account. The dashboard is free — no Passport, no setup fee, no commission. You keep 100%.</p>
+    <div class="bene">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5ec8d8" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>Free forever</span>
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5ec8d8" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>No card required</span>
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5ec8d8" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>Keep 100% of bookings</span>
+    </div>
+  </div>
+</section>
+
+<div class="wrap panel">
+
+  <!-- STEP 1 — details -->
+  <div id="step-email">
+    <div class="step-h">Get started</div>
+    <div class="step-sub">Tell us a little about you and we'll send a 6-digit code to confirm your email. It's free — you'll be in your dashboard in under a minute.</div>
+    <div class="hp"><label>Do not fill<input type="text" id="hp" tabindex="-1" autocomplete="off"></label></div>
+
+    <div class="row2">
+      <div class="field"><label>Given names <span class="req">*</span></label><input class="in" id="given" type="text" autocomplete="given-name" placeholder="First name" maxlength="60"></div>
+      <div class="field"><label>Surname <span class="req">*</span></label><input class="in" id="surname" type="text" autocomplete="family-name" placeholder="Last name" maxlength="60"></div>
+    </div>
+
+    <div class="field"><label>Email <span class="req">*</span></label><input class="in" id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" maxlength="120"></div>
+
+    <div class="field" id="prof-field">
+      <label>Main profession <span class="req">*</span></label>
+      <input type="hidden" id="prof-value">
+      <button type="button" class="pick-btn placeholder" id="prof-btn" onclick="profToggle(event)">
+        <span id="prof-lbl">Select your profession</span>
+        <svg class="car" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="prof-pop" id="prof-pop" hidden>
+        <input type="text" class="prof-search" id="prof-search" placeholder="Search profession or category…" autocomplete="off" oninput="profRender(this.value)">
+        <div class="prof-list" id="prof-list"></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field"><label>Country</label><select class="in" id="country" onchange="onCountryChange()"></select></div>
+      <div class="field"><label>City</label><select class="in" id="city"></select></div>
+    </div>
+
+    <button class="btn" id="email-btn" onclick="requestCode()">Create my free account</button>
+    <div class="err" id="email-err"></div>
+    <div class="alt">Already have an account? <a href="/app">Sign in →</a></div>
+  </div>
+
+  <!-- STEP 2 — code -->
+  <div id="step-code" class="hidden">
+    <div class="step-h">Enter your code</div>
+    <div class="step-sub">We sent a 6-digit code to <span class="sent-to" id="sent-to"></span>. Enter it below to confirm and finish.</div>
+    <div class="field"><label>6-digit code</label><input class="in code" id="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••" onkeydown="if(event.key==='Enter'){event.preventDefault();verifyCode();}"></div>
+    <button class="btn" id="code-btn" onclick="verifyCode()">Confirm &amp; finish</button>
+    <div class="err" id="code-err"></div>
+    <div class="resend">Didn't get it? <a id="resend-link" onclick="resendCode()">Resend code</a><span id="resend-timer" style="margin-left:6px;opacity:.8;"></span></div>
+    <div class="backlink" onclick="backToEmail()">Use a different email</div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="step-ok" class="hidden ok">
+    <div class="ok-mark"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h2>You're all set</h2>
+    <p>Your free professional account is live and you're signed in. Taking you to your dashboard now&hellip;</p>
+    <p style="margin-top:14px;">Not redirected? <a href="/app" style="color:var(--teal);font-weight:800;">Open your dashboard →</a></p>
+  </div>
+
+  <div class="foot">FFP Professional · Questions? <a href="mailto:hello@findfitpeople.com">hello@findfitpeople.com</a></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var API_BASE='https://ffp-passport-backend.vercel.app';
+  var _email='', _member=null;
+  function $(id){ return document.getElementById(id); }
+  function v(id){ var e=$(id); return e ? (e.value||'').trim() : ''; }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function show(which){
+    $('step-email').classList.toggle('hidden', which!=='email');
+    $('step-code').classList.toggle('hidden', which!=='code');
+    $('step-ok').classList.toggle('hidden', which!=='ok');
+  }
+
+  /* ── Country / City — FFP_TAX.cities (same source as the app onboarding) ── */
+  function tax(){ return window.FFP_TAX || {}; }
+  function fillCountries(){
+    var sel=$('country'); if(!sel) return;
+    var cities=tax().cities||{}; var keys=Object.keys(cities).sort();
+    var cur=sel.value;
+    sel.innerHTML='<option value="">Country</option>'+keys.map(function(k){ return '<option'+(k===cur?' selected':'')+'>'+esc(k)+'</option>'; }).join('');
+    fillCities();
+  }
+  window.onCountryChange=function(){ fillCities(); };
+  function fillCities(){
+    var csel=$('city'), country=v('country'); if(!csel) return;
+    var cities=tax().cities||{}; var list=(cities[country]||[]).slice();
+    csel.innerHTML='<option value="">City</option>'+list.map(function(x){ return '<option>'+esc(x)+'</option>'; }).join('');
+  }
+
+  /* ── Profession — FFP taxonomy searchable picker (professionalRolesFlat) ── */
+  function roles(){ var t=tax(); return (t.professionalRolesFlat && t.professionalRolesFlat()) || []; }
+  window.profRender=function(filter){
+    var host=$('prof-list'); if(!host) return;
+    var q=(filter||'').trim().toLowerCase();
+    var chosen=v('prof-value');
+    var list=roles();
+    if(q) list=list.filter(function(r){ return (r.name||'').toLowerCase().indexOf(q)!==-1 || (r.category||'').toLowerCase().indexOf(q)!==-1; });
+    if(!list.length){ host.innerHTML='<div class="prof-empty">No professions match. Try a different search.</div>'; return; }
+    host.innerHTML=list.map(function(r){
+      var on=r.name===chosen;
+      return '<button type="button" class="prof-row'+(on?' sel':'')+'" onclick="profPick('+JSON.stringify(esc(r.name))+','+JSON.stringify(esc(r.category||''))+')">'+
+        '<span class="pr-name">'+esc(r.name)+(on?' ✓':'')+'</span><span class="pr-cat">'+esc(r.category||'')+'</span></button>';
+    }).join('');
+  };
+  window.profPick=function(name,category){
+    $('prof-value').value=name; $('prof-value').dataset.category=category||'';
+    var lbl=$('prof-lbl'); if(lbl) lbl.textContent=name;
+    $('prof-btn').classList.remove('placeholder');
+    profClose();
+  };
+  window.profToggle=function(ev){ if(ev)ev.stopPropagation(); var pop=$('prof-pop'); if(pop.hasAttribute('hidden')) profOpen(); else profClose(); };
+  function profOpen(){ var pop=$('prof-pop'); pop.removeAttribute('hidden'); $('prof-btn').classList.add('open'); window.profRender(''); var s=$('prof-search'); if(s){ s.value=''; setTimeout(function(){ try{s.focus();}catch(e){} },30); } }
+  function profClose(){ $('prof-pop').setAttribute('hidden',''); $('prof-btn').classList.remove('open'); }
+  document.addEventListener('click', function(e){ var f=$('prof-field'); if(f && !f.contains(e.target)) profClose(); });
+
+  // Populate taxonomy-driven fields now (inline fallback) + refresh when the DB list resolves.
+  function hydrateTax(){ fillCountries(); if(!$('prof-pop').hasAttribute('hidden')) window.profRender(v('prof-search')); }
+  hydrateTax();
+  document.addEventListener('ffp-tax-ready', hydrateTax);
+
+  /* ── Step 1 → create the FREE account + send code (dedicated paywall-free endpoint) ── */
+  window.requestCode=function(){
+    var err=$('email-err'); err.textContent='';
+    if($('hp').value) return; // honeypot
+    var given=v('given'), surname=v('surname'), email=v('email').toLowerCase(), prof=v('prof-value');
+    if(!given || !surname){ err.textContent='Please enter your given names and surname.'; return; }
+    if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ err.textContent='Please enter a valid email address.'; $('email').focus(); return; }
+    if(!prof){ err.textContent='Please choose your main profession.'; return; }
+    var btn=$('email-btn'), lbl=btn.textContent; btn.disabled=true; btn.textContent='Sending your code…';
+    var fullName=(given+' '+surname).trim();
+    fetch(API_BASE+'/api/pro/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:email, full_name:fullName }) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok:r.ok, d:d }; }); })
+      .then(function(x){
+        btn.disabled=false; btn.textContent=lbl;
+        if(!x.ok || (x.d && x.d.error)){ err.textContent=(x.d && x.d.error) || 'Something went wrong — please try again.'; return; }
+        // NEW or EXISTING email both proceed — the backend reuses one account per email.
+        _email=email; $('sent-to').textContent=email;
+        show('code'); var c=$('code'); if(c) c.focus(); startCooldown(60);
+      }).catch(function(){ btn.disabled=false; btn.textContent=lbl; err.textContent='Network error — please try again.'; });
+  };
+
+  /* ── Step 2 → verify code, create the pro (professional_link), go to dashboard ── */
+  window.verifyCode=function(){
+    var err=$('code-err'); err.textContent='';
+    var code=(v('code')||'').replace(/[^0-9]/g,'');
+    if(code.length<6){ err.textContent='Enter all 6 digits.'; return; }
+    var btn=$('code-btn'), lbl=btn.textContent; btn.disabled=true; btn.textContent='Confirming…';
+    try{ if(window.FFPAuth && FFPAuth.setPersist) FFPAuth.setPersist(true); }catch(_){}
+    FFPApi.verifyCode(_email, code).then(function(res){
+      if(res && res.error){ btn.disabled=false; btn.textContent=lbl; err.textContent='That code didn’t work — try again or request a new one.'; $('code').value=''; $('code').focus(); return; }
+      _member=(res && res.member) || (window.FFPAuth && FFPAuth.getMember && FFPAuth.getMember()) || null;
+      return linkPro().then(function(){ finish(); }).catch(function(){ finish(); /* fallback: /app onboarding will catch */ });
+    }).catch(function(){ btn.disabled=false; btn.textContent=lbl; err.textContent='Sign-in failed — please try again.'; });
+  };
+
+  // Create the professional record with the SAME RPC the app onboarding uses (RULE 5) so signup is complete.
+  function linkPro(){
+    if(!_member || !_member.id || !window.supabase) return Promise.resolve();
+    var given=v('given'), surname=v('surname'), prof=v('prof-value');
+    var category=($('prof-value').dataset.category)||((window.FFP_TAX&&FFP_TAX.categoryOfRole)?FFP_TAX.categoryOfRole(prof):'')||'';
+    var payload={ given_names:given, surname:surname, display_name:(given+' '+surname).trim(),
+      professional_types:[prof], category:category, country:v('country')||null, city:v('city')||null };
+    return window.supabase.rpc('professional_link', { p_member:_member.id, p:payload }).then(function(r){
+      if(r && r.error) throw r.error; return r;
+    });
+  }
+
+  function finish(){ show('ok'); window.scrollTo({top:0,behavior:'smooth'}); setTimeout(function(){ window.location.href='/app'; }, 1100); }
+
+  window.backToEmail=function(){ show('email'); $('code-err').textContent=''; $('code').value=''; };
+
+  var _timer=null;
+  function startCooldown(secs){
+    var link=$('resend-link'), t=$('resend-timer'); if(!link) return;
+    if(_timer) clearInterval(_timer);
+    var rem=secs||60; link.style.pointerEvents='none'; link.style.opacity='.45';
+    var tick=function(){ if(rem<=0){ clearInterval(_timer); _timer=null; link.style.pointerEvents=''; link.style.opacity=''; if(t)t.textContent=''; return; } if(t)t.textContent='· available in '+rem+'s'; rem--; };
+    tick(); _timer=setInterval(tick,1000);
+  }
+  window.resendCode=function(){
+    var link=$('resend-link'), t=$('resend-timer');
+    if(link && link.style.pointerEvents==='none') return;
+    if(!_email){ backToEmail(); return; }
+    if(t)t.textContent='· sending…';
+    fetch(API_BASE+'/api/pro/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:_email }) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }); })
+      .then(function(d){ if(d && d.error){ if(t)t.textContent='· '+d.error; return; } if(t)t.textContent='· new code sent'; startCooldown(60); })
+      .catch(function(){ if(t)t.textContent='· network error'; });
+  };
+})();
+</script>
+</body>
+</html>

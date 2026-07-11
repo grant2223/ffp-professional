@@ -653,7 +653,7 @@
   window.teamDeleteConfirm = function () {
     var S = window.FFP_TEAM, team = _teamMeta();
     var go = async function () { try { await _tSb().rpc('pro_team_delete', { p_pro: S.pid, p_team: S.team }); _clearSet(); _tToast('Team deleted', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not delete', 'error'); } };
-    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Delete ' + (team.name || 'this team') + '?', body: 'This removes the team, its benchmarks, and every recorded result. This can\'t be undone.', action: 'Delete team', onOk: go }); else if (confirm('Delete this team?')) go();
+    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Delete ' + (team.name || 'this team') + '?', body: 'This removes the team, its benchmarks, and every recorded result. This can\'t be undone.', confirm: 'Delete team' }).then(function (ok) { if (ok) go(); }); else if (confirm('Delete this team?')) go();
   };
   function _benchmarksSectionHtml(kind) {
     var ov = window.FFP_TEAM.overview || {}, fits = ov.fitness || [], sk = ov.skills || [], rows = '';
@@ -699,8 +699,8 @@
   window.teamAddBenchmark = function () { window.FFP_TEAM.setTab = 'benchmarks'; if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('measured'); };
   window.teamAddSkill = function () { window.FFP_TEAM.setTab = 'skills'; if (typeof _clearBench === 'function') _clearBench(); _showBenchmarkPage('skill'); };
   window.teamBenchDelete = function (id, name) {
-    var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_benchmark_delete', { p_pro: S.pid, p_benchmark: id }); _tToast('Benchmark removed', ''); try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {} _showTeamSettings(); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } };
-    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'benchmark') + '?', body: 'This deletes the benchmark and all recorded results for it.', action: 'Remove', onOk: go }); else go();
+    var S = window.FFP_TEAM, go = async function () { try { var r = await _tSb().rpc('pro_benchmark_delete', { p_pro: S.pid, p_benchmark: id }); if (r && r.error) throw r.error; _tToast('Removed', ''); try { var ro = await _tSb().rpc('pro_team_overview', { p_pro: S.pid, p_team: S.team }); S.overview = (ro && ro.data) || {}; } catch (e) {} _showTeamSettings(); } catch (e) { console.error(e); _tToast('Could not remove' + (e && e.message ? ': ' + e.message : ''), 'error'); } };
+    if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'benchmark') + '?', body: 'This deletes the benchmark and all recorded results for it.', confirm: 'Remove' }).then(function (ok) { if (ok) go(); }); else go();
   };
   async function _teamLoadReqs() {
     var S = window.FFP_TEAM, host = document.getElementById('tg-reqs'); if (!host) return;
@@ -724,7 +724,7 @@
     catch (e) { console.error(e); _tToast('Could not update', 'error'); }
   };
   window.teamRename = async function () { var S = window.FFP_TEAM, name = (document.getElementById('tg-name') || {}).value || ''; if (!name.trim()) { _tToast('Name can\'t be empty', 'error'); return; } try { await _tSb().rpc('pro_team_update', { p_pro: S.pid, p_team: S.team, p_name: name.trim() }); _closeModal(); _tToast('Saved', ''); renderTeam(); } catch (e) { console.error(e); _tToast('Could not save', 'error'); } };
-  window.teamRemoveMember = function (mid, name) { var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_team_remove_member', { p_pro: S.pid, p_team: S.team, p_member: mid }); _tToast('Removed', ''); _closeModal(); _load(S.team); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } }; if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'player') + '?', body: 'They\'ll no longer show in this team.', action: 'Remove', onOk: go }); else go(); };
+  window.teamRemoveMember = function (mid, name) { var S = window.FFP_TEAM, go = async function () { try { await _tSb().rpc('pro_team_remove_member', { p_pro: S.pid, p_team: S.team, p_member: mid }); _tToast('Removed', ''); _closeModal(); _load(S.team); } catch (e) { console.error(e); _tToast('Could not remove', 'error'); } }; if (typeof ffpConfirm === 'function') ffpConfirm({ danger: true, title: 'Remove ' + (name || 'player') + '?', body: 'They\'ll no longer show in this team.', confirm: 'Remove' }).then(function (ok) { if (ok) go(); }); else go(); };
 
   // ── Add players — full-bleed page (invite/referral link + your clients + email) ──
   async function _showAddPlayerPage() {

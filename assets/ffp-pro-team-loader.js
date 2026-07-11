@@ -740,8 +740,10 @@
           '<div style="font-size:11px;color:rgba(255,255,255,.78);margin-top:9px;">They sign up to the Passport through your link (you get the referral), then you add them below.</div>' +
         '</div>' +
         '<div class="ffpt-clab">Add from your clients</div>' +
-        '<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e4ebec;border-radius:11px;padding:11px 13px;margin-bottom:12px;">' + _ic('search', 16, '#869599') + '<input id="ap-search" oninput="teamApFilter(this.value)" placeholder="Search clients" style="border:none;outline:none;background:transparent;flex:1;font-size:14px;font-family:inherit;color:#0f2327;"></div>' +
+        '<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e4ebec;border-radius:11px;padding:11px 13px;margin-bottom:12px;">' + _ic('search', 16, '#869599') + '<input id="ap-search" oninput="teamApFilter(this.value)" placeholder="Search people" style="border:none;outline:none;background:transparent;flex:1;font-size:14px;font-family:inherit;color:#0f2327;"></div>' +
         '<div id="ap-list"><div style="color:#869599;font-size:13px;padding:8px 0;">Loading your clients…</div></div>' +
+        '<div class="ffpt-clab" style="margin-top:20px;">From your FFP Passport connections</div>' +
+        '<div id="ap-conn-list"><div style="color:#869599;font-size:13px;padding:8px 0;">Loading your connections…</div></div>' +
         '<div onclick="teamApEmail()" style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:7px;color:#0a3e44;font-size:12.5px;font-weight:700;cursor:pointer;">' + _ic('mail', 16) + ' Invite someone by email</div>' +
         '<button class="ffpt-cta" style="margin-top:16px;" onclick="teamApDone()">Done</button>' +
       '</div></div></div>';
@@ -750,6 +752,24 @@
     var cands = []; try { var r = await _tSb().rpc('pro_team_candidate_members', { p_pro: S.pid }); cands = (r && r.data) || []; } catch (e) { console.error(e); }
     S._apCands = cands.map(function (c) { return { id: c.id, name: c.name, email: c.email, photo: c.photo, has_passport: !!c.has_passport, added: !!(c.id && existing[c.id]) }; });
     _renderApList('');
+    // Passport connections (coach's own accepted crew) — tap to add straight to the team.
+    var conns = []; try { var rc = await _tSb().rpc('pro_passport_connections', { p_pro: S.pid, p_team: S.team }); conns = (rc && rc.data) || []; } catch (e) { console.error(e); }
+    S._apConns = conns.map(function (c) { return { id: c.id, name: c.name, email: c.email, photo: c.photo, city: c.city, added: !!c.already_member || !!(c.id && existing[c.id]) }; });
+    _renderApConn('');
+  }
+  function _renderApConn(q) {
+    var host = document.getElementById('ap-conn-list'); if (!host) return;
+    var conns = window.FFP_TEAM._apConns; if (!conns) return; q = (q || '').toLowerCase();
+    if (!conns.length) { host.innerHTML = '<div style="color:#5a6b6e;font-size:13px;padding:10px 2px;">No Passport connections yet. Connect with people in your own FFP Passport (same email) and they\'ll appear here to add. Needs an active FFP Passport.</div>'; return; }
+    var list = conns.filter(function (c) { return !q || (c.name || '').toLowerCase().indexOf(q) >= 0 || (c.email || '').toLowerCase().indexOf(q) >= 0; });
+    if (!list.length) { host.innerHTML = '<div style="color:#5a6b6e;font-size:13px;padding:10px 2px;">No match.</div>'; return; }
+    host.innerHTML = list.map(function (c) {
+      var action;
+      if (c.added) action = '<div style="display:flex;align-items:center;gap:5px;background:#e5f6ee;color:#1d7a4d;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;">' + _ic('check', 14) + 'Added</div>';
+      else action = '<button style="border:1.5px solid #0a3e44;color:#0a3e44;background:#fff;border-radius:9px;padding:7px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamApAdd(\'' + c.id + '\',\'' + _tEsc((c.name || '').replace(/\'/g, '')) + '\')">Add</button>';
+      return '<div style="display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:1px solid #e4ebec;">' + _av(c.name, c.photo, 38) +
+        '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.name) + '</div><div style="font-size:11px;color:#869599;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc((c.city ? c.city + ' · ' : '') + (c.email || '')) + '</div></div>' + action + '</div>';
+    }).join('');
   }
   async function _teamLoadInvite() {
     var el = document.getElementById('ap-linktext'); if (!el) return;
@@ -775,13 +795,15 @@
         '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(c.name) + '</div><div style="font-size:11px;color:#869599;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (c.has_passport ? _tEsc(c.email || '') : 'No Passport yet · invite to add') + '</div></div>' + action + '</div>';
     }).join('');
   }
-  window.teamApFilter = function (v) { _renderApList(v); };
+  window.teamApFilter = function (v) { _renderApList(v); _renderApConn(v); };
   window.teamApAdd = async function (mid, name) {
     var S = window.FFP_TEAM;
     try {
       await _tSb().rpc('pro_team_add_member', { p_pro: S.pid, p_team: S.team, p_member: mid, p_full_name: name || null });
       var c = (S._apCands || []).find(function (x) { return x.id === mid; }); if (c) c.added = true;
-      _renderApList((document.getElementById('ap-search') || {}).value || '');
+      var c2 = (S._apConns || []).find(function (x) { return x.id === mid; }); if (c2) c2.added = true;
+      var qv = (document.getElementById('ap-search') || {}).value || '';
+      _renderApList(qv); _renderApConn(qv);
       try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {}
     } catch (e) { console.error(e); _tToast('Could not add', 'error'); }
   };

@@ -532,36 +532,63 @@
   window.teamHeroMark = function (i) { window.FFP_TEAM.heroMark = i; _paint(); };
   function _actCloseFoot() { return '<button class="ffpt-min" style="width:auto;padding:11px 20px;background:#0a3e44;color:#fff;font-weight:800;cursor:pointer;" onclick="ffpCloseModal()">Close</button>'; }
   function _paceStr(km, min) { if (!km || !min) return null; var p = min / km, m = Math.floor(p), s = Math.round((p - m) * 60); return m + ':' + (s < 10 ? '0' : '') + s + ' /km'; }
+  // HR zones — from metrics.hr_zones_ms (manual Log-Activity entry OR wearable sync). FFP zone ramp.
+  function _hrZonesHtml(metrics) {
+    var _z = (metrics && metrics.hr_zones_ms) ? metrics.hr_zones_ms : null;
+    if (!_z) return '';
+    var zones = [['Z1', _z.zone_one_milli || 0, '#3aa0e6'], ['Z2', _z.zone_two_milli || 0, '#16a34a'], ['Z3', _z.zone_three_milli || 0, '#eab308'], ['Z4', _z.zone_four_milli || 0, '#d9531e'], ['Z5', _z.zone_five_milli || 0, '#dc2626']];
+    if (_z.zone_zero_milli) zones.unshift(['Z0', _z.zone_zero_milli, '#6b7a88']);
+    var tot = zones.reduce(function (s, z) { return s + (z[1] || 0); }, 0);
+    if (tot <= 0) return '';
+    var mins = function (ms) { return Math.round(ms / 60000); };
+    var bar = zones.map(function (z) { var w = z[1] / tot * 100; return w > 0 ? '<i style="height:100%;width:' + w.toFixed(1) + '%;background:' + z[2] + ';"></i>' : ''; }).join('');
+    var leg = zones.map(function (z) { return '<div style="flex:1;text-align:center;"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + z[2] + ';margin-bottom:5px;"></span><div style="font-size:13px;font-weight:900;color:#0f2327;">' + mins(z[1]) + 'm</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#8fa1a9;margin-top:1px;">' + z[0] + '</div></div>'; }).join('');
+    return '<div style="margin-top:20px;background:#f4f8f9;border-radius:14px;padding:15px 15px 13px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;"><div style="font-size:13.5px;font-weight:900;color:#0f2327;">Heart-rate zones</div><div style="font-size:11.5px;color:#869599;font-weight:700;">time in zone</div></div>' +
+      '<div style="display:flex;height:20px;border-radius:6px;overflow:hidden;">' + bar + '</div>' +
+      '<div style="display:flex;margin-top:11px;">' + leg + '</div></div>';
+  }
   function _renderActivityCard(a) {
-    var grad = 'linear-gradient(135deg,#0e5a63,#0a1a24)';
+    var mem = a.member || {}, grad = 'linear-gradient(135deg,#0e5a63,#0a1a24)';
     var photos = (a.photos && a.photos.length ? a.photos : (a.photo_url ? [a.photo_url] : []));
+    var avInit = _tEsc((((mem.name || '?').trim().charAt(0)) || '?').toUpperCase());
+    var av = mem.photo
+      ? '<div style="width:42px;height:42px;border-radius:50%;flex:0 0 auto;background:#0a3e44 center/cover no-repeat;background-image:url(\'' + _tEsc(mem.photo) + '\');"></div>'
+      : '<div style="width:42px;height:42px;border-radius:50%;flex:0 0 auto;background:linear-gradient(135deg,#0a3e44,#2ba8e0);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;">' + avInit + '</div>';
+    var teamName = (_teamMeta() || {}).name || '';
+    var who = mem.name ? ('<div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;">' + av + '<div style="min-width:0;"><div style="font-size:15px;font-weight:800;color:#0f2327;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(mem.name) + '</div><div style="font-size:12px;color:#869599;font-weight:600;">' + (teamName ? _tEsc(teamName) + ' · ' : '') + 'logged this session</div></div></div>') : '';
     var verBadge = a.verified ? '<span style="position:absolute;top:10px;right:10px;background:rgba(8,20,32,.6);color:#37E0C6;border-radius:100px;padding:4px 10px;font-size:11px;font-weight:800;">' + _ic('verified', 13) + ' Verified</span>' : '';
     var cover;
     if (photos.length) {
-      cover = '<div style="height:210px;border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(photos[0]) + '\');">' + verBadge + (photos.length > 1 ? '<span style="position:absolute;bottom:10px;right:10px;background:rgba(8,20,32,.6);color:#fff;border-radius:100px;padding:3px 9px;font-size:11px;font-weight:800;">' + _ic('collections', 13) + ' ' + photos.length + '</span>' : '') + '</div>';
-      if (photos.length > 1) cover += '<div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;">' + photos.slice(1, 6).map(function (u) { return '<div style="flex:0 0 auto;width:64px;height:64px;border-radius:9px;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(u) + '\');"></div>'; }).join('') + '</div>';
+      cover = '<div style="height:210px;border-radius:14px;overflow:hidden;margin-bottom:10px;position:relative;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(photos[0]) + '\');">' + verBadge + (photos.length > 1 ? '<span style="position:absolute;bottom:10px;right:10px;background:rgba(8,20,32,.6);color:#fff;border-radius:100px;padding:3px 9px;font-size:11px;font-weight:800;">' + _ic('collections', 13) + ' ' + photos.length + '</span>' : '') + '</div>';
+      if (photos.length > 1) cover += '<div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:4px;">' + photos.slice(1, 6).map(function (u2) { return '<div style="flex:0 0 auto;width:60px;height:60px;border-radius:11px;background:#0a1a24 center/cover no-repeat;background-image:url(\'' + _tEsc(u2) + '\');"></div>'; }).join('') + '</div>';
     } else {
-      cover = '<div style="height:120px;border-radius:12px;background:' + grad + ';display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative;">' + _ic(_sportIcon(a.category, a.activity), 44, '#fff') + verBadge + '</div>';
+      cover = '<div style="height:120px;border-radius:14px;background:' + grad + ';display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;">' + _ic(_sportIcon(a.category, a.activity), 44, '#fff') + verBadge + '</div>';
     }
     var place = [a.venue, a.area, a.city, a.country].filter(Boolean).filter(function (v, i, arr) { return arr.indexOf(v) === i; }).join(', ');
     var when = a.logged_at ? (new Date(a.logged_at).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + new Date(a.logged_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) : '';
-    var tile = function (val, lab) { return '<div class="ffpt-tile" style="min-width:78px;"><div class="tv">' + val + '</div><div class="tl">' + lab + '</div></div>'; };
-    var u = function (t) { return '<span style="font-size:11px;color:#869599;font-weight:700;">' + t + '</span>'; };
-    var tiles = [];
-    if (a.distance_km) tiles.push(tile(a.distance_km + u(' km'), 'Distance'));
-    if (a.duration_min) tiles.push(tile(a.duration_min + u(' min'), 'Time'));
-    var pace = _paceStr(a.distance_km, a.duration_min); if (pace) tiles.push(tile('<span style="font-size:15px;">' + pace.replace(' /km', '') + '</span>' + u(' /km'), 'Pace'));
-    if (a.calories) tiles.push(tile(a.calories + u(' kcal'), 'Energy'));
-    if (a.avg_heart_rate) tiles.push(tile(a.avg_heart_rate + u(' bpm'), 'Avg HR'));
-    if (a.steps) tiles.push(tile(a.steps, 'Steps'));
-    var tilesHtml = tiles.length ? '<div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-top:14px;">' + tiles.join('') + '</div>' : '';
-    return cover +
-      '<div style="font-size:19px;font-weight:900;color:#0f2327;line-height:1.15;">' + _tEsc(a.activity || 'Activity') + '</div>' +
-      (a.category ? '<div style="font-size:12px;color:#869599;margin-top:2px;">' + _tEsc(a.category) + (a.intensity ? ' · ' + _tEsc(a.intensity) : '') + '</div>' : '') +
-      (place ? '<div style="display:flex;align-items:center;gap:5px;margin-top:8px;color:#5a6b6e;font-size:12.5px;font-weight:600;">' + _ic('place', 15, '#0a3e44') + _tEsc(place) + '</div>' : '') +
-      (when ? '<div style="display:flex;align-items:center;gap:5px;margin-top:4px;color:#869599;font-size:12px;">' + _ic('schedule', 14, '#869599') + when + '</div>' : '') +
-      tilesHtml +
-      (a.notes ? '<div style="margin-top:14px;padding:12px 13px;background:#f4f7f8;border-radius:11px;font-size:13px;color:#0f2327;line-height:1.5;white-space:pre-wrap;">' + _tEsc(a.notes) + '</div>' : '');
+    var pace = _paceStr(a.distance_km, a.duration_min);
+    var maxHr = (a.metrics && (a.metrics.max_heart_rate || a.metrics.max_hr)) || null;
+    var cells = [];
+    if (a.distance_km) cells.push([a.distance_km, 'km', 'Distance']);
+    if (a.duration_min) cells.push([a.duration_min, 'min', 'Time']);
+    if (pace) cells.push([pace.replace(' /km', ''), '/km', 'Pace']);
+    if (a.calories) cells.push([a.calories, 'kcal', 'Energy']);
+    if (a.avg_heart_rate) cells.push([a.avg_heart_rate, 'bpm', 'Avg HR']);
+    if (maxHr) cells.push([maxHr, 'bpm', 'Max HR']);
+    if (a.steps) cells.push([a.steps, '', 'Steps']);
+    var grid = cells.length ? ('<div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #e6ecee;margin-top:16px;">' + cells.map(function (c, i) {
+      var bl = (i % 3 !== 0) ? 'border-left:1px solid #e6ecee;padding-left:14px;' : '';
+      return '<div style="padding:15px 4px 14px;border-bottom:1px solid #e6ecee;' + bl + '"><div style="font-size:21px;font-weight:900;color:#0f2327;letter-spacing:-.5px;">' + c[0] + (c[1] ? '<span style="font-size:11px;font-weight:800;color:#8fa1a9;margin-left:2px;">' + c[1] + '</span>' : '') + '</div><div style="font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8fa1a9;margin-top:4px;">' + c[2] + '</div></div>';
+    }).join('') + '</div>') : '';
+    return who + cover +
+      '<div style="font-size:22px;font-weight:900;color:#0f2327;line-height:1.12;letter-spacing:-.4px;margin-top:2px;">' + _tEsc(a.activity || 'Activity') + '</div>' +
+      (a.category ? '<div style="font-size:12px;color:#869599;margin-top:2px;font-weight:600;">' + _tEsc(a.category) + (a.intensity ? ' · ' + _tEsc(a.intensity) : '') + '</div>' : '') +
+      (place ? '<div style="display:flex;align-items:flex-start;gap:5px;margin-top:9px;color:#5a6b6e;font-size:12.5px;font-weight:600;line-height:1.4;">' + _ic('place', 15, '#0a3e44') + '<span>' + _tEsc(place) + '</span></div>' : '') +
+      (when ? '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;color:#869599;font-size:12px;">' + _ic('schedule', 14, '#869599') + when + '</div>' : '') +
+      grid +
+      _hrZonesHtml(a.metrics) +
+      (a.notes ? '<div style="margin-top:18px;font-size:15px;color:#33474e;line-height:1.55;white-space:pre-wrap;font-weight:600;">' + _tEsc(a.notes) + '</div>' : '');
   }
   window.teamOpenActivity = async function (id) {
     var S = window.FFP_TEAM;

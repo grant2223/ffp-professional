@@ -852,7 +852,7 @@ function wkBuilder(){
     '<div id="wk-day-chips" style="display:flex;gap:5px;margin:0 0 12px;"></div>'+
     '<div style="font-size:10.5px;color:var(--ffp-text-dim);margin:0 0 8px;">Tick each set as it’s done · edit reps / weight / effort live.</div>'+
     '<div id="wk-build"></div>'+
-    '<button class="btn btn-sec btn-sm" style="margin-top:8px;" onclick="wkAddExercise()"><span class="ms">add</span> Add exercise</button>',
+    '<button class="btn btn-sec btn-sm" style="margin-top:8px;" onclick="wkOpenExPicker()"><span class="ms">add</span> Add exercise</button>',
     '<button class="btn btn-ghost" onclick="openClientWorkouts(\''+_wkClient+'\')">Back</button>'+
     '<button class="btn btn-sec" onclick="wkSavePlan()"><span class="ms">event</span> Save plan</button>'+
     '<button class="btn btn-pri" onclick="wkStartWorkout()"><span class="ms">play_arrow</span> Start workout</button>');
@@ -1016,7 +1016,7 @@ function wkRunRender(){
       var donB='<button onclick="wkRunToggle('+ei+','+si+')" style="flex:0 0 60px;height:58px;align-self:flex-end;border-radius:14px;border:2px solid '+(s.done?'#16a34a':'var(--ffp-border-mid)')+';background:'+(s.done?'#16a34a':'transparent')+';color:'+(s.done?'#fff':'var(--ffp-text-dim)')+';cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="ms" style="font-size:30px;">'+(s.done?'check':'radio_button_unchecked')+'</span></button>';
       return '<div style="display:flex;gap:9px;align-items:flex-end;margin-bottom:12px;'+(s.done?'opacity:.65;':'')+'"><div style="flex:0 0 18px;font-size:13px;font-weight:800;color:var(--ffp-purple);align-self:flex-end;padding-bottom:18px;">'+(si+1)+'</div>'+fields+donB+'</div>';
     }).join('');
-    var demoChip=ex.demo_url?'<button onclick="wkDemoOpen('+ei+')" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:14px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;"><span style="width:30px;height:30px;border-radius:50%;background:var(--ffp-purple,#9b7bf0);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><span class="ms" style="font-size:19px;">play_arrow</span></span><span style="font-weight:900;font-size:14px;color:var(--ffp-text);">Watch how</span><span class="ms" style="font-size:20px;color:var(--ffp-text-dim);">chevron_right</span></button>':'';
+    var demoChip=ex.demo_url?'<button onclick="wkDemoOpen('+ei+')" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:14px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;"><span style="width:30px;height:30px;border-radius:50%;background:var(--ffp-purple,#0a3e44);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><span class="ms" style="font-size:19px;">play_arrow</span></span><span style="font-weight:900;font-size:14px;color:var(--ffp-text);">Watch how</span><span class="ms" style="font-size:20px;color:var(--ffp-text-dim);">chevron_right</span></button>':'';
     return '<div style="padding:18px 16px;border-bottom:1px solid var(--ffp-border);"><div style="font-size:20px;font-weight:900;color:var(--ffp-text);margin-bottom:'+(ex.note?'3px':'12px')+';">'+escHtml(ex.name||'Exercise')+'</div>'+(ex.note?'<div style="font-size:12.5px;color:var(--ffp-text-dim);margin-bottom:12px;">'+escHtml(ex.note)+'</div>':'')+demoChip+sets+'</div>';
   }).join('');
   host.innerHTML=head+body;
@@ -1051,6 +1051,104 @@ function wkDemoOpen(ei){
   document.body.appendChild(ov);
 }
 function wkDemoClose(){ var o=document.getElementById('wk-demo-ov'); if(o&&o.parentNode)o.parentNode.removeChild(o); }
+// ─── Exercise LIBRARY picker (Phase 2a) — "Add exercise" searches the shared library; pick snapshots name+demo+cue in. ───
+var _exPickCache=[]; var _exPickT=null;
+var EX_MUSCLES=['Chest','Back','Legs','Glutes','Shoulders','Arms','Core','Full body','Cardio'];
+var EX_EQUIP=['Barbell','Dumbbell','Kettlebell','Bodyweight','Machine','Cable','Band','None'];
+function wkOpenExPicker(){
+  wkCollect();
+  wkExPickClose();
+  var ov=document.createElement('div'); ov.id='wk-expick-ov';
+  ov.setAttribute('style','position:fixed;inset:0;z-index:100065;background:var(--ffp-bg,#f4f7f8);display:flex;flex-direction:column;font-family:inherit;');
+  var fsel='padding:8px 6px;border:1px solid var(--ffp-border-mid);border-radius:9px;background:var(--ffp-bg-card);color:var(--ffp-text);font-family:inherit;font-size:12.5px;flex:1;min-width:0;';
+  var msel='<select id="ex-fm" onchange="wkExPickFetch()" style="'+fsel+'"><option value="">All muscles</option>'+EX_MUSCLES.map(function(m){return '<option>'+m+'</option>';}).join('')+'</select>';
+  var esel='<select id="ex-fe" onchange="wkExPickFetch()" style="'+fsel+'"><option value="">All equipment</option>'+EX_EQUIP.map(function(e){return '<option>'+e+'</option>';}).join('')+'</select>';
+  ov.innerHTML=''+
+    '<div style="display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--ffp-border);background:var(--ffp-bg-card);">'+
+      '<button onclick="wkExPickClose()" style="background:none;border:none;color:var(--ffp-text);cursor:pointer;padding:0;"><span class="ms" style="font-size:25px;">arrow_back</span></button>'+
+      '<div style="font-size:16px;font-weight:900;color:var(--ffp-text);">Add exercise</div>'+
+    '</div>'+
+    '<div style="padding:12px 16px 0;background:var(--ffp-bg-card);border-bottom:1px solid var(--ffp-border);">'+
+      '<div style="display:flex;align-items:center;gap:8px;background:var(--ffp-bg);border-radius:11px;padding:9px 12px;">'+
+        '<span class="ms" style="font-size:19px;color:var(--ffp-text-dim);">search</span>'+
+        '<input id="ex-fs" oninput="wkExPickDebounce()" placeholder="Search exercises…" style="flex:1;border:none;background:none;font-size:14px;color:var(--ffp-text);font-family:inherit;outline:none;">'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin:10px 0 12px;">'+msel+esel+'</div>'+
+    '</div>'+
+    '<div id="ex-list" style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:2px 16px 16px;"></div>'+
+    '<div style="padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--ffp-border);background:var(--ffp-bg-card);"><button onclick="wkNewExercise()" class="btn btn-sec" style="width:100%;"><span class="ms">add</span> New exercise</button></div>';
+  document.body.appendChild(ov);
+  wkExPickFetch();
+}
+function wkExPickClose(){ var o=document.getElementById('wk-expick-ov'); if(o&&o.parentNode)o.parentNode.removeChild(o); }
+function wkExPickDebounce(){ clearTimeout(_exPickT); _exPickT=setTimeout(wkExPickFetch,250); }
+async function wkExPickFetch(){
+  var pid=_memProvId(); var list=document.getElementById('ex-list'); if(!list) return;
+  var s=(document.getElementById('ex-fs')||{}).value||''; var m=(document.getElementById('ex-fm')||{}).value||''; var e=(document.getElementById('ex-fe')||{}).value||'';
+  list.innerHTML='<div class="psub" style="padding:16px 2px;">Loading…</div>';
+  try{
+    var r=await window.supabase.rpc('exercise_library_list',{p_professional:pid,p_search:s,p_muscle:m,p_equipment:e});
+    if(r&&r.error) throw r.error; _exPickCache=(r&&r.data)||[];
+  }catch(err){ console.error('[exlib list]',err); list.innerHTML='<div class="psub" style="padding:16px 2px;">Could not load exercises.</div>'; return; }
+  wkExPickRender();
+}
+function wkExPickRender(){
+  var list=document.getElementById('ex-list'); if(!list) return;
+  if(!_exPickCache.length){ list.innerHTML='<div class="psub" style="padding:16px 2px;">No exercises match — tap “New exercise” to add your own.</div>'; return; }
+  list.innerHTML=_exPickCache.map(function(x,i){
+    var demo=x.demo_url?'<span style="width:30px;height:30px;border-radius:50%;background:rgba(10,62,68,.10);color:var(--ffp-purple,#0a3e44);display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><span class="ms" style="font-size:18px;">play_arrow</span></span>':'<span style="width:30px;flex:0 0 auto;"></span>';
+    var meta=[x.muscle_group,x.equipment].filter(Boolean).join(' · ')+(x.professional_id?' · your exercise':'');
+    return '<div onclick="wkPickExercise('+i+')" style="display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--ffp-border);cursor:pointer;">'+
+      demo+
+      '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14.5px;color:var(--ffp-text);">'+escHtml(x.name||'')+'</div><div style="font-size:11.5px;font-weight:700;color:var(--ffp-text-muted);">'+escHtml(meta)+'</div></div>'+
+      '<span class="ms" style="color:var(--ffp-purple,#0a3e44);font-size:23px;flex:0 0 auto;">add_circle</span>'+
+    '</div>';
+  }).join('');
+}
+function wkPickExercise(i){
+  var x=_exPickCache[i]; if(!x) return;
+  _wkDraft.exercises=_wkDraft.exercises||[];
+  _wkDraft.exercises.push({ name:x.name||'', mode:x.default_mode||'weights', note:x.default_cue||'', demo_url:x.demo_url||'',
+    exercise_library_id:x.id||null, muscle_group:x.muscle_group||'', equipment:x.equipment||'', sets:[wkBlankSet()] });
+  wkExPickClose(); wkRenderBuild(); showToast('Added '+(x.name||'exercise'),'success');
+}
+function wkNewExercise(){
+  wkNewExClose();
+  var inp='width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--ffp-border-mid);border-radius:10px;font-size:13.5px;font-family:inherit;background:var(--ffp-bg-card);color:var(--ffp-text);';
+  var sel=inp;
+  var lbl='font-size:10px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:14px 0 5px;';
+  var ov=document.createElement('div'); ov.id='wk-newex-ov';
+  ov.setAttribute('style','position:fixed;inset:0;z-index:100066;background:var(--ffp-bg,#f4f7f8);display:flex;flex-direction:column;font-family:inherit;');
+  ov.innerHTML=''+
+   '<div style="display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--ffp-border);background:var(--ffp-bg-card);">'+
+     '<button onclick="wkNewExClose()" style="background:none;border:none;color:var(--ffp-text);cursor:pointer;padding:0;"><span class="ms" style="font-size:25px;">arrow_back</span></button>'+
+     '<div style="font-size:16px;font-weight:900;color:var(--ffp-text);">New exercise</div>'+
+   '</div>'+
+   '<div style="flex:1;overflow:auto;padding:2px 18px 16px;">'+
+     '<div style="'+lbl+'">Exercise name</div><input id="nx-name" style="'+inp+'" placeholder="e.g. Bulgarian split squat">'+
+     '<div style="display:flex;gap:10px;"><div style="flex:1;"><div style="'+lbl+'">Muscle</div><select id="nx-m" style="'+sel+'"><option value="">Select…</option>'+EX_MUSCLES.map(function(m){return '<option>'+m+'</option>';}).join('')+'</select></div>'+
+       '<div style="flex:1;"><div style="'+lbl+'">Equipment</div><select id="nx-e" style="'+sel+'"><option value="">Select…</option>'+EX_EQUIP.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></div></div>'+
+     '<div style="'+lbl+'">Default mode</div><select id="nx-mode" style="'+sel+'"><option value="weights">Reps &amp; weight</option><option value="time">Time / hold</option><option value="distance">Distance</option></select>'+
+     '<div style="'+lbl+'">Demo video link (optional)</div><input id="nx-demo" style="'+inp+'" placeholder="Paste a YouTube / Vimeo / video link">'+
+     '<div style="'+lbl+'">Coaching cue (optional)</div><input id="nx-cue" style="'+inp+'" placeholder="e.g. Front knee tracks the toes">'+
+   '</div>'+
+   '<div style="padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--ffp-border);background:var(--ffp-bg-card);"><button onclick="wkSaveNewExercise()" class="btn btn-pri" style="width:100%;"><span class="ms">check</span> Save &amp; add</button></div>';
+  document.body.appendChild(ov);
+}
+function wkNewExClose(){ var o=document.getElementById('wk-newex-ov'); if(o&&o.parentNode)o.parentNode.removeChild(o); }
+async function wkSaveNewExercise(){
+  var name=((document.getElementById('nx-name')||{}).value||'').trim(); if(!name){ showToast('Name the exercise','error'); return; }
+  var m=(document.getElementById('nx-m')||{}).value||''; var e=(document.getElementById('nx-e')||{}).value||'';
+  var mode=(document.getElementById('nx-mode')||{}).value||'weights'; var demo=((document.getElementById('nx-demo')||{}).value||'').trim(); var cue=(document.getElementById('nx-cue')||{}).value||'';
+  var pid=_memProvId();
+  try{
+    var r=await window.supabase.rpc('exercise_library_save',{p_professional:pid,p_id:null,p_name:name,p_muscle_group:m,p_equipment:e,p_difficulty:null,p_default_mode:mode,p_demo_url:demo,p_thumb_url:null,p_default_cue:cue,p_aliases:null});
+    if(r&&r.error) throw r.error; var d=(r&&r.data)||{}; if(!d.ok) throw new Error(d.error||'save_failed');
+    _wkDraft.exercises=_wkDraft.exercises||[];
+    _wkDraft.exercises.push({name:name,mode:mode,note:cue,demo_url:demo,exercise_library_id:d.id||null,muscle_group:m,equipment:e,sets:[wkBlankSet()]});
+    wkNewExClose(); wkExPickClose(); wkRenderBuild(); showToast('Added to your library','success');
+  }catch(err){ console.error('[exlib save]',err); showToast('Could not save the exercise','error'); }
+}
 function wkDelete(id){
   ffpConfirm({title:'Delete workout?',body:"This removes it from the client's plan / history.",confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(ok) wkDoDelete(id); });
 }

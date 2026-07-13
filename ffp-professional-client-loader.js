@@ -841,8 +841,8 @@ async function wkAiGenerate(){
   }catch(e){ console.error('[wk draft]',e); showToast('Draft failed: '+((e&&e.message)||'network'),'error'); }
 }
 function wkBlankSet(){ return {reps:10,weight:0,effort:'moderate',seconds:30,distance:1,unit:'sec',done:false}; }
-function wkNorm(w){ return { title:w.title||'Workout', notes:w.notes||'', days:(w.day_of_week!=null?[w.day_of_week]:[]), exercises:(w.exercises||[]).map(function(ex){ return { name:ex.name||'', mode:ex.mode||'weights', note:ex.note||'', sets:(ex.sets||[]).map(function(s){ return {reps:Number(s.reps)||0,weight:Number(s.weight)||0,effort:s.effort||'moderate',seconds:Number(s.seconds)||0,distance:Number(s.distance)||0,unit:s.unit||'sec',done:false}; }) }; }) }; }
-function wkNewBlank(){ _wkDraft={title:'',notes:'',days:[],exercises:[{name:'',mode:'weights',note:'',sets:[wkBlankSet()]}]}; _wkSrc='manual'; _wkFromAssigned=null; wkBuilder(); }
+function wkNorm(w){ return { title:w.title||'Workout', notes:w.notes||'', days:(w.day_of_week!=null?[w.day_of_week]:[]), exercises:(w.exercises||[]).map(function(ex){ return { name:ex.name||'', mode:ex.mode||'weights', note:ex.note||'', demo_url:ex.demo_url||'', sets:(ex.sets||[]).map(function(s){ return {reps:Number(s.reps)||0,weight:Number(s.weight)||0,effort:s.effort||'moderate',seconds:Number(s.seconds)||0,distance:Number(s.distance)||0,unit:s.unit||'sec',done:false}; }) }; }) }; }
+function wkNewBlank(){ _wkDraft={title:'',notes:'',days:[],exercises:[{name:'',mode:'weights',note:'',demo_url:'',sets:[wkBlankSet()]}]}; _wkSrc='manual'; _wkFromAssigned=null; wkBuilder(); }
 function wkOpenAssigned(id){ var w=(_wkList||[]).find(function(x){return x.id===id;}); if(!w) return; _wkDraft=wkNorm(w); _wkSrc=w.source||'manual'; _wkFromAssigned=id; wkBuilder(); }
 function wkBuilder(){
   openModalShell('lg','Workout',
@@ -904,7 +904,10 @@ function wkRenderBuild(){
         '<button onclick="wkRemoveEx('+ei+')" style="background:none;border:none;color:var(--ffp-text-dim);cursor:pointer;"><span class="ms">delete</span></button>'+
       '</div>'+modeRow+sets+
       '<button class="btn btn-ghost btn-sm" style="margin-top:5px;" onclick="wkAddSet('+ei+')"><span class="ms" style="font-size:15px;">add</span> Set</button>'+
-      (ex.note?('<div style="font-size:11px;color:var(--ffp-text-dim);margin-top:6px;font-style:italic;">'+escHtml(ex.note)+'</div>'):'')+
+      '<div style="display:flex;align-items:center;gap:5px;margin-top:10px;"><span style="font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);">Demo video</span><span class="ms" onclick="ffpInfoPop(this)" data-t="Demo video" data-b="Paste a YouTube, Vimeo or video link. The client can watch how it&#39;s done before every set — it only loads when they tap Watch how." style="font-size:15px;color:var(--ffp-text-dim);cursor:pointer;">info</span></div>'+
+      '<input data-field="demo_url" value="'+escHtml(ex.demo_url||'')+'" placeholder="Paste video link (optional)" style="width:100%;margin-top:4px;font-size:12px;box-sizing:border-box;'+inp+'">'+
+      '<div style="font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin-top:10px;">Coaching cue</div>'+
+      '<input data-field="cue" value="'+escHtml(ex.note||'')+'" placeholder="e.g. Feet planted, drive up — no bounce (optional)" style="width:100%;margin-top:4px;font-size:12px;box-sizing:border-box;'+inp+'">'+
     '</div>';
   }).join('') || '<div class="psub">No exercises yet — add one.</div>';
 }
@@ -921,11 +924,12 @@ function wkCollect(){
       else if(mode==='distance'){ var dist=Number((setEl.querySelector('[data-field="dist"]')||{}).value)||0; var dmin=Number((setEl.querySelector('[data-field="dmin"]')||{}).value)||0; sets.push({distance:dist,seconds:dmin*60,done:done}); }
       else { sets.push({reps:Number((setEl.querySelector('[data-field="reps"]')||{}).value)||0,weight:Number((setEl.querySelector('[data-field="weight"]')||{}).value)||0,effort:((setEl.querySelector('[data-field="effort"]')||{}).value)||'moderate',done:done}); }
     });
-    exs.push({name:nameEl?nameEl.value:'', mode:mode, note:(prev[i]&&prev[i].note)||'', sets:sets}); i++;
+    var demoEl=exEl.querySelector('[data-field="demo_url"]'); var cueEl=exEl.querySelector('[data-field="cue"]');
+    exs.push({name:nameEl?nameEl.value:'', mode:mode, note:cueEl?cueEl.value:((prev[i]&&prev[i].note)||''), demo_url:demoEl?demoEl.value.trim():((prev[i]&&prev[i].demo_url)||''), sets:sets}); i++;
   });
   _wkDraft.exercises=exs; return exs;
 }
-function wkAddExercise(){ wkCollect(); _wkDraft.exercises.push({name:'',mode:'weights',note:'',sets:[wkBlankSet()]}); wkRenderBuild(); }
+function wkAddExercise(){ wkCollect(); _wkDraft.exercises.push({name:'',mode:'weights',note:'',demo_url:'',sets:[wkBlankSet()]}); wkRenderBuild(); }
 function wkAddSet(ei){ wkCollect(); var ex=_wkDraft.exercises[ei]; var last=(ex.sets||[]).slice(-1)[0]||wkBlankSet(); ex.sets.push({reps:last.reps,weight:last.weight,effort:last.effort,seconds:last.seconds,distance:last.distance,unit:last.unit,done:false}); wkRenderBuild(); }
 function wkRemoveSet(ei,si){ wkCollect(); _wkDraft.exercises[ei].sets.splice(si,1); wkRenderBuild(); }
 function wkRemoveEx(ei){ wkCollect(); _wkDraft.exercises.splice(ei,1); wkRenderBuild(); }
@@ -959,7 +963,7 @@ async function wkLogToPassport(srcExs){
   if(!exs.length){ showToast('Add an exercise first','error'); return; }
   var logged=exs.map(function(ex){
     var mode=ex.mode||'weights'; var done=ex.sets.filter(function(s){return s.done;}); var use=done.length?done:ex.sets;
-    return {name:ex.name.trim(),mode:mode,note:ex.note||'',sets:use.map(function(s){
+    return {name:ex.name.trim(),mode:mode,note:ex.note||'',demo_url:ex.demo_url||'',sets:use.map(function(s){
       if(mode==='time') return {seconds:s.seconds||0};
       if(mode==='distance') return {distance:s.distance||0,seconds:s.seconds||0};
       return {reps:s.reps||0,weight:s.weight||0,effort:s.effort||''};
@@ -1012,7 +1016,8 @@ function wkRunRender(){
       var donB='<button onclick="wkRunToggle('+ei+','+si+')" style="flex:0 0 60px;height:58px;align-self:flex-end;border-radius:14px;border:2px solid '+(s.done?'#16a34a':'var(--ffp-border-mid)')+';background:'+(s.done?'#16a34a':'transparent')+';color:'+(s.done?'#fff':'var(--ffp-text-dim)')+';cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="ms" style="font-size:30px;">'+(s.done?'check':'radio_button_unchecked')+'</span></button>';
       return '<div style="display:flex;gap:9px;align-items:flex-end;margin-bottom:12px;'+(s.done?'opacity:.65;':'')+'"><div style="flex:0 0 18px;font-size:13px;font-weight:800;color:var(--ffp-purple);align-self:flex-end;padding-bottom:18px;">'+(si+1)+'</div>'+fields+donB+'</div>';
     }).join('');
-    return '<div style="padding:18px 16px;border-bottom:1px solid var(--ffp-border);"><div style="font-size:20px;font-weight:900;color:var(--ffp-text);margin-bottom:'+(ex.note?'3px':'12px')+';">'+escHtml(ex.name||'Exercise')+'</div>'+(ex.note?'<div style="font-size:12.5px;color:var(--ffp-text-dim);margin-bottom:12px;">'+escHtml(ex.note)+'</div>':'')+sets+'</div>';
+    var demoChip=ex.demo_url?'<button onclick="wkDemoOpen('+ei+')" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:14px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;"><span style="width:30px;height:30px;border-radius:50%;background:var(--ffp-purple,#9b7bf0);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><span class="ms" style="font-size:19px;">play_arrow</span></span><span style="font-weight:900;font-size:14px;color:var(--ffp-text);">Watch how</span><span class="ms" style="font-size:20px;color:var(--ffp-text-dim);">chevron_right</span></button>':'';
+    return '<div style="padding:18px 16px;border-bottom:1px solid var(--ffp-border);"><div style="font-size:20px;font-weight:900;color:var(--ffp-text);margin-bottom:'+(ex.note?'3px':'12px')+';">'+escHtml(ex.name||'Exercise')+'</div>'+(ex.note?'<div style="font-size:12.5px;color:var(--ffp-text-dim);margin-bottom:12px;">'+escHtml(ex.note)+'</div>':'')+demoChip+sets+'</div>';
   }).join('');
   host.innerHTML=head+body;
 }
@@ -1021,6 +1026,31 @@ function wkRunTime(ei,si,v){ try{ var s=_wkDraft.exercises[ei].sets[si]; s.secon
 function wkRunDistMin(ei,si,v){ try{ _wkDraft.exercises[ei].sets[si].seconds=(Number(v)||0)*60; }catch(e){} }
 function wkRunToggle(ei,si){ try{ var s=_wkDraft.exercises[ei].sets[si]; s.done=!s.done; }catch(e){} wkRunRender(); }
 function wkRunnerFinish(){ wkLogToPassport(_wkDraft.exercises); }
+// ─── Demo video — lazy: nothing loads on the workout; the player builds only when "Watch how" is tapped. ───
+function wkEmbed(url){
+  url=String(url||'').trim(); if(!url) return ''; var m;
+  if(m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([\w-]{6,})/)) return '<iframe src="https://www.youtube.com/embed/'+m[1]+'?rel=0&autoplay=1&playsinline=1" style="width:100%;height:100%;border:0;" allow="autoplay;encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe>';
+  if(m=url.match(/vimeo\.com\/(?:video\/)?(\d+)/)) return '<iframe src="https://player.vimeo.com/video/'+m[1]+'?autoplay=1" style="width:100%;height:100%;border:0;" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>';
+  if(/\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(url)) return '<video src="'+escHtml(url)+'" controls autoplay playsinline style="width:100%;height:100%;background:#000;"></video>';
+  return '';
+}
+function wkDemoOpen(ei){
+  var ex=((_wkDraft&&_wkDraft.exercises)||[])[ei]; if(!ex||!ex.demo_url) return;
+  var emb=wkEmbed(ex.demo_url);
+  if(!emb){ try{ window.open(ex.demo_url,'_blank','noopener'); }catch(e){} return; }
+  wkDemoClose();
+  var ov=document.createElement('div'); ov.id='wk-demo-ov';
+  ov.setAttribute('style','position:fixed;inset:0;z-index:100080;background:#000;display:flex;flex-direction:column;font-family:inherit;');
+  ov.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;background:#0b1622;">'+
+      '<button onclick="wkDemoClose()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0;"><span class="ms" style="font-size:26px;">close</span></button>'+
+      '<div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(ex.name||'Exercise')+'</div><div style="font-size:11px;color:#8fa1a9;">How to</div></div>'+
+      '<a href="'+escHtml(ex.demo_url)+'" target="_blank" rel="noopener" style="color:#8fa1a9;"><span class="ms" style="font-size:22px;">open_in_new</span></a>'+
+    '</div>'+
+    '<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#000;"><div style="width:100%;max-width:920px;aspect-ratio:16/9;max-height:100%;">'+emb+'</div></div>'+
+    (ex.note?'<div style="padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#0b1622;color:#dbe7f0;font-size:13px;line-height:1.5;"><b style="color:#fff;">Coach cue:</b> '+escHtml(ex.note)+'</div>':'<div style="height:env(safe-area-inset-bottom);background:#0b1622;"></div>');
+  document.body.appendChild(ov);
+}
+function wkDemoClose(){ var o=document.getElementById('wk-demo-ov'); if(o&&o.parentNode)o.parentNode.removeChild(o); }
 function wkDelete(id){
   ffpConfirm({title:'Delete workout?',body:"This removes it from the client's plan / history.",confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(ok) wkDoDelete(id); });
 }

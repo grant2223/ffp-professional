@@ -1016,7 +1016,16 @@ function wkRunRender(){
       var donB='<button onclick="wkRunToggle('+ei+','+si+')" style="flex:0 0 60px;height:58px;align-self:flex-end;border-radius:14px;border:2px solid '+(s.done?'#16a34a':'var(--ffp-border-mid)')+';background:'+(s.done?'#16a34a':'transparent')+';color:'+(s.done?'#fff':'var(--ffp-text-dim)')+';cursor:pointer;display:flex;align-items:center;justify-content:center;"><span class="ms" style="font-size:30px;">'+(s.done?'check':'radio_button_unchecked')+'</span></button>';
       return '<div style="display:flex;gap:9px;align-items:flex-end;margin-bottom:12px;'+(s.done?'opacity:.65;':'')+'"><div style="flex:0 0 18px;font-size:13px;font-weight:800;color:var(--ffp-purple);align-self:flex-end;padding-bottom:18px;">'+(si+1)+'</div>'+fields+donB+'</div>';
     }).join('');
-    var demoChip=ex.demo_url?'<button onclick="wkDemoOpen('+ei+')" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:14px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;"><span style="width:30px;height:30px;border-radius:50%;background:var(--ffp-purple,#0a3e44);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><span class="ms" style="font-size:19px;">play_arrow</span></span><span style="font-weight:900;font-size:14px;color:var(--ffp-text);">Watch how</span><span class="ms" style="font-size:20px;color:var(--ffp-text-dim);">chevron_right</span></button>':'';
+    var _chipBtn='<button onclick="wkDemoOpen('+ei+')" style="display:inline-flex;align-items:center;gap:9px;margin-bottom:14px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;"><span style="width:30px;height:30px;border-radius:50%;background:var(--ffp-purple,#0a3e44);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><span class="ms" style="font-size:19px;">play_arrow</span></span><span style="font-weight:900;font-size:14px;color:var(--ffp-text);">Watch how</span><span class="ms" style="font-size:20px;color:var(--ffp-text-dim);">chevron_right</span></button>';
+    var demoChip='';
+    if(ex.demo_url){
+      if(/\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(ex.demo_url)){
+        demoChip='<div onclick="wkDemoOpen('+ei+')" style="position:relative;margin-bottom:14px;border-radius:12px;overflow:hidden;max-width:360px;background:#000;cursor:pointer;">'+
+          '<video src="'+escHtml(ex.demo_url)+'"'+(ex.thumb_url?(' poster="'+escHtml(ex.thumb_url)+'"'):'')+' muted loop autoplay playsinline preload="metadata" style="width:100%;display:block;"></video>'+
+          '<div style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.62);color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px;"><span class="ms" style="font-size:13px;vertical-align:-2px;">open_in_full</span> Tap to expand</div>'+
+        '</div>';
+      } else { demoChip=_chipBtn; }
+    }
     return '<div style="padding:18px 16px;border-bottom:1px solid var(--ffp-border);"><div style="font-size:20px;font-weight:900;color:var(--ffp-text);margin-bottom:'+(ex.note?'3px':'12px')+';">'+escHtml(ex.name||'Exercise')+'</div>'+(ex.note?'<div style="font-size:12.5px;color:var(--ffp-text-dim);margin-bottom:12px;">'+escHtml(ex.note)+'</div>':'')+demoChip+sets+'</div>';
   }).join('');
   host.innerHTML=head+body;

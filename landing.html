@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FFP Professional — Everything you need to support your community</title>
 <!--
-  FFP PROFESSIONAL — landing.html v6 (2026-07-10) · ffpprofessional.com/
+  FFP PROFESSIONAL — landing.html v7 (2026-07-27) · ffpprofessional.com/
+  v7: audience named explicitly (fitness trainers, sports coaches & specialists) across hero/
+      summary/pricing-card + new "Who it's for" 3-card section; new "Made for your phone"
+      install section (iOS + Android add-to-home-screen steps). Matches existing teal design.
+  --
   Rebuilt to the ffppassport.com landing STANDARD: full responsive marketing site
   (nav, full-bleed hero, multi-column sections, 9/19 phone shots, pricing-style
   benefits card WITH CTA, CTA band, footer). Teal brand, community voice.
@@ -148,6 +152,28 @@
   .f-legal a{font-size:12.5px;color:var(--mut2);font-weight:600;}
   .f-copy{font-size:12px;color:var(--mut2);font-weight:600;}
   @media(max-width:720px){.f-top{grid-template-columns:1fr 1fr;}.f-brand{grid-column:1/-1;}}
+
+  /* WHO IT'S FOR */
+  .who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px;}
+  .who-card{background:linear-gradient(160deg,#0e3742,#0a2029);border:1px solid var(--hair);border-radius:20px;padding:28px 26px;text-align:center;}
+  .who-card .ic{width:46px;height:46px;margin:0 auto 14px;border-radius:14px;background:rgba(94,200,216,.14);display:flex;align-items:center;justify-content:center;}
+  .who-card .ic svg{width:24px;height:24px;stroke:var(--teal);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+  .who-card b{display:block;font-size:18px;font-weight:900;margin-bottom:7px;}
+  .who-card span{font-size:14px;color:var(--mut);font-weight:500;line-height:1.5;}
+  @media(max-width:720px){.who-grid{grid-template-columns:1fr;}}
+
+  /* PHONE INSTALL */
+  .install-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:34px;}
+  .install-card{background:linear-gradient(160deg,#0e3742,#0a2029);border:1px solid var(--hair);border-radius:22px;padding:28px 26px;}
+  .install-card .plat{font-size:16px;font-weight:900;margin-bottom:16px;letter-spacing:-.2px;}
+  .install-card .plat span{color:var(--teal);}
+  .install-card ol{list-style:none;counter-reset:step;}
+  .install-card li{counter-increment:step;position:relative;padding:11px 0 11px 40px;font-size:14.5px;color:#d6e5f2;font-weight:500;border-top:1px solid var(--hair);line-height:1.5;}
+  .install-card li:first-child{border-top:none;}
+  .install-card li::before{content:counter(step);position:absolute;left:0;top:9px;width:26px;height:26px;border-radius:50%;background:var(--teal);color:#082335;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .install-card li b{color:#fff;font-weight:800;}
+  .install-note{margin-top:26px;text-align:center;font-size:14px;color:var(--mut);font-weight:600;}
+  @media(max-width:640px){.install-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -168,8 +194,9 @@
     <img alt="An active community celebrating together" src="https://kxzyuofecmtymablnmak.supabase.co/storage/v1/object/public/site-images/race-group-photo.jpg">
   </div>
   <div class="hero-copy"><div class="wrap">
-    <div class="eyebrow">For coaches &amp; trainers</div>
+    <div class="eyebrow">For fitness trainers, sports coaches &amp; specialists</div>
     <h1>Everything you need to support your community.</h1>
+    <p class="lead">Your free toolkit to coach, manage, track and engage the people you train.</p>
     <div class="hero-cta">
       <a href="/signup" class="btn">Create your free account</a>
       <a href="#what" class="btn-ghost">See how it works &rarr;</a>
@@ -180,9 +207,32 @@
 <!-- SUMMARY -->
 <section class="summary">
   <div class="wrap">
-    <p><b>FFP Professional</b> is the ultimate toolkit for sports coaches and fitness trainers — it makes it easy for you to <b>coach</b>, <b>manage</b>, <b>track</b> and <b>engage</b> your community.</p>
+    <p><b>FFP Professional</b> is the ultimate toolkit for fitness trainers, sports coaches and specialists — it makes it easy for you to <b>coach</b>, <b>manage</b>, <b>track</b> and <b>engage</b> your community.</p>
   </div>
 </section>
+
+<!-- WHO IT'S FOR -->
+<section class="divide"><div class="wrap">
+  <div class="sec-head" style="max-width:700px;margin:0 auto;text-align:center;">
+    <div class="eyebrow">Who it's for</div>
+    <h2>Built for every kind of coach.</h2>
+    <p>One free platform, whatever you help people do.</p>
+  </div>
+  <div class="who-grid">
+    <div class="who-card">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M6.5 6.5h11M4 12h16M9 17.5h6"/><circle cx="12" cy="12" r="9"/></svg></div>
+      <b>Fitness Trainers</b><span>Personal trainers, group instructors and gym coaches.</span>
+    </div>
+    <div class="who-card">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 21.5 7.1 18.2l.9-5.5-4-3.9L9.5 8z"/></svg></div>
+      <b>Sports Coaches</b><span>Teams, squads and individual athletes.</span>
+    </div>
+    <div class="who-card">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg></div>
+      <b>Specialists</b><span>Physios, nutritionists, S&amp;C and recovery pros.</span>
+    </div>
+  </div>
+</div></section>
 
 <!-- CAPABILITIES -->
 <section id="what"><div class="wrap">
@@ -239,7 +289,7 @@
   <div class="card">
     <div class="band"></div>
     <div class="free">Free</div>
-    <div class="sub">For coaches and trainers</div>
+    <div class="sub">For fitness trainers, sports coaches &amp; specialists</div>
     <ul>
       <li><span class="tick"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span> Your own profile on Find Fit People</li>
       <li><span class="tick"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></span> Unlimited clients and teams</li>
@@ -254,6 +304,34 @@
     <a href="/signup" class="btn">Create your free account</a>
     <div class="fine">No setup fee. Sign up in under a minute.</div>
   </div>
+</div></section>
+
+<!-- ADD TO PHONE -->
+<section class="divide"><div class="wrap">
+  <div class="sec-head" style="max-width:720px;margin:0 auto;text-align:center;">
+    <div class="eyebrow">On your phone</div>
+    <h2>Made for your phone.</h2>
+    <p>FFP Professional runs right in your browser and lives on your home screen — no app store, no download. Add it once and it opens like a native app.</p>
+  </div>
+  <div class="install-grid">
+    <div class="install-card">
+      <div class="plat"><span>iPhone &amp; iPad</span></div>
+      <ol>
+        <li>Open <b>ffpprofessional.com</b> in <b>Safari</b>.</li>
+        <li>Tap the <b>Share</b> icon.</li>
+        <li>Choose <b>Add to Home Screen</b>.</li>
+      </ol>
+    </div>
+    <div class="install-card">
+      <div class="plat"><span>Android</span></div>
+      <ol>
+        <li>Open <b>ffpprofessional.com</b> in <b>Chrome</b>.</li>
+        <li>Tap the <b>&#8942;</b> menu.</li>
+        <li>Choose <b>Add to Home screen</b> (or <b>Install app</b>).</li>
+      </ol>
+    </div>
+  </div>
+  <div class="install-note">Then tap the FFP Professional icon to open it — just like any other app.</div>
 </div></section>
 
 <!-- CTA -->

@@ -784,8 +784,8 @@ function openClientWorkouts(id){
   var m=(_members||[]).find(function(x){return x.id===id;})||{};
   openModalShell('lg','Workouts · '+escHtml(m.full_name||'Client'),
     '<div style="display:flex;gap:8px;margin:0 0 14px;">'+
-      '<button class="btn btn-pri btn-sm" style="flex:1;" onclick="wkAiStart()"><span class="ms">auto_awesome</span> AI draft</button>'+
-      '<button class="btn btn-sec btn-sm" style="flex:1;" onclick="wkNewBlank()"><span class="ms">add</span> New workout</button>'+
+      '<button class="btn btn-pri btn-sm" style="flex:1;" onclick="proGuidedBuild(\''+id+'\')"><span class="ms">fitness_center</span> Build workout</button>'+
+      '<button class="btn btn-sec btn-sm" style="flex:1;" onclick="wkAiStart()"><span class="ms">auto_awesome</span> AI draft</button>'+
     '</div>'+
     '<div id="wk-list"><div class="psub" style="padding:6px 0;">Loading…</div></div>',
     '<button class="btn btn-ghost" onclick="clientProfile(\''+id+'\')">Close</button>');

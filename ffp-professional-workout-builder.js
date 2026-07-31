@@ -32,9 +32,15 @@
   function grouped() { return S.style === "superset" || S.style === "circuit"; }
 
   window.proGuidedBuild = function (clientId) {
-    S = { clientId: clientId, step: 1, style: null, ex: [], p: JSON.parse(JSON.stringify(DEF_P)), q: "", day: null, title: "", notes: "" };
+    S = { clientId: clientId || null, step: 1, style: null, ex: [], p: JSON.parse(JSON.stringify(DEF_P)), q: "", day: null, title: "", notes: "", clients: [], sel: {} };
+    if (clientId) S.sel[clientId] = true; // pre-select when launched from a client's screen
     render();
+    loadClients();
   };
+  function loadClients() {
+    var pid = window._memProvId ? window._memProvId() : null; if (!pid || !window.supabase) return;
+    window.supabase.rpc("pro_list_clients", { p_pro: pid }).then(function (r) { S.clients = (r && r.data) || []; if (S.step === 3) stepParams(); }, function () {});
+  }
 
   function render() {
     var titles = ["Pick a style", "Add exercises", "Reps · rounds · rest"];
@@ -50,7 +56,7 @@
       '<button class="btn btn-ghost" onclick="' + (S.step > 1 ? "pgbBack()" : "openClientWorkouts('" + S.clientId + "')") + '">' + (S.step > 1 ? "Back" : "Cancel") + '</button>' +
       (S.step < 3
         ? '<button class="btn btn-pri" onclick="pgbNext()">Next</button>'
-        : '<button class="btn btn-pri" onclick="pgbSave()"><span class="ms">send</span> Assign to client</button>');
+        : '<button class="btn btn-pri" onclick="pgbSave()"><span class="ms">save</span> Save workout</button>');
     window.openModalShell("lg", titles[S.step - 1], body, foot);
     if (S.step === 1) stepStyle();
     else if (S.step === 2) stepExercises();
@@ -137,15 +143,32 @@
       '<input id="pgb-title" value="' + esc(S.title) + '" placeholder="Workout title (e.g. ' + esc(meta().name) + ' block)" style="' + iinp + 'font-weight:700;margin-bottom:8px;">' +
       '<input id="pgb-notes" value="' + esc(S.notes) + '" placeholder="Coaching note (optional)" style="' + iinp + 'font-size:13px;margin-bottom:14px;">' +
       (rows ? '<div style="margin-bottom:14px;">' + rows + '</div>' : "") +
-      '<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:2px 0 7px;">Assign to a day</div>' +
+      clientPicker() +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:14px 0 7px;">On which day (optional)</div>' +
       '<div style="display:flex;gap:5px;">' + DOW.map(function (d, i) {
         var on = S.day === i;
         return '<button onclick="pgbDay(' + i + ')" style="flex:1;padding:9px 0;border-radius:9px;border:1px solid ' + (on ? "var(--ffp-purple)" : "var(--ffp-border-mid)") + ';background:' + (on ? "var(--ffp-purple)" : "transparent") + ';color:' + (on ? "#fff" : "var(--ffp-text)") + ';font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">' + d.charAt(0) + '</button>';
       }).join("") + '</div>' +
-      '<div class="psub" style="margin:7px 0 0;">Leave a day unselected to save it as a template.</div>';
+      '<div class="psub" style="margin:8px 0 0;">Saves to your library. Selected clients get it assigned; none selected = library only.</div>';
+  }
+  function clientPicker() {
+    var all = S.clients || [];
+    var selCount = Object.keys(S.sel).filter(function (k) { return S.sel[k]; }).length;
+    var rows = all.map(function (c) {
+      var on = !!S.sel[c.id];
+      return '<button onclick="pgbToggleClient(\'' + c.id + '\')" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 11px;background:var(--ffp-bg-card);border:1px solid ' + (on ? "var(--ffp-purple)" : "var(--ffp-border-mid)") + ';border-radius:10px;margin-bottom:6px;cursor:pointer;font-family:inherit;">' +
+        '<span style="width:20px;height:20px;flex:0 0 auto;border-radius:6px;border:2px solid ' + (on ? "var(--ffp-purple)" : "var(--ffp-border-mid)") + ';background:' + (on ? "var(--ffp-purple)" : "transparent") + ';display:flex;align-items:center;justify-content:center;">' + (on ? '<span class="ms" style="font-size:15px;color:#fff;">check</span>' : "") + '</span>' +
+        '<span style="flex:1;min-width:0;font-weight:700;font-size:13.5px;color:var(--ffp-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(c.full_name || "Client") + '</span></button>';
+    }).join("");
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px;">' +
+      '<span style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);">Assign to clients' + (selCount ? " · " + selCount : "") + '</span>' +
+      (all.length ? '<button onclick="pgbSelAll()" style="background:none;border:none;color:var(--ffp-purple);font-size:11.5px;font-weight:800;cursor:pointer;">' + (selCount === all.length ? "Clear all" : "Select all") + '</button>' : "") +
+      '</div>' + (all.length ? rows : '<div class="psub" style="padding:2px 0 4px;">No clients yet — you can still save this to your library.</div>');
   }
   window.pgbP = function (key, d, min) { S.p[key] = Math.max(min, (S.p[key] || 0) + d); stepParams(); };
   window.pgbDay = function (i) { S.day = (S.day === i ? null : i); stepParams(); };
+  window.pgbToggleClient = function (id) { S.sel[id] = !S.sel[id]; stepParams(); };
+  window.pgbSelAll = function () { var all = S.clients || []; var sc = Object.keys(S.sel).filter(function (k) { return S.sel[k]; }).length; if (sc === all.length) { S.sel = {}; } else { all.forEach(function (c) { S.sel[c.id] = true; }); } stepParams(); };
 
   function buildExercises() {
     var isGroup = grouped() || S.style === "fortime";
@@ -177,16 +200,70 @@
     if (!exercises.length) { window.showToast("Add an exercise first", "error"); return; }
     var pid = (window._memProvId ? window._memProvId() : null);
     if (!pid) { window.showToast("Sign in again", "error"); return; }
-    window.showToast("Assigning…");
+    var sel = Object.keys(S.sel).filter(function (k) { return S.sel[k]; });
+    window.showToast("Saving…");
     try {
+      // Always save the reusable template to the library …
       var r = await window.supabase.rpc("pro_workout_save", {
-        p_professional: pid, p_id: null, p_client_id: S.clientId,
-        p_kind: "assigned", p_title: title, p_notes: (S.notes || "").trim() || null,
-        p_exercises: exercises, p_day_of_week: (S.day == null ? null : S.day), p_source: "builder"
+        p_professional: pid, p_id: null, p_client_id: null, p_kind: "template", p_title: title,
+        p_notes: (S.notes || "").trim() || null, p_exercises: exercises, p_day_of_week: null, p_source: "builder"
       });
       if (r && r.error) throw r.error;
-      window.showToast("Workout assigned", "success");
-      if (window.openClientWorkouts) window.openClientWorkouts(S.clientId);
-    } catch (e) { console.error("[pgb save]", e); window.showToast("Couldn’t assign — try again", "error"); }
+      var tid = r && r.data && r.data.id;
+      // … then assign it to any selected clients in one call.
+      if (sel.length && tid) {
+        var a = await window.supabase.rpc("pro_workout_assign", { p_pro: pid, p_template_id: tid, p_client_ids: sel, p_day: (S.day == null ? null : S.day) });
+        if (a && a.error) throw a.error;
+        window.showToast("Saved to library · assigned to " + sel.length + " client" + (sel.length === 1 ? "" : "s"), "success");
+      } else {
+        window.showToast("Saved to your library", "success");
+      }
+      if (S.clientId && window.openClientWorkouts) window.openClientWorkouts(S.clientId);
+      else { if (window.closeModal) window.closeModal(); if (window.renderWorkoutHub) window.renderWorkoutHub(); }
+    } catch (e) { console.error("[pgb save]", e); window.showToast("Couldn’t save — try again", "error"); }
+  };
+
+  /* Assign an existing library workout to 1+ clients (opened from the Workouts library). */
+  var A = null;
+  window.proAssignLibrary = function (templateId, title) {
+    if (!title && window._wkLib) { var f = (window._wkLib || []).filter(function (w) { return w.id === templateId; })[0]; title = f && f.title; }
+    A = { tid: templateId, title: title || "Workout", clients: [], sel: {}, day: null };
+    renderAssign();
+    var pid = window._memProvId ? window._memProvId() : null;
+    if (pid && window.supabase) window.supabase.rpc("pro_list_clients", { p_pro: pid }).then(function (r) { A.clients = (r && r.data) || []; renderAssign(); }, function () {});
+  };
+  function renderAssign() {
+    var all = A.clients || [];
+    var sel = Object.keys(A.sel).filter(function (k) { return A.sel[k]; });
+    var rows = all.map(function (c) {
+      var on = !!A.sel[c.id];
+      return '<button onclick="paToggle(\'' + c.id + '\')" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 11px;background:var(--ffp-bg-card);border:1px solid ' + (on ? "var(--ffp-purple)" : "var(--ffp-border-mid)") + ';border-radius:10px;margin-bottom:6px;cursor:pointer;font-family:inherit;">' +
+        '<span style="width:20px;height:20px;flex:0 0 auto;border-radius:6px;border:2px solid ' + (on ? "var(--ffp-purple)" : "var(--ffp-border-mid)") + ';background:' + (on ? "var(--ffp-purple)" : "transparent") + ';display:flex;align-items:center;justify-content:center;">' + (on ? '<span class="ms" style="font-size:15px;color:#fff;">check</span>' : "") + '</span>' +
+        '<span style="flex:1;min-width:0;font-weight:700;font-size:13.5px;color:var(--ffp-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(c.full_name || "Client") + '</span></button>';
+    }).join("");
+    var body = '<div class="psub" style="margin:0 0 10px;">Choose who gets <b>' + esc(A.title) + '</b>.</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px;"><span style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);">Clients' + (sel.length ? " · " + sel.length : "") + '</span>' +
+      (all.length ? '<button onclick="paSelAll()" style="background:none;border:none;color:var(--ffp-purple);font-size:11.5px;font-weight:800;cursor:pointer;">' + (sel.length === all.length ? "Clear all" : "Select all") + '</button>' : "") + '</div>' +
+      (all.length ? rows : '<div class="psub" style="padding:4px 0;">No clients yet.</div>') +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:14px 0 7px;">On which day (optional)</div>' +
+      '<div style="display:flex;gap:5px;">' + DOW.map(function (d, i) { var on = A.day === i; return '<button onclick="paDay(' + i + ')" style="flex:1;padding:9px 0;border-radius:9px;border:1px solid ' + (on ? "var(--ffp-purple)" : "var(--ffp-border-mid)") + ';background:' + (on ? "var(--ffp-purple)" : "transparent") + ';color:' + (on ? "#fff" : "var(--ffp-text)") + ';font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">' + d.charAt(0) + '</button>'; }).join("") + '</div>';
+    window.openModalShell("lg", "Assign workout", body,
+      '<button class="btn btn-ghost" onclick="closeModal();if(window.renderWorkoutHub)renderWorkoutHub()">Cancel</button>' +
+      '<button class="btn btn-pri" onclick="paDo()"><span class="ms">send</span> Assign' + (sel.length ? " to " + sel.length : "") + '</button>');
+  }
+  window.paToggle = function (id) { A.sel[id] = !A.sel[id]; renderAssign(); };
+  window.paSelAll = function () { var all = A.clients || []; var sc = Object.keys(A.sel).filter(function (k) { return A.sel[k]; }).length; if (sc === all.length) { A.sel = {}; } else { all.forEach(function (c) { A.sel[c.id] = true; }); } renderAssign(); };
+  window.paDay = function (i) { A.day = (A.day === i ? null : i); renderAssign(); };
+  window.paDo = async function () {
+    var pid = window._memProvId ? window._memProvId() : null;
+    var sel = Object.keys(A.sel).filter(function (k) { return A.sel[k]; });
+    if (!sel.length) { window.showToast("Pick at least one client", "error"); return; }
+    window.showToast("Assigning…");
+    try {
+      var a = await window.supabase.rpc("pro_workout_assign", { p_pro: pid, p_template_id: A.tid, p_client_ids: sel, p_day: (A.day == null ? null : A.day) });
+      if (a && a.error) throw a.error;
+      window.showToast("Assigned to " + sel.length + " client" + (sel.length === 1 ? "" : "s"), "success");
+      if (window.closeModal) window.closeModal(); if (window.renderWorkoutHub) window.renderWorkoutHub();
+    } catch (e) { console.error("[pa]", e); window.showToast("Couldn’t assign — try again", "error"); }
   };
 })();

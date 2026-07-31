@@ -1168,28 +1168,37 @@ async function renderWorkoutHub(){
   var host=document.getElementById('wk-hub'); if(!host) return;
   var pid=_memProvId();
   if(!(_members&&_members.length)){ try{ var rr=await window.supabase.rpc('pro_list_clients',{p_pro:pid}); _members=(rr&&rr.data)||[]; }catch(e){} }
-  var all=[]; try{ var r=await window.supabase.rpc('pro_workout_list',{p_professional:pid,p_client_id:null}); all=(r&&r.data)||[]; }catch(e){ all=[]; }
-  window._wkHubAll=all;
-  var recent=all.slice().sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);}).slice(0,3);
+  var lib=[]; try{ var r=await window.supabase.rpc('pro_workout_library',{p_pro:pid}); lib=(r&&r.data)||[]; }catch(e){ lib=[]; }
+  window._wkLib=lib;
+  var sessions=[]; try{ var r2=await window.supabase.rpc('pro_workout_list',{p_professional:pid,p_client_id:null}); sessions=((r2&&r2.data)||[]).filter(function(w){return w.kind==='session';}).sort(function(a,b){return new Date(b.finished_at||b.created_at||0)-new Date(a.finished_at||a.created_at||0);}).slice(0,4); }catch(e){}
   var nameOf=function(cid){ var m=(_members||[]).find(function(x){return x.id===cid;}); return m?(m.full_name||'Client'):'Client'; };
-  var html='<button class="btn btn-pri" style="width:100%;margin:0 0 16px;" onclick="wkHubNew()"><span class="ms">add</span> New workout</button>';
-  html+='<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:0 0 8px;">Recently created</div>';
-  if(!recent.length){ html+='<div class="psub" style="padding:2px 0;">No workouts yet. Tap “New workout”, pick a client, and the AI Coach will draft one.</div>'; }
+  var html='<button class="btn btn-pri" style="width:100%;margin:0 0 16px;" onclick="proGuidedBuild()"><span class="ms">add</span> Build workout</button>';
+  html+='<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:0 0 8px;">Your workout library</div>';
+  if(!lib.length){ html+='<div class="psub" style="padding:2px 0 4px;">No workouts yet. Tap “Build workout” — it saves here so you can assign it to any client, any time.</div>'; }
   else{
-    html+='<div style="display:flex;flex-direction:column;gap:7px;">'+recent.map(function(w){
-      var nex=(w.exercises&&w.exercises.length)||0; var when=w.created_at?new Date(w.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
-      var sub=(w.kind==='session'?'Logged':'Plan')+' · '+escHtml(w.title||'Workout')+' · '+nex+' ex · '+when;
-      return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px 9px 12px;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:12px;">'+
-        '<div onclick="openClientWorkouts(\''+w.client_id+'\')" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;cursor:pointer;">'+
-          '<span class="ms" style="color:var(--ffp-purple);flex:0 0 auto;">'+(w.kind==='session'?'fitness_center':'event')+'</span>'+
-          '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13.5px;color:var(--ffp-text);">'+escHtml(nameOf(w.client_id))+'</div><div style="font-size:11px;color:var(--ffp-text-dim);">'+sub+'</div></div>'+
-        '</div>'+
-        '<button class="btn btn-pri btn-sm" style="flex:0 0 auto;" onclick="wkHubStart(\''+w.id+'\')"><span class="ms" style="font-size:15px;">play_arrow</span> Start</button>'+
+    html+='<div style="display:flex;flex-direction:column;gap:7px;">'+lib.map(function(w){
+      var nex=(w.exercises&&w.exercises.length)||0; var style=(w.exercises&&w.exercises[0]&&w.exercises[0].style)||'';
+      return '<div style="display:flex;align-items:center;gap:9px;padding:11px 12px;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:12px;">'+
+        '<span class="ms" style="color:var(--ffp-purple);flex:0 0 auto;">fitness_center</span>'+
+        '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13.5px;color:var(--ffp-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(w.title||'Workout')+'</div><div style="font-size:11px;color:var(--ffp-text-dim);text-transform:capitalize;">'+(style?escHtml(style)+' · ':'')+nex+' exercise'+(nex===1?'':'s')+'</div></div>'+
+        '<button class="btn btn-pri btn-sm" style="flex:0 0 auto;" onclick="proAssignLibrary(\''+w.id+'\')"><span class="ms" style="font-size:15px;">send</span> Assign</button>'+
+        '<button title="Delete" onclick="wkHubDeleteTpl(\''+w.id+'\')" style="background:none;border:none;color:var(--ffp-text-dim);cursor:pointer;flex:0 0 auto;padding:2px;"><span class="ms" style="font-size:18px;">delete</span></button>'+
       '</div>';
+    }).join('')+'</div>';
+  }
+  if(sessions.length){
+    html+='<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:18px 0 8px;">Recently completed by clients</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:7px;">'+sessions.map(function(w){
+      var when=w.finished_at?new Date(w.finished_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+      return '<div onclick="openClientWorkouts(\''+w.client_id+'\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:12px;cursor:pointer;">'+
+        '<span class="ms" style="color:#16a34a;flex:0 0 auto;">task_alt</span>'+
+        '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:var(--ffp-text);">'+escHtml(nameOf(w.client_id))+'</div><div style="font-size:11px;color:var(--ffp-text-dim);">'+escHtml(w.title||'Workout')+' · '+when+(w.duration_min?(' · '+w.duration_min+' min'):'')+'</div></div>'+
+        '<span class="ms" style="color:var(--ffp-text-dim);">chevron_right</span></div>';
     }).join('')+'</div>';
   }
   host.innerHTML=html;
 }
+function wkHubDeleteTpl(id){ ffpConfirm({title:'Delete workout?',body:'Removes it from your library. Copies already assigned to clients stay with them.',confirm:'Delete',danger:true,icon:'delete'}).then(function(ok){ if(!ok)return; window.supabase.rpc('pro_workout_delete',{p_professional:_memProvId(),p_id:id}).then(function(r){ if(r&&r.error){ showToast('Could not delete','error'); return; } showToast('Deleted','success'); renderWorkoutHub(); }); }); }
 // Start a workout straight from the hub → load it and open the big-input runner.
 function wkHubStart(id){
   var w=((window._wkHubAll)||[]).find(function(x){return String(x.id)===String(id);}); if(!w){ showToast('Could not open','error'); return; }

@@ -65,6 +65,13 @@
       "#pgb-body .pgb-hd .wbz-steps{flex:1;margin:0;}",
       "#pgb-body .pgb-bk{width:34px;height:34px;flex:none;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:9px;color:var(--ffp-text);cursor:pointer;display:grid;place-items:center;}",
       "#pgb-body .pgb-bk .ms{font-size:18px;}",
+      "#pgb-body .pgb-gen{background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:14px;padding:14px;margin-bottom:14px;}",
+      "#pgb-body .pgb-gen-h{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:var(--ffp-text);margin-bottom:8px;}",
+      "#pgb-body .pgb-gen-h .ms{color:#f2a900;font-size:19px;}",
+      "#pgb-body .pgb-gen textarea{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid var(--ffp-border-mid);border-radius:10px;font-family:inherit;background:var(--ffp-bg);color:var(--ffp-text);font-size:13px;resize:vertical;}",
+      "#pgb-body .pgb-gen-cta{width:100%;margin-top:9px;display:flex;align-items:center;justify-content:center;gap:7px;background:#f2a900;color:#3a2d00;border:none;border-radius:11px;padding:12px;font-family:inherit;font-weight:900;font-size:14px;cursor:pointer;}",
+      "#pgb-body .pgb-gen-cta .ms{font-size:19px;}",
+      "#pgb-body .pgb-or{text-align:center;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ffp-text-dim);margin:0 0 12px;}",
       "#pgb-body .wbz-block{border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--ffp-border-mid);}",
       "#pgb-body .wbz-block.on{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 40%,transparent);}",
       "#pgb-body .wbz-block .bc-hd{display:flex;align-items:center;gap:10px;background:var(--c);color:#fff;padding:12px 14px;}",
@@ -166,13 +173,58 @@
 
   function stepStyle() {
     document.getElementById("pgb-stage").innerHTML =
+      '<div class="pgb-gen"><div class="pgb-gen-h"><span class="ms">auto_awesome</span>Generate with AI — build faster</div>' +
+        '<textarea id="pgb-gen-q" placeholder="e.g. 45-min lower-body dumbbell session, intermediate, protect a sore knee" rows="2"></textarea>' +
+        '<button class="pgb-gen-cta" onclick="pgbGenerate()"><span class="ms">auto_awesome</span>Generate workout</button></div>' +
+      '<div class="pgb-or">or build it yourself</div>' +
       '<div class="wbz-h">How should this workout run?</div><div class="wbz-sub">Tap a style — it sets up the rest for you.</div>' +
       '<div class="wbz-sgrid">' + STYLES.map(function (s) {
-        return '<button class="wbz-scard' + (S.style === s.k ? " on" : "") + '" style="--c:' + s.c + ';" onclick="pgbPickStyle(\'' + s.k + '\')">' +
+        return '<button class="wbz-scard" style="--c:' + s.c + ';" onclick="pgbPickStyle(\'' + s.k + '\')">' +
           '<span class="ic"><span class="ms">' + s.icon + '</span></span><span class="n">' + s.name + '</span><span class="x">' + s.desc + '</span></button>';
       }).join("") + '</div>';
   }
   window.pgbPickStyle = function (k) { S.style = k; S.step = 2; render(); };   // full-color style card → tap to advance
+
+  // Convert a generated/normalised plan ({warmup, exercises, cooldown}) into the builder state.
+  function loadPlanIntoState(plan) {
+    var exs = (plan && Array.isArray(plan.exercises)) ? plan.exercises : [];
+    var lead = exs.filter(function (e) { return e && e.style; })[0];
+    S.style = (lead && lead.style) || "sets";
+    var groups = [];
+    exs.forEach(function (e) { if (e && e.name) { if (e.link && groups.length) groups[groups.length - 1].push(e); else groups.push([e]); } });
+    S.blocks = groups.map(function (g) {
+      var leader = g[0], p = JSON.parse(JSON.stringify(DEF_P));
+      if (leader.rest_sec != null) p.rest = parseInt(leader.rest_sec, 10) || p.rest;
+      if (leader.rounds != null) { p.rounds = parseInt(leader.rounds, 10) || p.rounds; p.tabRounds = p.rounds; p.ftRounds = p.rounds; }
+      if (leader.capMin != null) { p.capMin = parseInt(leader.capMin, 10) || p.capMin; p.ftCap = p.capMin; }
+      if (leader.emomMin != null) p.emomMin = parseInt(leader.emomMin, 10) || p.emomMin;
+      if (leader.tabWork != null) p.tabWork = parseInt(leader.tabWork, 10) || p.tabWork;
+      if (leader.tabRest != null) p.tabRest = parseInt(leader.tabRest, 10) || p.tabRest;
+      var ex = g.map(function (e) {
+        var rs = String(e.reps == null ? "10" : e.reps), measure = "reps";
+        if (/\bcal/i.test(rs)) measure = "cal"; else if (/\b(?:km|m|meters?|metres?)\b/i.test(rs)) measure = "m"; else if (/\b(?:s|sec|secs)\b/i.test(rs)) measure = "s";
+        return { name: e.name, muscle: "", sets: parseInt(e.sets, 10) || 3, reps: (rs.match(/\d+/) || ["10"])[0], rest: parseInt(e.rest_sec, 10) || 75, measure: measure, scope: e.once ? "once" : "round" };
+      });
+      return { ex: ex, p: p };
+    });
+    if (!S.blocks.length) S.blocks = [newBlock()];
+    var toMob = function (arr) { return (Array.isArray(arr) ? arr : []).filter(function (x) { return x && x.name; }).map(function (x) { var d = parseInt(x.duration_sec, 10) || 30; return { name: x.name, duration_sec: d, unit: (d >= 60 && d % 60 === 0 ? "min" : "sec") }; }); };
+    S.warm = toMob(plan && plan.warmup); S.cool = toMob(plan && plan.cooldown);
+    S.name = String((plan && plan.title) || ""); S.active = 0;
+  }
+  window.pgbGenerate = async function () {
+    var el = document.getElementById("pgb-gen-q"), q = el ? el.value.trim() : "";
+    if (q.length < 3) { window.showToast("Describe the workout first", "error"); return; }
+    window.showToast("Generating…");
+    try {
+      var r = await fetch("https://ffp-passport-backend.vercel.app/api/workout/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: q }) });
+      var j = await r.json();
+      if (!r.ok || !j || !j.plan) { window.showToast(r.status === 503 ? "Workout AI isn’t on yet" : "Couldn’t generate — rephrase", "error"); return; }
+      loadPlanIntoState(j.plan);
+      S.step = 3; render();
+      window.showToast("Built — review & tweak", "success");
+    } catch (e) { window.showToast("Network error — try again", "error"); }
+  };
 
   // Warm-up / Cool-down — SAME quick picker as Workout (LIB + CATS), timed moves.
   function stepMob(which) {

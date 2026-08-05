@@ -173,10 +173,6 @@
 
   function stepStyle() {
     document.getElementById("pgb-stage").innerHTML =
-      '<div class="pgb-gen"><div class="pgb-gen-h"><span class="ms">auto_awesome</span>Generate with AI — build faster</div>' +
-        '<textarea id="pgb-gen-q" placeholder="e.g. 45-min lower-body dumbbell session, intermediate, protect a sore knee" rows="2"></textarea>' +
-        '<button class="pgb-gen-cta" onclick="pgbGenerate()"><span class="ms">auto_awesome</span>Generate workout</button></div>' +
-      '<div class="pgb-or">or build it yourself</div>' +
       '<div class="wbz-h">How should this workout run?</div><div class="wbz-sub">Tap a style — it sets up the rest for you.</div>' +
       '<div class="wbz-sgrid">' + STYLES.map(function (s) {
         return '<button class="wbz-scard" style="--c:' + s.c + ';" onclick="pgbPickStyle(\'' + s.k + '\')">' +
@@ -212,6 +208,21 @@
     S.warm = toMob(plan && plan.warmup); S.cool = toMob(plan && plan.cooldown);
     S.name = String((plan && plan.title) || ""); S.active = 0;
   }
+  // Page-level entry — "Generate workout" on the Workouts page. Opens a prompt, then drops the built
+  // workout into the SAME staged builder (populated, at the Workout step) to tweak + assign.
+  window.proGenerateWorkout = function (clientId) {
+    ensureCss();
+    S = { clientId: clientId || null, step: 1, style: null, blocks: [newBlock()], active: 0, warm: [], cool: [],
+          q: "", qw: "", qc: "", cat: "", wcat: "", ccat: "", name: "", notes: "", day: null, clients: [], sel: {} };
+    if (clientId) S.sel[clientId] = true;
+    loadClients();
+    var body = '<div id="pgb-body"><div class="pgb-gen" style="margin:0;"><div class="pgb-gen-h"><span class="ms">auto_awesome</span>Describe the workout</div>' +
+      '<textarea id="pgb-gen-q" placeholder="e.g. 45-min lower-body dumbbell session, intermediate, protect a sore knee" rows="3"></textarea></div>' +
+      '<div class="wbz-sub" style="margin-top:10px;">The AI builds it — you review, tweak and assign.</div></div>';
+    window.openModalShell("lg", "Generate workout", body,
+      '<button class="btn btn-ghost" onclick="' + (clientId && window.openClientWorkouts ? "openClientWorkouts('" + clientId + "')" : "closeModal();if(window.renderWorkoutHub)renderWorkoutHub()") + '">Cancel</button>' +
+      '<button class="btn btn-pri pgb-gen-cta" onclick="pgbGenerate()"><span class="ms">auto_awesome</span> Generate</button>');
+  };
   window.pgbGenerate = async function () {
     var el = document.getElementById("pgb-gen-q"), q = el ? el.value.trim() : "";
     if (q.length < 3) { window.showToast("Describe the workout first", "error"); return; }

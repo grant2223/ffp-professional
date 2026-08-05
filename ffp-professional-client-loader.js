@@ -1172,7 +1172,8 @@ async function renderWorkoutHub(){
   window._wkLib=lib;
   var sessions=[]; try{ var r2=await window.supabase.rpc('pro_workout_list',{p_professional:pid,p_client_id:null}); sessions=((r2&&r2.data)||[]).filter(function(w){return w.kind==='session';}).sort(function(a,b){return new Date(b.finished_at||b.created_at||0)-new Date(a.finished_at||a.created_at||0);}).slice(0,4); }catch(e){}
   var nameOf=function(cid){ var m=(_members||[]).find(function(x){return x.id===cid;}); return m?(m.full_name||'Client'):'Client'; };
-  var html='<button class="btn btn-pri" style="width:100%;margin:0 0 16px;" onclick="proGuidedBuild()"><span class="ms">add</span> Build workout</button>';
+  var html='<button style="width:100%;margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:7px;background:#f2a900;color:#3a2d00;border:none;border-radius:11px;padding:13px;font-family:inherit;font-weight:900;font-size:14px;cursor:pointer;" onclick="proGenerateWorkout()"><span class="ms">auto_awesome</span> Generate workout</button>';
+  html+='<button class="btn btn-pri" style="width:100%;margin:0 0 16px;" onclick="proGuidedBuild()"><span class="ms">add</span> Build workout</button>';
   html+='<div style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ffp-text-dim);margin:0 0 8px;">Your workout library</div>';
   if(!lib.length){ html+='<div class="psub" style="padding:2px 0 4px;">No workouts yet. Tap “Build workout” — it saves here so you can assign it to any client, any time.</div>'; }
   else{

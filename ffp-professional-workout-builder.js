@@ -57,11 +57,14 @@
       "#pgb-body .wbz-h{font-size:18px;font-weight:900;color:var(--ffp-text);margin:0 0 3px;}",
       "#pgb-body .wbz-sub{font-size:12.5px;color:var(--ffp-text-dim);font-weight:600;margin:0 0 12px;}",
       "#pgb-body .wbz-sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}",
-      "#pgb-body .wbz-scard{text-align:left;padding:12px;border-radius:12px;border:1.5px solid var(--ffp-border-mid);background:var(--ffp-bg-card);cursor:pointer;font-family:inherit;}",
-      "#pgb-body .wbz-scard.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 7%,transparent);}",
-      "#pgb-body .wbz-scard .ic .ms{font-size:20px;color:var(--c);}",
-      "#pgb-body .wbz-scard .n{display:block;font-weight:800;font-size:13.5px;color:var(--ffp-text);margin-top:5px;}",
-      "#pgb-body .wbz-scard .x{display:block;font-size:10.5px;color:var(--ffp-text-dim);line-height:1.35;margin-top:2px;}",
+      "#pgb-body .wbz-scard{text-align:left;padding:14px;border-radius:14px;border:none;background:var(--c);cursor:pointer;font-family:inherit;}",
+      "#pgb-body .wbz-scard .ic .ms{font-size:22px;color:#fff;}",
+      "#pgb-body .wbz-scard .n{display:block;font-weight:900;font-size:14px;color:#fff;margin-top:6px;}",
+      "#pgb-body .wbz-scard .x{display:block;font-size:10.5px;color:rgba(255,255,255,.9);line-height:1.35;margin-top:2px;}",
+      "#pgb-body .pgb-hd{display:flex;align-items:center;gap:8px;margin:0 0 16px;}",
+      "#pgb-body .pgb-hd .wbz-steps{flex:1;margin:0;}",
+      "#pgb-body .pgb-bk{width:34px;height:34px;flex:none;background:var(--ffp-bg-card);border:1px solid var(--ffp-border-mid);border-radius:9px;color:var(--ffp-text);cursor:pointer;display:grid;place-items:center;}",
+      "#pgb-body .pgb-bk .ms{font-size:18px;}",
       "#pgb-body .wbz-block{border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--ffp-border-mid);}",
       "#pgb-body .wbz-block.on{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 40%,transparent);}",
       "#pgb-body .wbz-block .bc-hd{display:flex;align-items:center;gap:10px;background:var(--c);color:#fff;padding:12px 14px;}",
@@ -136,20 +139,20 @@
       var cls = S.step === i + 1 ? " on" : S.step > i + 1 ? " done" : "";
       return '<div class="wbz-s' + cls + '"><div class="bar"></div><div class="lbl">' + l + '</div></div>';
     }).join("");
-    var body = '<div class="wbz-steps">' + steps + '</div><div id="pgb-stage"></div>';
+    var back = '<button class="pgb-bk" onclick="' + (S.step > 1 ? "pgbBack()" : "closeModal()") + '"><span class="ms">arrow_back_ios_new</span></button>';
+    var body = '<div id="pgb-body"><div class="pgb-hd">' + back + '<div class="wbz-steps">' + steps + '</div></div><div id="pgb-stage"></div></div>';
+    // Single full-width CTA per step (identical to the FFP App builder). Step 1 = tap a style to advance.
     var foot =
-      '<button class="btn btn-ghost" onclick="' + (S.step > 1 ? "pgbBack()" : "closeModal()") + '">' + (S.step > 1 ? "Back" : "Cancel") + '</button>' +
-      (S.step === 1 ? '<button class="btn btn-pri" onclick="pgbNext()">Next</button>'
-       : S.step === 2 ? '<button class="btn btn-pri" onclick="pgbGoto(3)">' + (S.warm.length ? "Continue · " + S.warm.length + " added" : "Skip warm-up") + '</button>'
-       : S.step === 3 ? '<button class="btn btn-pri" onclick="pgbToCool()"><span class="ms">arrow_forward</span> Continue</button>'
-       : S.step === 4 ? '<button class="btn btn-pri" onclick="pgbGoto(5)">' + (S.cool.length ? "Continue · " + S.cool.length + " added" : "Skip cool-down") + '</button>'
-       : '<button class="btn btn-pri" onclick="pgbSave()"><span class="ms">bookmark_add</span> Save workout</button>');
+      S.step === 1 ? ''
+      : S.step === 2 ? '<button class="btn btn-pri" style="width:100%;" onclick="pgbGoto(3)">' + (S.warm.length ? "Continue · " + S.warm.length + " added" : "Skip warm-up") + '</button>'
+      : S.step === 3 ? '<button class="btn btn-pri" style="width:100%;" onclick="pgbToCool()">Continue</button>'
+      : S.step === 4 ? '<button class="btn btn-pri" style="width:100%;" onclick="pgbGoto(5)">' + (S.cool.length ? "Continue · " + S.cool.length + " added" : "Skip cool-down") + '</button>'
+      : '<button class="btn btn-pri" style="width:100%;" onclick="pgbSave()"><span class="ms">bookmark_add</span> Save workout</button>';
     window.openModalShell("lg", TITLES[S.step - 1], body, foot);
     stage();
   }
   function stage() {
-    var wrap = document.getElementById("pgb-stage"); if (!wrap) return;
-    wrap.id = "pgb-body";                      // so the injected CSS (scoped to #pgb-body) applies
+    if (!document.getElementById("pgb-stage")) return;
     if (S.step === 1) stepStyle();
     else if (S.step === 2) stepMob("warm");
     else if (S.step === 3) stepWorkout();
@@ -162,14 +165,14 @@
   window.pgbToCool = function () { if (!S.blocks.some(function (b) { return b.ex.length; })) { window.showToast("Add an exercise", "error"); return; } S.step = 4; render(); };
 
   function stepStyle() {
-    document.getElementById("pgb-body").innerHTML =
+    document.getElementById("pgb-stage").innerHTML =
       '<div class="wbz-h">How should this workout run?</div><div class="wbz-sub">Tap a style — it sets up the rest for you.</div>' +
       '<div class="wbz-sgrid">' + STYLES.map(function (s) {
         return '<button class="wbz-scard' + (S.style === s.k ? " on" : "") + '" style="--c:' + s.c + ';" onclick="pgbPickStyle(\'' + s.k + '\')">' +
           '<span class="ic"><span class="ms">' + s.icon + '</span></span><span class="n">' + s.name + '</span><span class="x">' + s.desc + '</span></button>';
       }).join("") + '</div>';
   }
-  window.pgbPickStyle = function (k) { S.style = k; stepStyle(); };
+  window.pgbPickStyle = function (k) { S.style = k; S.step = 2; render(); };   // full-color style card → tap to advance
 
   // Warm-up / Cool-down — SAME quick picker as Workout (LIB + CATS), timed moves.
   function stepMob(which) {
@@ -181,7 +184,7 @@
         '<div class="exset"><div class="valgrp"><input class="rin" value="' + mobShown(m) + '" oninput="pgbMobVal(\'' + which + '\',' + i + ',this.value)"><button class="unit" onclick="pgbMobUnit(\'' + which + '\',' + i + ')">' + m.unit + '</button></div></div>' +
         '<button class="rm" onclick="pgbMobRm(\'' + which + '\',' + i + ')">&times;</button></div>';
     }).join("") : '<div class="bc-empty">No moves yet — add from the suggestions below.</div>';
-    document.getElementById("pgb-body").innerHTML =
+    document.getElementById("pgb-stage").innerHTML =
       '<div class="wbz-h">' + hd.nm + '</div>' +
       '<div class="wbz-block" style="--c:' + hd.c + ';"><div class="bc-hd"><span class="bc-ic"><span class="ms">' + hd.ic + '</span></span>' +
         '<div class="bc-tt"><div class="bc-nm">' + hd.nm + '</div><div class="bc-tag">' + hd.tag + '</div></div></div>' +
@@ -201,7 +204,7 @@
         (S.blocks.length > 1 ? '<button class="bc-rm" onclick="event.stopPropagation();pgbRmBlock(' + bi + ')">&times;</button>' : "") +
         '</div><div class="bc-body">' + body + '</div></div>';
     }).join("");
-    document.getElementById("pgb-body").innerHTML =
+    document.getElementById("pgb-stage").innerHTML =
       '<div class="wbz-h">Your workout</div>' + blocksHtml +
       '<button class="wbz-addblk" onclick="pgbAddBlock()"><span class="ms">add</span>Add ' + (S.blocks.length ? "another" : "a") + ' block</button>' +
       addPanel("Add exercises" + (S.blocks.length > 1 ? " · block " + (S.active + 1) : ""), "work", S.q, S.cat);
@@ -279,7 +282,7 @@
     });
     if (S.cool.length) { sum += '<div class="se hd"><span>Cool-down</span><span class="d">' + S.cool.length + ' move' + (S.cool.length === 1 ? "" : "s") + '</span></div>'; sum += S.cool.map(function (x) { return '<div class="se"><span>' + esc(x.name) + '</span><span class="d">' + x.duration_sec + 's</span></div>'; }).join(""); }
     var iinp = "width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid var(--ffp-border-mid);border-radius:10px;font-family:inherit;background:var(--ffp-bg);color:var(--ffp-text);font-size:14px;";
-    document.getElementById("pgb-body").innerHTML =
+    document.getElementById("pgb-stage").innerHTML =
       '<div class="wbz-h">Review &amp; save</div><div class="wbz-sub">Name it, assign it, save to your library.</div>' +
       '<input id="pgb-title" value="' + esc(S.name) + '" placeholder="' + esc(m.name) + ' workout" style="' + iinp + 'font-weight:700;margin-bottom:8px;">' +
       '<input id="pgb-notes" value="' + esc(S.notes) + '" placeholder="Coaching note (optional)" style="' + iinp + 'font-size:13px;margin-bottom:14px;">' +

@@ -226,6 +226,9 @@
     catch (e) { console.error('[FFP Team] overview', e); S.overview = {}; }
     try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: teamId }); S.players = ((rp && rp.data) || {}).players || []; }
     catch (e) { console.error('[FFP Team] players', e); S.players = []; }
+    // Pending join requests for THIS team — surfaced as a card on the overview so the coach can Accept/Ignore.
+    try { var rq = await _tSb().rpc('pro_team_join_requests_list', { p_pro: S.pid }); S.joinReqs = ((rq && rq.data) || []).filter(function (x) { return x.team_id === teamId; }); }
+    catch (e) { S.joinReqs = []; }
     S.tab = S.tab || 'overview';
     S.ovMark = 0; S.ovSkill = 0; S.workView = 'today'; S.sel = null; S.detail = null; S.nutri = null; S.heroMark = 0; S.nutriDay = null;
     S.clubComp = null;
@@ -346,6 +349,18 @@
   }
   function _overviewSections() {
     var S = window.FFP_TEAM, ov = S.overview || {}, html = '';
+    // Requests to join — first thing the coach sees, with Accept / Ignore inline.
+    var reqs = S.joinReqs || [];
+    if (reqs.length) {
+      html += '<div class="ffpt-sec" style="background:rgba(255,204,0,.10);border:1px solid rgba(255,204,0,.55);border-radius:14px;padding:14px 15px;margin-bottom:14px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;color:#0a3e44;letter-spacing:-.1px;">' + _ic('person_add', 18, '#0a3e44') + 'Requests to join <span style="background:#FFCC00;color:#3a2d00;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:900;">' + reqs.length + '</span></div>' +
+        reqs.map(function (q) {
+          return '<div style="display:flex;align-items:center;gap:9px;padding:11px 0 3px;">' + _av(q.name, q.photo, 36) +
+            '<span style="font-weight:800;color:#0f2327;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _tEsc(q.name) + '</span>' +
+            '<button style="border:none;background:#0a3e44;color:#fff;border-radius:10px;padding:9px 15px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamJoinDecide(\'' + q.id + '\',true)">Accept</button>' +
+            '<button style="border:1px solid #d7dee0;background:#fff;color:#869599;border-radius:10px;padding:9px 13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;" onclick="teamJoinDecide(\'' + q.id + '\',false)">Ignore</button></div>';
+        }).join('') + '</div>';
+    }
     html += _clubCompSection();
     // Doing the work
     html += '<div class="ffpt-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;"><div class="st">Doing the work</div>' +
@@ -744,9 +759,12 @@
     var S = window.FFP_TEAM;
     try {
       await _tSb().rpc('pro_team_join_decide', { p_pro: S.pid, p_request: reqId, p_approve: approve });
-      _tToast(approve ? 'Added to the team' : 'Declined', '');
+      _tToast(approve ? 'Added to the team' : 'Ignored', '');
+      // Refresh pending requests + roster, then repaint whichever view is open (overview card OR settings).
+      try { var rq = await _tSb().rpc('pro_team_join_requests_list', { p_pro: S.pid }); S.joinReqs = ((rq && rq.data) || []).filter(function (x) { return x.team_id === S.team; }); } catch (e) {}
       if (approve) { try { var rp = await _tSb().rpc('pro_team_players', { p_pro: S.pid, p_team: S.team }); S.players = ((rp && rp.data) || {}).players || []; } catch (e) {} }
-      S.setTab = 'players'; _showTeamSettings();   // repaint so an approved player appears in the Roster immediately (+ the request drops off)
+      if (document.getElementById('tg-reqs')) { S.setTab = 'players'; _showTeamSettings(); }   // in settings → repaint settings
+      else _paint();   // on the overview → repaint the overview (request card updates, roster grows)
     }
     catch (e) { console.error(e); _tToast('Could not update', 'error'); }
   };

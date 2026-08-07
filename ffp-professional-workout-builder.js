@@ -71,6 +71,8 @@
       "#pgb-body .pgb-gen textarea{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid var(--ffp-border-mid);border-radius:10px;font-family:inherit;background:var(--ffp-bg);color:var(--ffp-text);font-size:13px;resize:vertical;}",
       "#pgb-body .pgb-gen-cta{width:100%;margin-top:9px;display:flex;align-items:center;justify-content:center;gap:7px;background:#f2a900;color:#3a2d00;border:none;border-radius:11px;padding:12px;font-family:inherit;font-weight:900;font-size:14px;cursor:pointer;}",
       "#pgb-body .pgb-gen-cta .ms{font-size:19px;}",
+      "#pgb-body .wbz-or{display:flex;align-items:center;gap:10px;margin:2px 0 14px;color:var(--ffp-text-dim);font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;}",
+      "#pgb-body .wbz-or:before,#pgb-body .wbz-or:after{content:'';flex:1;height:1px;background:var(--ffp-border-mid);}",
       "#pgb-body .pgb-or{text-align:center;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ffp-text-dim);margin:0 0 12px;}",
       "#pgb-body .wbz-block{border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--ffp-border-mid);}",
       "#pgb-body .wbz-block.on{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 40%,transparent);}",
@@ -173,6 +175,11 @@
 
   function stepStyle() {
     document.getElementById("pgb-stage").innerHTML =
+      // AI describe-and-build sits at the TOP of the first page (unified with manual build).
+      '<div class="pgb-gen"><div class="pgb-gen-h"><span class="ms">auto_awesome</span>Describe it — AI builds it</div>' +
+        '<textarea id="pgb-gen-q" placeholder="e.g. 45-min lower-body dumbbell session, intermediate, protect a sore knee" rows="3">' + esc(S.genq || "") + '</textarea>' +
+        '<button class="pgb-gen-cta" onclick="pgbGenerate()"><span class="ms">auto_awesome</span> Generate with AI</button></div>' +
+      '<div class="wbz-or"><span>or build it yourself</span></div>' +
       '<div class="wbz-h">How should this workout run?</div><div class="wbz-sub">Tap a style — it sets up the rest for you.</div>' +
       '<div class="wbz-sgrid">' + STYLES.map(function (s) {
         return '<button class="wbz-scard" style="--c:' + s.c + ';" onclick="pgbPickStyle(\'' + s.k + '\')">' +
@@ -186,8 +193,15 @@
     var exs = (plan && Array.isArray(plan.exercises)) ? plan.exercises : [];
     var lead = exs.filter(function (e) { return e && e.style; })[0];
     S.style = (lead && lead.style) || "sets";
+    var isGrouped = S.style === "superset" || S.style === "circuit";
     var groups = [];
-    exs.forEach(function (e) { if (e && e.name) { if (e.link && groups.length) groups[groups.length - 1].push(e); else groups.push([e]); } });
+    // Grouped styles (superset/circuit) split into blocks by `link`; every other style is ONE block
+    // holding all the exercises (straight sets = one list of exercises, each with its own sets/reps/rest).
+    exs.forEach(function (e) {
+      if (!e || !e.name) return;
+      if (isGrouped) { if (e.link && groups.length) groups[groups.length - 1].push(e); else groups.push([e]); }
+      else { if (!groups.length) groups.push([]); groups[0].push(e); }
+    });
     S.blocks = groups.map(function (g) {
       var leader = g[0], p = JSON.parse(JSON.stringify(DEF_P));
       if (leader.rest_sec != null) p.rest = parseInt(leader.rest_sec, 10) || p.rest;
@@ -208,23 +222,12 @@
     S.warm = toMob(plan && plan.warmup); S.cool = toMob(plan && plan.cooldown);
     S.name = String((plan && plan.title) || ""); S.active = 0;
   }
-  // Page-level entry — "Generate workout" on the Workouts page. Opens a prompt, then drops the built
-  // workout into the SAME staged builder (populated, at the Workout step) to tweak + assign.
-  window.proGenerateWorkout = function (clientId) {
-    ensureCss();
-    S = { clientId: clientId || null, step: 1, style: null, blocks: [newBlock()], active: 0, warm: [], cool: [],
-          q: "", qw: "", qc: "", cat: "", wcat: "", ccat: "", name: "", notes: "", day: null, clients: [], sel: {} };
-    if (clientId) S.sel[clientId] = true;
-    loadClients();
-    var body = '<div id="pgb-body"><div class="pgb-gen" style="margin:0;"><div class="pgb-gen-h"><span class="ms">auto_awesome</span>Describe the workout</div>' +
-      '<textarea id="pgb-gen-q" placeholder="e.g. 45-min lower-body dumbbell session, intermediate, protect a sore knee" rows="3"></textarea></div>' +
-      '<div class="wbz-sub" style="margin-top:10px;">The AI builds it — you review, tweak and assign.</div></div>';
-    window.openModalShell("lg", "Generate workout", body,
-      '<button class="btn btn-ghost" onclick="' + (clientId && window.openClientWorkouts ? "openClientWorkouts('" + clientId + "')" : "closeModal();if(window.renderWorkoutHub)renderWorkoutHub()") + '">Cancel</button>' +
-      '<button class="btn btn-pri pgb-gen-cta" onclick="pgbGenerate()"><span class="ms">auto_awesome</span> Generate</button>');
-  };
+  // Legacy entry kept for any old callers — AI generate now lives on the builder's first page,
+  // so this just opens the unified guided builder (describe box + style picker together).
+  window.proGenerateWorkout = function (clientId) { window.proGuidedBuild(clientId); };
   window.pgbGenerate = async function () {
     var el = document.getElementById("pgb-gen-q"), q = el ? el.value.trim() : "";
+    if (el) S.genq = q;
     if (q.length < 3) { window.showToast("Describe the workout first", "error"); return; }
     window.showToast("Generating…");
     try {
@@ -269,8 +272,10 @@
     }).join("");
     document.getElementById("pgb-stage").innerHTML =
       '<div class="wbz-h">Your workout</div>' + blocksHtml +
-      '<button class="wbz-addblk" onclick="pgbAddBlock()"><span class="ms">add</span>Add ' + (S.blocks.length ? "another" : "a") + ' block</button>' +
-      addPanel("Add exercises" + (S.blocks.length > 1 ? " · block " + (S.active + 1) : ""), "work", S.q, S.cat);
+      // Multiple blocks only make sense for grouped styles (superset/circuit). Straight sets, AMRAP, EMOM,
+      // Tabata and For-Time are ONE block holding all the exercises.
+      (grouped() ? '<button class="wbz-addblk" onclick="pgbAddBlock()"><span class="ms">add</span>Add ' + (S.blocks.length ? "another" : "a") + ' block</button>' : "") +
+      addPanel("Add exercises" + (grouped() && S.blocks.length > 1 ? " · block " + (S.active + 1) : ""), "work", S.q, S.cat);
     focusSearch();
   }
   function addPanel(title, which, q, catv) {

@@ -266,7 +266,9 @@
     if(!list.length){ host.innerHTML='<div class="prof-empty">No professions match. Try a different search.</div>'; return; }
     host.innerHTML=list.map(function(r){
       var on=r.name===chosen;
-      return '<button type="button" class="prof-row'+(on?' sel':'')+'" onclick="profPick('+JSON.stringify(esc(r.name))+','+JSON.stringify(esc(r.category||''))+')">'+
+      var na=String(r.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var ca=String(r.category||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return '<button type="button" class="prof-row'+(on?' sel':'')+'" onclick="profPick(\''+na+'\',\''+ca+'\')">'+
         '<span class="pr-name">'+esc(r.name)+(on?' ✓':'')+'</span><span class="pr-cat">'+esc(r.category||'')+'</span></button>';
     }).join('');
   };

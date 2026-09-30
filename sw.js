@@ -1,14 +1,15 @@
-/* FFP Passport — Service Worker (v1)
+/* FFP PROFESSIONAL — Service Worker (v2)
+   Was a verbatim copy of the Passport worker: it precached icons that do not exist on this
+   domain and sent notification taps to /ffp-member-dashboard.html, a page that is not here.
    Deliberately CONSERVATIVE. Its only jobs are (a) make the app installable (Android/Chrome require a SW
    with a fetch handler) and (b) cache the static home-screen icons. It NEVER caches HTML or JS, so a Netlify
    deploy is always served fresh — no stale-page bugs. Offline support is intentionally minimal. */
-const CACHE = 'ffp-static-v1';
+const CACHE = 'ffp-pro-static-v2';
 const PRECACHE = [
-  '/assets/icons/ffp-icon-192.png',
-  '/assets/icons/ffp-icon-512.png',
-  '/assets/icons/ffp-maskable-192.png',
-  '/assets/icons/ffp-maskable-512.png',
-  '/manifest.webmanifest'
+  '/assets/icons/ffp-pro-192.png',
+  '/assets/icons/ffp-pro-512.png',
+  '/assets/icons/ffp-pro-180.png',
+  '/ffp-pro.webmanifest'
 ];
 
 self.addEventListener('install', function (event) {
@@ -50,12 +51,12 @@ self.addEventListener('push', function (event) {
   var data = {};
   try { data = event.data ? event.data.json() : {}; }
   catch (e) { try { data = { body: event.data && event.data.text() }; } catch (e2) {} }
-  var title = data.title || 'FFP Passport';
+  var title = data.title || 'FFP Professional';
   var options = {
     body: data.body || '',
-    icon: data.icon || '/assets/icons/ffp-icon-192.png',
-    badge: '/assets/icons/ffp-favicon-32.png',
-    data: { url: data.url || '/ffp-member-dashboard.html' }
+    icon: data.icon || '/assets/icons/ffp-pro-192.png',
+    badge: '/assets/icons/ffp-pro-32.png',
+    data: { url: data.url || '/app' }
   };
   if (data.tag) { options.tag = data.tag; options.renotify = true; }
   event.waitUntil(self.registration.showNotification(title, options));
@@ -63,7 +64,7 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  var url = (event.notification.data && event.notification.data.url) || '/ffp-member-dashboard.html';
+  var url = (event.notification.data && event.notification.data.url) || '/app';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
